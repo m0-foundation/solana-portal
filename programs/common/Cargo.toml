@@ -8,3 +8,5 @@ name = "common"
 crate-type = ["lib"]
 
 [dependencies]
+anchor-lang.workspace = true
+anchor-spl.workspace = true

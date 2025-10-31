@@ -1,17 +1,18 @@
 use anchor_lang::prelude::*;
 
 #[error_code]
-pub enum MessengerError {
-    #[msg("Paused")]
+pub enum PortalError {
     Paused,
     #[msg("Signer is not authorized to perform this action")]
     NotAuthorized,
-    #[msg("Invalid amount")]
     InvalidAmount,
-    #[msg("Invalid extension")]
+    InvalidMint,
     InvalidExtension,
     #[msg("Bridge adapter not supported")]
     InvalidBridgeAdapter,
+    #[msg("Account marked as optional is required")]
+    MissingRequiredOptional,
     #[msg("Invalid number of remaining accounts")]
     InvalidRemainingAccounts,
+    InvalidRecipientTokenAccount,
 }

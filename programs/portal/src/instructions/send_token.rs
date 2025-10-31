@@ -3,7 +3,7 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use common::{Payload, TokenTransferPayload};
 
 use crate::{
-    errors::MessengerError,
+    errors::PortalError,
     instructions::{
         ext_swap::{self, accounts::SwapGlobal, program::ExtSwap},
         send_message, wormhole_adapter,
@@ -107,7 +107,7 @@ pub struct SendTokens<'info> {
 impl SendTokens<'_> {
     fn validate(&self, amount: u64) -> Result<()> {
         if self.messenger_global.paused {
-            return err!(MessengerError::Paused);
+            return err!(PortalError::Paused);
         }
 
         if self
@@ -120,11 +120,11 @@ impl SendTokens<'_> {
             })
             .is_none()
         {
-            return err!(MessengerError::InvalidExtension);
+            return err!(PortalError::InvalidExtension);
         }
 
         if amount == 0 {
-            return err!(MessengerError::InvalidAmount);
+            return err!(PortalError::InvalidAmount);
         }
 
         Ok(())
@@ -182,6 +182,7 @@ impl SendTokens<'_> {
             ctx.accounts.bridge_adapter.to_account_info(),
             ctx.accounts.sender.to_account_info(),
             ctx.accounts.messenger_authority.to_account_info(),
+            ctx.bumps.messenger_authority,
             ctx.accounts.system_program.to_account_info(),
             ctx.remaining_accounts.to_vec(),
             message.encode(),

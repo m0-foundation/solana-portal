@@ -43,6 +43,7 @@ impl SendFillReport<'_> {
             ctx.accounts.bridge_adapter.to_account_info(),
             ctx.accounts.sender.to_account_info(),
             ctx.accounts.messenger_authority.to_account_info(),
+            ctx.bumps.messenger_authority,
             ctx.accounts.system_program.to_account_info(),
             ctx.remaining_accounts.to_vec(),
             message.encode(),
