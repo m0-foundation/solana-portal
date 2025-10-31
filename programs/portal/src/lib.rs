@@ -1,16 +1,54 @@
-use anchor_lang::prelude::*;
+#![allow(unexpected_cfgs)]
 
-declare_id!("7eVvG1ofbppUebcB744q5VVjUBFCphGgzBuHhdLHkNzT");
+pub mod errors;
+pub mod instructions;
+pub mod state;
+
+use anchor_lang::prelude::*;
+use instructions::*;
+
+declare_id!("MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce");
 
 #[program]
 pub mod portal {
     use super::*;
 
+    /// Admin Instructions
+
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        msg!("Greetings from: {:?}", ctx.program_id);
-        Ok(())
+        Initialize::handler(ctx)
+    }
+
+    /// Outbound Instructions
+
+    pub fn send_token<'info>(
+        ctx: Context<'_, '_, '_, 'info, SendTokens<'info>>,
+        amount: u64,
+        destination_token: [u8; 32],
+        recipient: [u8; 32],
+    ) -> Result<()> {
+        SendTokens::handler(ctx, amount, destination_token, recipient)
+    }
+
+    pub fn send_fill_report<'info>(
+        ctx: Context<'_, '_, '_, 'info, SendFillReport<'info>>,
+        order_id: [u8; 32],
+        amount_in_to_release: u128,
+        amount_out_filled: u128,
+        origin_recipient: [u8; 32],
+    ) -> Result<()> {
+        SendFillReport::handler(
+            ctx,
+            order_id,
+            amount_in_to_release,
+            amount_out_filled,
+            origin_recipient,
+        )
+    }
+
+    /// Inbound Instructions
+
+    pub fn receive_message(ctx: Context<ReceiveMessage>, payload: Vec<u8>) -> Result<()> {
+        ReceiveMessage::handler(ctx, payload)
     }
 }
-
-#[derive(Accounts)]
-pub struct Initialize {}
