@@ -10,13 +10,17 @@ use anchor_spl::{
 use executor_account_resolver_svm::{
     find_account, InstructionGroup, InstructionGroups, MissingAccounts, Resolver,
     SerializableAccountMeta, SerializableInstruction, RESOLVER_PUBKEY_PAYER,
-    RESOLVER_PUBKEY_POSTED_VAA, RESOLVER_RESULT_ACCOUNT, RESOLVER_RESULT_ACCOUNT_SEED,
+    RESOLVER_PUBKEY_SHIM_VAA_SIGS, RESOLVER_RESULT_ACCOUNT, RESOLVER_RESULT_ACCOUNT_SEED,
 };
 
 use crate::{
     errors::WormholeError,
     instruction::ReceiveMessage,
-    instructions::{earn, ext_swap, messenger, VaaBody},
+    instructions::{
+        earn::{self, accounts::EarnGlobal},
+        ext_swap::{self, accounts::SwapGlobal},
+        messenger, wormhole_verify_vaa_shim, VaaBody,
+    },
     state::GLOBAL_SEED,
 };
 
@@ -27,37 +31,31 @@ pub struct ResolveExecuteVaa {}
 pub struct ExecutorAccountResolverResult(Resolver<InstructionGroups>);
 
 impl ResolveExecuteVaa {
-    pub fn handler(ctx: Context<Self>, vaa_body: Vec<u8>) -> Result<Resolver<InstructionGroups>> {
+    pub fn handler<'info>(
+        ctx: Context<'_, '_, 'info, 'info, ResolveExecuteVaa>,
+        vaa_body: Vec<u8>,
+    ) -> Result<Resolver<InstructionGroups>> {
         let vaa = VaaBody::from_bytes(&vaa_body)?;
 
         // Accounts we need read data on
-        let swap_global = Pubkey::find_program_address(&[GLOBAL_SEED], &ext_swap::ID).0;
-        let result_account =
-            Pubkey::find_program_address(&[RESOLVER_RESULT_ACCOUNT_SEED], &crate::ID).0;
+        let swap_global = pda(&[GLOBAL_SEED], &ext_swap::ID);
+        let earn_global = pda(&[GLOBAL_SEED], &earn::ID);
+        let result_account = pda(&[RESOLVER_RESULT_ACCOUNT_SEED], &crate::ID);
 
         // Check for missing accounts
         {
-            let mut missing: Vec<Pubkey> = Vec::with_capacity(3);
+            let mut missing = Vec::new();
 
-            // Account to load result into
-            if find_account(ctx.remaining_accounts, result_account).is_none() {
-                missing.push(result_account);
-            }
-
-            // Need swap global for extension info
-            if find_account(ctx.remaining_accounts, swap_global).is_none() {
-                missing.push(swap_global);
-            }
-
-            // Need system program for creating result account
-            if find_account(ctx.remaining_accounts, System::id()).is_none() {
-                missing.push(System::id());
+            for account in [swap_global, earn_global, result_account] {
+                if find_account(ctx.remaining_accounts, account).is_none() {
+                    missing.push(account);
+                }
             }
 
             if !missing.is_empty() {
                 // Placeholder for payer we know is missing
                 missing.push(RESOLVER_PUBKEY_PAYER);
-                missing.push(RESOLVER_PUBKEY_POSTED_VAA);
+                missing.push(RESOLVER_PUBKEY_SHIM_VAA_SIGS);
 
                 return Ok(Resolver::Missing(MissingAccounts {
                     accounts: missing,
@@ -108,6 +106,12 @@ impl ResolveExecuteVaa {
             Account::<ExecutorAccountResolverResult>::try_from(return_account)?
         };
 
+        // Parse accounts we know are on remaining_accounts
+        let swap_global_data =
+            deserialize_account::<SwapGlobal>(ctx.remaining_accounts, swap_global)?;
+        let earn_global_data =
+            deserialize_account::<EarnGlobal>(ctx.remaining_accounts, earn_global)?;
+
         let receive_message_ix = SerializableInstruction {
             program_id: crate::ID,
             data: ReceiveMessage {
@@ -126,28 +130,28 @@ impl ResolveExecuteVaa {
                     is_writable: false,
                     is_signer: false,
                 },
-                SerializableAccountMeta {
-                    pubkey: guardian_set,
-                    is_writable: false,
-                    is_signer: false,
-                },
-                SerializableAccountMeta {
-                    pubkey: guardian_signatures,
-                    is_writable: false,
-                    is_signer: false,
-                },
+                // SerializableAccountMeta {
+                //     pubkey: guardian_set,
+                //     is_writable: false,
+                //     is_signer: false,
+                // },
+                // SerializableAccountMeta {
+                //     pubkey: guardian_signatures,
+                //     is_writable: false,
+                //     is_signer: false,
+                // },
                 SerializableAccountMeta {
                     pubkey: Pubkey::find_program_address(&[GLOBAL_SEED], &earn::ID).0,
                     is_writable: false,
                     is_signer: false,
                 },
                 SerializableAccountMeta {
-                    pubkey: m_mint,
+                    pubkey: earn_global_data.m_mint,
                     is_writable: false,
                     is_signer: false,
                 },
                 SerializableAccountMeta {
-                    pubkey: wormhole_verify_vaa_shim,
+                    pubkey: wormhole_verify_vaa_shim::ID,
                     is_writable: false,
                     is_signer: false,
                 },
@@ -172,5 +176,24 @@ impl ResolveExecuteVaa {
         )));
         ret.exit(ctx.program_id)?;
         Ok(Resolver::Account())
+    }
+}
+
+pub fn pda(seeds: &[&[u8]], program_id: &Pubkey) -> Pubkey {
+    Pubkey::find_program_address(seeds, program_id).0
+}
+
+fn deserialize_account<T: AccountDeserialize>(
+    remaining_accounts: &[AccountInfo],
+    pubkey: Pubkey,
+) -> Result<T> {
+    let account = find_account(remaining_accounts, pubkey).unwrap();
+
+    match T::try_deserialize(&mut &account.try_borrow_mut_data()?[..]) {
+        Ok(data) => Ok(data),
+        Err(e) => {
+            msg!("Failed to deserialize account {}", pubkey);
+            Err(e)
+        }
     }
 }

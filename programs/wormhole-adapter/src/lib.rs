@@ -32,8 +32,8 @@ pub mod wormhole_adapter {
     }
 
     #[instruction(discriminator = &RESOLVER_EXECUTE_VAA_V1)]
-    pub fn resolve_execute(
-        ctx: Context<ResolveExecuteVaa>,
+    pub fn resolve_execute<'info>(
+        ctx: Context<'_, '_, 'info, 'info, ResolveExecuteVaa>,
         vaa_body: Vec<u8>,
     ) -> Result<Resolver<InstructionGroups>> {
         ResolveExecuteVaa::handler(ctx, vaa_body)

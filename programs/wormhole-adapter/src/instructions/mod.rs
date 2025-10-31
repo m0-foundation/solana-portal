@@ -104,6 +104,9 @@ mod tests {
             .decode(base64_vaa_body)
             .expect("Failed to decode base64 string");
 
+        assert_eq!(vaa_raw[0], 1);
+        assert_eq!(u32::from_be_bytes(vaa_raw[1..5].try_into().unwrap()), 4);
+
         // remove header
         let header_len = 6 + vaa_raw[5] as usize * 66;
         let vaa_body = vaa_raw[header_len..].to_vec();
