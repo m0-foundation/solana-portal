@@ -19,7 +19,7 @@ use crate::{
     instructions::{
         earn::{self, accounts::EarnGlobal},
         ext_swap::{self, accounts::SwapGlobal},
-        messenger, wormhole_verify_vaa_shim, VaaBody,
+        portal, wormhole_verify_vaa_shim, VaaBody,
     },
     state::GLOBAL_SEED,
 };
@@ -121,12 +121,12 @@ impl ResolveExecuteVaa {
             .data(),
             accounts: vec![
                 SerializableAccountMeta {
-                    pubkey: Pubkey::find_program_address(&[GLOBAL_SEED], &crate::ID).0,
+                    pubkey: pda(&[GLOBAL_SEED], &crate::ID),
                     is_writable: false,
                     is_signer: false,
                 },
                 SerializableAccountMeta {
-                    pubkey: Pubkey::find_program_address(&[b"authority"], &messenger::ID).0,
+                    pubkey: pda(&[b"authority"], &portal::ID),
                     is_writable: false,
                     is_signer: false,
                 },

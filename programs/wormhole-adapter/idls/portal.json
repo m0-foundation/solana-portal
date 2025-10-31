@@ -1,7 +1,7 @@
 {
   "address": "MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce",
   "metadata": {
-    "name": "messenger",
+    "name": "portal",
     "version": "0.1.0",
     "spec": "0.1.0",
     "description": "bridge program that interacts with bridge adapters"
@@ -159,7 +159,275 @@
           "address": "mz2vDzjbQDUDXBH6FPF5s4odCJ4y8YLE5QWaZ8XdZ9Z"
         },
         {
-          "name": "token_program"
+          "name": "m_token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "extension_mint",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "recipient_token_account",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "messenger_authority"
+              },
+              {
+                "kind": "account",
+                "path": "extension_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "extension_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "authority_m_token_account",
+          "docs": [
+            "Transient $M account that is allowed to hold tokens before wrapping"
+          ],
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "messenger_authority"
+              },
+              {
+                "kind": "account",
+                "path": "m_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "m_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "extension_m_vault",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "extension_m_vault_authority"
+              },
+              {
+                "kind": "account",
+                "path": "m_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "m_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "extension_m_vault_authority",
+          "optional": true
+        },
+        {
+          "name": "extension_mint_authority",
+          "optional": true
+        },
+        {
+          "name": "extension_global",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "extension_token_program",
+          "optional": true
+        },
+        {
+          "name": "extension_program",
+          "optional": true
+        },
+        {
+          "name": "swap_global",
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                60,
+                242,
+                167,
+                56,
+                11,
+                17,
+                54,
+                97,
+                114,
+                227,
+                114,
+                39,
+                167,
+                101,
+                13,
+                161,
+                190,
+                235,
+                218,
+                112,
+                220,
+                127,
+                89,
+                126,
+                174,
+                151,
+                23,
+                37,
+                130,
+                35,
+                190
+              ]
+            }
+          }
+        },
+        {
+          "name": "swap_program",
+          "optional": true,
+          "address": "MSwapi3WhNKMUGm9YrxGhypgUEt7wYQH3ZgG32XoWzH"
         }
       ],
       "args": [
@@ -653,8 +921,7 @@
   "errors": [
     {
       "code": 6000,
-      "name": "Paused",
-      "msg": "Paused"
+      "name": "Paused"
     },
     {
       "code": 6001,
@@ -663,23 +930,34 @@
     },
     {
       "code": 6002,
-      "name": "InvalidAmount",
-      "msg": "Invalid amount"
+      "name": "InvalidAmount"
     },
     {
       "code": 6003,
-      "name": "InvalidExtension",
-      "msg": "Invalid extension"
+      "name": "InvalidMint"
     },
     {
       "code": 6004,
+      "name": "InvalidExtension"
+    },
+    {
+      "code": 6005,
       "name": "InvalidBridgeAdapter",
       "msg": "Bridge adapter not supported"
     },
     {
-      "code": 6005,
+      "code": 6006,
+      "name": "MissingRequiredOptional",
+      "msg": "Account marked as optional is required"
+    },
+    {
+      "code": 6007,
       "name": "InvalidRemainingAccounts",
       "msg": "Invalid number of remaining accounts"
+    },
+    {
+      "code": 6008,
+      "name": "InvalidRecipientTokenAccount"
     }
   ],
   "types": [

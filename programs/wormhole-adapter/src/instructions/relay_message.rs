@@ -6,7 +6,7 @@ use anchor_lang::{
 use crate::{
     consts::{CORE_BRIDGE_CONFIG, CORE_BRIDGE_FEE_COLLECTOR, CORE_BRIDGE_PROGRAM_ID},
     instructions::{
-        messenger,
+        portal,
         wormhole_post_message_shim::{self, program::WormholePostMessageShim, types::Finality},
     },
     state::{WormholeGlobal, GLOBAL_SEED},
@@ -26,10 +26,10 @@ pub struct RelayMessage<'info> {
 
     #[account(
         seeds = [b"authority"], 
-        seeds::program = messenger::ID,
+        seeds::program = portal::ID,
         bump
     )]
-    /// Only relay messages coming from the Messenger program
+    /// Only relay messages coming from the Portal
     messenger_authority: Signer<'info>,
 
     #[account(
