@@ -31,6 +31,7 @@ pub struct ReceiveMessage<'info> {
         seeds::program = messenger::ID,
         bump
     )]
+    /// CHECK: Account does not hold data
     pub messenger_authority: AccountInfo<'info>,
 
     /// CHECK: Guardian set used for signature verification by shim (checked by the shim)
