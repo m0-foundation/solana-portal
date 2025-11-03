@@ -6,7 +6,7 @@ use crate::{FillReportPayload, TokenTransferPayload};
 const SWAP_PROGRAM: Pubkey = pubkey!("MSwapi3WhNKMUGm9YrxGhypgUEt7wYQH3ZgG32XoWzH");
 const ORDERBOOK_PROGRAM: Pubkey = pubkey!("4Qgxc6VkBGaAQAikirnkApYNyy1W6asQgMHZxKgRcSL8");
 
-// Helper macro to extract accounts from remaining_accounts vector
+// Helper macro to convert remaining_accounts into a payload specific struct
 macro_rules! extract_accounts {
     ($struct_type:ident, $accounts:expr, { $($field:ident : $idx:expr),* $(,)? }) => {{
         $struct_type {
