@@ -48,7 +48,10 @@ pub mod portal {
 
     /// Inbound Instructions
 
-    pub fn receive_message(ctx: Context<ReceiveMessage>, payload: Vec<u8>) -> Result<()> {
+    pub fn receive_message<'info>(
+        ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
+        payload: Vec<u8>,
+    ) -> Result<()> {
         ReceiveMessage::handler(ctx, payload)
     }
 }

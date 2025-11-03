@@ -15,28 +15,6 @@ declare_program!(ext_swap);
 declare_program!(wormhole_adapter);
 declare_program!(earn);
 
-// Helper macro to unwrap an optional account that is required
-#[macro_export]
-macro_rules! required_optional {
-    ($opt:expr) => {
-        match &$opt {
-            Some(account) => account,
-            None => return err!(PortalError::MissingRequiredOptional),
-        }
-    };
-}
-
-// Helper macro to get a key from an optional account
-#[macro_export]
-macro_rules! unwrap_or_default {
-    ($opt:expr) => {
-        match &$opt {
-            Some(account) => account.key(),
-            None => crate::ID,
-        }
-    };
-}
-
 pub fn send_message<'info>(
     bridge_adapter: AccountInfo<'info>,
     sender: AccountInfo<'info>,
