@@ -14,6 +14,7 @@ use crate::{errors::PortalError, state::AUTHORITY_SEED};
 declare_program!(ext_swap);
 declare_program!(wormhole_adapter);
 declare_program!(earn);
+declare_program!(order_book);
 
 pub fn send_message<'info>(
     bridge_adapter: AccountInfo<'info>,

@@ -1,17 +1,21 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{self, Mint, TokenInterface};
-use common::{Payload, TokenTransferPayload};
+use common::{FillReportPayload, Payload, TokenTransferPayload};
 
 use crate::{
     instructions::{
         earn::{self, accounts::EarnGlobal, cpi::accounts::PropagateIndex, program::Earn},
         ext_swap::{self},
+        order_book::{self, types::FillReport},
     },
     state::{AUTHORITY_SEED, GLOBAL_SEED},
 };
 
 #[derive(Accounts)]
 pub struct ReceiveMessage<'info> {
+    #[account(mut)]
+    pub relayer: Signer<'info>,
+
     #[account(
         seeds = [AUTHORITY_SEED],
         bump,
@@ -54,12 +58,11 @@ impl ReceiveMessage<'_> {
                 msg!("Received Index Payload: {}", index_payload.index);
                 return Self::handle_index_payload(&ctx, index_payload.index);
             }
-            Payload::FillReport(_fill_report) => {
+            Payload::FillReport(fill_report) => {
                 msg!("Received Fill Report Payload");
+                return Self::handle_fill_report_payload(ctx, fill_report);
             }
         }
-
-        Ok(())
     }
 
     fn handle_index_payload<'info>(
@@ -79,10 +82,8 @@ impl ReceiveMessage<'_> {
             authority_seed,
         );
 
-        earn::cpi::propagate_index(propogate_ctx, index, [0; 32])?;
         msg!("Index update: {}", index);
-
-        Ok(())
+        earn::cpi::propagate_index(propogate_ctx, index, [0; 32])
     }
 
     fn handle_token_transfer_payload<'info>(
@@ -97,8 +98,7 @@ impl ReceiveMessage<'_> {
         }
 
         // Get payload specific accounts
-        let remaining = ctx.remaining_accounts.to_vec();
-        let accounts = payload.parse_and_validate_accounts(remaining)?;
+        let accounts = payload.parse_and_validate_accounts(ctx.remaining_accounts.to_vec())?;
 
         // Get the principal amount of $M tokens to transfer using the multiplier
         let principal = common::amount_to_principal_down(
@@ -149,5 +149,41 @@ impl ReceiveMessage<'_> {
         )?;
 
         Ok(())
+    }
+
+    fn handle_fill_report_payload<'info>(
+        ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
+        payload: FillReportPayload,
+    ) -> Result<()> {
+        // Get payload specific accounts
+        let accounts = payload.parse_and_validate_accounts(ctx.remaining_accounts.to_vec())?;
+
+        order_book::cpi::report_order_fill(
+            CpiContext::new_with_signer(
+                accounts.orderbook_program.clone(),
+                order_book::cpi::accounts::ReportOrderFill {
+                    relayer: ctx.accounts.relayer.to_account_info(),
+                    messenger_authority: ctx.accounts.messenger_authority.to_account_info(),
+                    global_account: accounts.orderbook_global_account,
+                    order: accounts.order,
+                    token_in_mint: accounts.token_in_mint,
+                    origin_recipient: accounts.origin_recipient,
+                    recipient_token_in_ata: accounts.recipient_token_in_ata,
+                    order_token_in_ata: accounts.order_token_in_ata,
+                    token_in_program: accounts.token_in_program,
+                    associated_token_program: accounts.associated_token_program,
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                    event_authority: accounts.event_authority,
+                    program: accounts.orderbook_program,
+                },
+                &[&[AUTHORITY_SEED, &[ctx.bumps.messenger_authority]]],
+            ),
+            FillReport {
+                order_id: payload.order_id,
+                amount_in_to_release: payload.amount_in_to_release,
+                amount_out_filled: payload.amount_out_filled,
+                origin_recipient: payload.origin_recipient,
+            },
+        )
     }
 }
