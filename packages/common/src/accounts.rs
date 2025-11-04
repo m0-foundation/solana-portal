@@ -1,10 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::get_associated_token_address_with_program_id;
 
-use crate::{CommonError, FillReportPayload, TokenTransferPayload};
-
-const SWAP_PROGRAM: Pubkey = pubkey!("MSwapi3WhNKMUGm9YrxGhypgUEt7wYQH3ZgG32XoWzH");
-const ORDERBOOK_PROGRAM: Pubkey = pubkey!("4Qgxc6VkBGaAQAikirnkApYNyy1W6asQgMHZxKgRcSL8");
+use crate::{ext_swap, order_book, CommonError, FillReportPayload, TokenTransferPayload};
 
 // Helper macro to convert remaining_accounts into a payload specific struct
 macro_rules! extract_accounts {
@@ -66,7 +63,7 @@ impl TokenTransferPayload {
             return err!(CommonError::InvalidRemainingAccount);
         }
 
-        if accounts.swap_program.key != &SWAP_PROGRAM {
+        if accounts.swap_program.key != &ext_swap::ID {
             return err!(CommonError::InvalidRemainingAccount);
         }
 
@@ -105,7 +102,7 @@ impl FillReportPayload {
           orderbook_program: 9,
         });
 
-        if accounts.orderbook_program.key != &ORDERBOOK_PROGRAM {
+        if accounts.orderbook_program.key != &order_book::ID {
             return err!(CommonError::InvalidRemainingAccount);
         }
 

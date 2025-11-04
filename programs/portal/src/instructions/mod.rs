@@ -4,17 +4,13 @@ pub mod send_fill_report;
 pub mod send_token;
 
 use anchor_lang::prelude::*;
+use common::wormhole_adapter;
 pub use initialize::*;
 pub use receive_message::*;
 pub use send_fill_report::*;
 pub use send_token::*;
 
 use crate::{errors::PortalError, state::AUTHORITY_SEED};
-
-declare_program!(ext_swap);
-declare_program!(wormhole_adapter);
-declare_program!(earn);
-declare_program!(order_book);
 
 pub fn send_message<'info>(
     bridge_adapter: AccountInfo<'info>,

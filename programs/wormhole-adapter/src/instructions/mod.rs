@@ -12,13 +12,6 @@ pub use resolve_execute::*;
 
 use crate::errors::WormholeError;
 
-declare_program!(wormhole_post_message_shim);
-declare_program!(portal);
-declare_program!(wormhole_verify_vaa_shim);
-declare_program!(earn);
-declare_program!(ext_swap);
-declare_program!(order_book);
-
 #[derive(Debug)]
 pub struct VaaBody {
     pub timestamp: u32,

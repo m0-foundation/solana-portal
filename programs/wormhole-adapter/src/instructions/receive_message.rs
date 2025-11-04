@@ -3,15 +3,16 @@ use anchor_spl::{
     associated_token::spl_associated_token_account::solana_program::keccak,
     token_interface::{Mint, TokenInterface},
 };
+use common::{
+    earn::{self, accounts::EarnGlobal, program::Earn},
+    portal,
+    wormhole_verify_vaa_shim::{self, cpi::accounts::VerifyHash, program::WormholeVerifyVaaShim},
+};
 
 use crate::{
     consts::{AUTHORITY_SEED, CORE_BRIDGE_PROGRAM_ID, GUARDIAN_SET_SEED},
-    instructions::{
-        VaaBody, earn::{self, accounts::EarnGlobal, program::Earn}, portal::{self}, wormhole_verify_vaa_shim::{
-            self, cpi::accounts::VerifyHash, program::WormholeVerifyVaaShim,
-        }
-    },
-    state::{GLOBAL_SEED, WormholeGlobal},
+    instructions::VaaBody,
+    state::{WormholeGlobal, GLOBAL_SEED},
 };
 
 #[derive(Accounts)]
@@ -27,14 +28,14 @@ pub struct ReceiveMessage<'info> {
     pub wormhole_global: Account<'info, WormholeGlobal>,
 
     #[account(
-        seeds = [AUTHORITY_SEED], 
+        seeds = [AUTHORITY_SEED],
         bump
     )]
     /// CHECK: Account does not hold data
     pub wormhole_adapter_authority: AccountInfo<'info>,
 
     #[account(
-        seeds = [AUTHORITY_SEED], 
+        seeds = [AUTHORITY_SEED],
         seeds::program = portal::ID,
         bump
     )]

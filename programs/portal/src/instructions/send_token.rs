@@ -1,13 +1,13 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
-use common::{Payload, TokenTransferPayload};
+use common::{
+    ext_swap::{self, accounts::SwapGlobal, program::ExtSwap},
+    Payload, TokenTransferPayload,
+};
 
 use crate::{
     errors::PortalError,
-    instructions::{
-        ext_swap::{self, accounts::SwapGlobal, program::ExtSwap},
-        send_message, wormhole_adapter,
-    },
+    instructions::{send_message, wormhole_adapter},
     state::{MessengerGlobal, AUTHORITY_SEED, GLOBAL_SEED},
 };
 

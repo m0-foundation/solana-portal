@@ -2,13 +2,13 @@ use anchor_lang::{
     prelude::*,
     system_program::{transfer, Transfer},
 };
+use common::{
+    portal,
+    wormhole_post_message_shim::{self, program::WormholePostMessageShim, types::Finality},
+};
 
 use crate::{
     consts::{CORE_BRIDGE_CONFIG, CORE_BRIDGE_FEE_COLLECTOR, CORE_BRIDGE_PROGRAM_ID},
-    instructions::{
-        portal,
-        wormhole_post_message_shim::{self, program::WormholePostMessageShim, types::Finality},
-    },
     state::{WormholeGlobal, GLOBAL_SEED},
 };
 
