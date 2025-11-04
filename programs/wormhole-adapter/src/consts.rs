@@ -1,5 +1,8 @@
 use anchor_lang::{prelude::Pubkey, pubkey};
 
+pub const AUTHORITY_SEED: &[u8] = b"authority";
+pub const GUARDIAN_SET_SEED: &[u8] = b"GuardianSet";
+
 cfg_if::cfg_if! {
     if #[cfg(feature = "mainnet")] {
         pub const CORE_BRIDGE_PROGRAM_ID: Pubkey = pubkey!("worm2ZoG2kUd4vFXhvjh93UUH596ayRfgQ2MgjNMTth");

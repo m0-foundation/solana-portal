@@ -9,6 +9,7 @@ use anchor_spl::{
     },
     token_2022,
 };
+use common::pda;
 use executor_account_resolver_svm::{
     find_account, InstructionGroup, InstructionGroups, MissingAccounts, Resolver,
     SerializableAccountMeta, SerializableInstruction, RESOLVER_PUBKEY_PAYER,
@@ -16,6 +17,7 @@ use executor_account_resolver_svm::{
 };
 
 use crate::{
+    consts::AUTHORITY_SEED,
     errors::WormholeError,
     instruction::ReceiveMessage,
     instructions::{
@@ -24,7 +26,6 @@ use crate::{
         order_book::{self, accounts::NativeOrder},
         portal, wormhole_verify_vaa_shim, VaaBody,
     },
-    pda,
     state::GLOBAL_SEED,
 };
 
@@ -127,12 +128,22 @@ impl ResolveExecuteVaa {
             .data(),
             accounts: vec![
                 SerializableAccountMeta {
+                    pubkey: RESOLVER_PUBKEY_PAYER,
+                    is_writable: true,
+                    is_signer: false,
+                },
+                SerializableAccountMeta {
                     pubkey: pda!(&[GLOBAL_SEED], &crate::ID),
                     is_writable: false,
                     is_signer: false,
                 },
                 SerializableAccountMeta {
-                    pubkey: pda!(&[b"authority"], &portal::ID),
+                    pubkey: pda!(&[AUTHORITY_SEED], &crate::ID),
+                    is_writable: false,
+                    is_signer: false,
+                },
+                SerializableAccountMeta {
+                    pubkey: pda!(&[AUTHORITY_SEED], &portal::ID),
                     is_writable: false,
                     is_signer: false,
                 },

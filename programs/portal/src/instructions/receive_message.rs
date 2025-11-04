@@ -1,12 +1,14 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{self, Mint, TokenInterface};
-use common::{FillReportPayload, Payload, TokenTransferPayload};
+use common::{pda, FillReportPayload, Payload, TokenTransferPayload};
 
 use crate::{
+    errors::PortalError,
     instructions::{
         earn::{self, accounts::EarnGlobal, cpi::accounts::PropagateIndex, program::Earn},
         ext_swap::{self},
         order_book::{self, types::FillReport},
+        wormhole_adapter,
     },
     state::{AUTHORITY_SEED, GLOBAL_SEED},
 };
@@ -15,6 +17,8 @@ use crate::{
 pub struct ReceiveMessage<'info> {
     #[account(mut)]
     pub relayer: Signer<'info>,
+
+    pub adapter_authority: Signer<'info>,
 
     #[account(
         seeds = [AUTHORITY_SEED],
@@ -43,6 +47,20 @@ pub struct ReceiveMessage<'info> {
 }
 
 impl ReceiveMessage<'_> {
+    fn validate(&self) -> Result<()> {
+        // Check that one of the supported adapters signed the message
+        if [wormhole_adapter::ID]
+            .iter()
+            .find(|id| pda!(&[AUTHORITY_SEED], id) == self.adapter_authority.key())
+            .is_none()
+        {
+            return err!(PortalError::InvalidAdapterAuthority);
+        }
+
+        Ok(())
+    }
+
+    #[access_control(ctx.accounts.validate())]
     pub fn handler<'info>(
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
         payload: Vec<u8>,

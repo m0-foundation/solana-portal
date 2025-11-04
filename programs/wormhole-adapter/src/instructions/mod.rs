@@ -19,13 +19,6 @@ declare_program!(earn);
 declare_program!(ext_swap);
 declare_program!(order_book);
 
-#[macro_export]
-macro_rules! pda {
-    ($seeds:expr, $program_id:expr) => {
-        Pubkey::find_program_address($seeds, $program_id).0
-    };
-}
-
 #[derive(Debug)]
 pub struct VaaBody {
     pub timestamp: u32,

@@ -15,4 +15,6 @@ pub enum PortalError {
     #[msg("Invalid number of remaining accounts")]
     InvalidRemainingAccounts,
     InvalidRecipientTokenAccount,
+    #[msg("Expected authority from a supported adapter")]
+    InvalidAdapterAuthority,
 }

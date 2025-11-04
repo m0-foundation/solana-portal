@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::get_associated_token_address_with_program_id;
 
-use crate::{FillReportPayload, TokenTransferPayload};
+use crate::{CommonError, FillReportPayload, TokenTransferPayload};
 
 const SWAP_PROGRAM: Pubkey = pubkey!("MSwapi3WhNKMUGm9YrxGhypgUEt7wYQH3ZgG32XoWzH");
 const ORDERBOOK_PROGRAM: Pubkey = pubkey!("4Qgxc6VkBGaAQAikirnkApYNyy1W6asQgMHZxKgRcSL8");
@@ -21,14 +21,6 @@ macro_rules! extract_accounts {
             )*
         }
     }};
-}
-
-#[error_code]
-pub enum CommonError {
-    #[msg("Missing optional account required for payload type")]
-    MissingOptionalAccount,
-    #[msg("Remaining account invalid")]
-    InvalidRemainingAccount,
 }
 
 pub struct TokenTransferPayloadAccounts<'info> {
