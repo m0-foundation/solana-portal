@@ -7,4 +7,5 @@ signer "payer" "svm::secret_key" {
 signer "authority" "svm::secret_key" {
     description = "Can upgrade programs and manage critical ops"
     keypair_json = "~/.config/solana/id.json"
+    expected_address = "D76ySoHPwD8U2nnTTDqXeUJQg5UkD9UD1PUE1rnvPAGm"
 }

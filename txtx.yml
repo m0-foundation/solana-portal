@@ -5,6 +5,9 @@ runbooks:
   - name: deployment
     description: Deploy programs
     location: runbooks/deployment
+  - name: initialize
+    description: Initialize programs
+    location: runbooks/initialize
 environments:
   localnet:
     network_id: localnet

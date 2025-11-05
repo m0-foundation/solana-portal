@@ -16,7 +16,7 @@ static VALIDATOR: Lazy<Mutex<SurfnetValidator>> =
 pub struct SurfnetValidator {
     process: Child,
     client: Arc<RpcClient>,
-    keypair: Arc<Keypair>,
+    _keypair: Arc<Keypair>,
 }
 
 impl SurfnetValidator {
@@ -47,7 +47,7 @@ impl SurfnetValidator {
         let validator = SurfnetValidator {
             process,
             client: Arc::new(RpcClient::new("http://127.0.0.1:8899".to_string())),
-            keypair: Arc::new(keypair),
+            _keypair: Arc::new(keypair),
         };
 
         // Verify RPC connectivity
@@ -89,3 +89,6 @@ pub fn get_rpc_client() -> Arc<RpcClient> {
 
 #[cfg(test)]
 mod health_tests;
+
+#[cfg(test)]
+mod initialize_tests;
