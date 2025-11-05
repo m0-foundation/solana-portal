@@ -1,8 +1,7 @@
-
 signer "payer" "svm::secret_key" {
     description = "Pays fees for program deployments and operations"
     keypair_json = "~/.config/solana/id.json"
-    // See documentation for other options (mnemonic, etc): https://docs.surfpool.run/iac/svm/signers
+    expected_address = "D76ySoHPwD8U2nnTTDqXeUJQg5UkD9UD1PUE1rnvPAGm"
 }
     
 signer "authority" "svm::secret_key" {

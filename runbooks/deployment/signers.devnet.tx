@@ -1,12 +1,15 @@
-
-signer "payer" "svm::web_wallet" {
+signer "payer" "svm::secret_key" {
     description = "Pays fees for program deployments and operations"
-    // Optional: the public key of the signer can be enforced at runtime by setting an expected value
-    // expected_address = "zbBjhHwuqyKMmz8ber5oUtJJ3ZV4B6ePmANfGyKzVGV"
+    keypair_json = "~/.config/solana/id.json"
+    expected_address = "D76ySoHPwD8U2nnTTDqXeUJQg5UkD9UD1PUE1rnvPAGm"
 }
+    
+// connect a wallet that is on the multisig
+signer "initiator" "svm::web_wallet" {}
 
-signer "authority" "svm::web_wallet" {
+signer "authority" "svm::squads" {
     description = "Can upgrade programs and manage critical ops"
-    // expected_address = input.expected_payer_address
-    // See documentation for other options (squads, etc): https://docs.surfpool.run/iac/svm/signers
+    multisig_account_public_key = "ygejBD9qP5V22gKTg8pJVzFUNQwRYs2jgqyb7YS4XVy"
+    create_key = "H26UNMivrtwGhjv2vGwPfYLwgkWXactYhhwmbuq1M97Z"
+    initiator = signer.initiator
 }
