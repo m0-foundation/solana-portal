@@ -1,6 +1,8 @@
 use anyhow::{Context, Result};
 use once_cell::sync::Lazy;
 use solana_client::rpc_client::RpcClient;
+use solana_sdk::signature::Keypair;
+use solana_sdk::signer::Signer;
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -13,12 +15,21 @@ static VALIDATOR: Lazy<Mutex<SurfnetValidator>> =
 pub struct SurfnetValidator {
     process: Option<Child>,
     client: Arc<RpcClient>,
+    keypair: Arc<Keypair>,
 }
 
 impl SurfnetValidator {
     fn start() -> Result<Self> {
+        let keypair = Keypair::new();
+
+        // Ensure surfpool is not already running
+        let _ = Command::new("sh")
+            .arg("-c")
+            .arg("kill -9 $(lsof -ti:8899)")
+            .output();
+
         let process = Command::new("surfpool")
-            .arg("start")
+            .arg(format!("start --airdrop {}", keypair.pubkey().to_string()))
             .current_dir("..")
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -28,6 +39,7 @@ impl SurfnetValidator {
         let validator = SurfnetValidator {
             process: Some(process),
             client: Arc::new(RpcClient::new("http://127.0.0.1:8899".to_string())),
+            keypair: Arc::new(keypair),
         };
 
         validator.wait_for_ready(30)?;
