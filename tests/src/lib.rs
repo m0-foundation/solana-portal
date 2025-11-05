@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use once_cell::sync::Lazy;
 use solana_client::rpc_client::RpcClient;
 use std::process::{Child, Command, Stdio};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
@@ -12,7 +12,7 @@ static VALIDATOR: Lazy<Mutex<SurfnetValidator>> =
 
 pub struct SurfnetValidator {
     process: Option<Child>,
-    pub client: RpcClient,
+    client: Arc<RpcClient>,
 }
 
 impl SurfnetValidator {
@@ -27,7 +27,7 @@ impl SurfnetValidator {
 
         let validator = SurfnetValidator {
             process: Some(process),
-            client: RpcClient::new("http://127.0.0.1:8899".to_string()),
+            client: Arc::new(RpcClient::new("http://127.0.0.1:8899".to_string())),
         };
 
         validator.wait_for_ready(30)?;
@@ -72,11 +72,10 @@ impl Drop for SurfnetValidator {
     }
 }
 
-pub fn get_validator_client() -> RpcClient {
-    let _validator = VALIDATOR.lock().unwrap();
-    RpcClient::new("http://127.0.0.1:8899".to_string())
+pub fn get_rpc_client() -> Arc<RpcClient> {
+    let validator = VALIDATOR.lock().unwrap();
+    Arc::clone(&validator.client)
 }
 
 #[cfg(test)]
 mod health_tests;
-
