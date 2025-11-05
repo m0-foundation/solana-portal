@@ -14,7 +14,7 @@ fn test_validator_block_production() -> Result<()> {
     let client = crate::get_rpc_client();
 
     let initial_slot = client.get_slot()?;
-    thread::sleep(Duration::from_secs(2));
+    thread::sleep(Duration::from_secs(1));
     let new_slot = client.get_slot()?;
 
     // Verify blocks are being produced
