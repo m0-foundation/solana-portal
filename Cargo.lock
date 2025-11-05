@@ -5870,6 +5870,7 @@ name = "tests"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "once_cell",
  "serde_json",
  "solana-client",
  "solana-sdk",
