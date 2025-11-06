@@ -40,10 +40,20 @@ jobs:
           key: cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: cargo-build-target
 
-      - name: Install surfpool
+      - name: Install Surfpool
         run: |
           brew tap txtx/taps
           brew install txtx/taps/surfpool
+
+      - name: Install Anchor
+        shell: bash
+        run: |
+          cargo install anchor-cli@0.32.1
+          anchor --version
+
+      - name: Build programs
+        run: anchor build
+        shell: bash
 
       - name: Run tests
         run: make test-verbose
