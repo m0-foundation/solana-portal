@@ -5879,7 +5879,9 @@ dependencies = [
 name = "tests"
 version = "0.1.0"
 dependencies = [
+ "anchor-lang",
  "anyhow",
+ "common",
  "ctor",
  "once_cell",
  "serde_json",

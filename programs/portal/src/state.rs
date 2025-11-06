@@ -8,12 +8,12 @@ pub const AUTHORITY_SEED: &[u8] = b"authority";
 
 #[account]
 #[derive(InitSpace)]
-pub struct MessengerGlobal {
+pub struct PortalGlobal {
     pub bump: u8,
     pub admin: Pubkey,
     pub paused: bool,
 }
 
-impl MessengerGlobal {
-    pub const SIZE: usize = MessengerGlobal::INIT_SPACE + MessengerGlobal::DISCRIMINATOR.len();
+impl PortalGlobal {
+    pub const SIZE: usize = PortalGlobal::INIT_SPACE + PortalGlobal::DISCRIMINATOR.len();
 }

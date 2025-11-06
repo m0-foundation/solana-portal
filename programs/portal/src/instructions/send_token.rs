@@ -8,7 +8,7 @@ use common::{
 use crate::{
     errors::PortalError,
     instructions::{send_message, wormhole_adapter},
-    state::{MessengerGlobal, AUTHORITY_SEED, GLOBAL_SEED},
+    state::{PortalGlobal, AUTHORITY_SEED, GLOBAL_SEED},
 };
 
 #[derive(Accounts)]
@@ -19,7 +19,7 @@ pub struct SendTokens<'info> {
         seeds = [GLOBAL_SEED],
         bump = messenger_global.bump,
     )]
-    pub messenger_global: Account<'info, MessengerGlobal>,
+    pub messenger_global: Account<'info, PortalGlobal>,
 
     #[account(
         seeds = [GLOBAL_SEED],
