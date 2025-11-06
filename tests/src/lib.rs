@@ -80,7 +80,15 @@ impl SurfnetValidator {
 
     fn stop(&mut self) {
         if let Ok(logs) = self.logs.lock() {
-            let _ = std::fs::write("surfpool_validator.log", logs.join(""));
+            let log_content = logs.join("");
+
+            // Write to file
+            let _ = std::fs::write("surfpool_validator.log", &log_content);
+
+            // Also write to console to see logs with --nocapture
+            println!("\n========== SURFPOOL VALIDATOR LOGS ==========");
+            print!("{}", log_content);
+            println!("============================================\n");
         }
         let _ = self.process.kill();
     }
