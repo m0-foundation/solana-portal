@@ -46,4 +46,4 @@ jobs:
           brew install txtx/taps/surfpool
 
       - name: Run tests
-        run: cargo test --package tests
+        run: make test
