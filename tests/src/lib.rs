@@ -17,6 +17,7 @@ pub struct SurfnetValidator {
     process: Child,
     client: Arc<RpcClient>,
     _keypair: Arc<Keypair>,
+    logs: Arc<Mutex<Vec<String>>>,
 }
 
 impl SurfnetValidator {
@@ -42,19 +43,33 @@ impl SurfnetValidator {
             .spawn()
             .context("Failed to start surfpool")?;
 
-        // Capture stdout to monitor for the ready log
+        // Capture stdout and monitor for the ready log
         let stdout = process.stdout.take().context("Failed to capture stdout")?;
-        let mut stdout_reader = BufReader::new(stdout);
+        let stdout_reader = BufReader::new(stdout);
+
+        let logs = Arc::new(Mutex::new(Vec::new()));
+        let logs_clone = Arc::clone(&logs);
+
+        // Spawn a background thread to continuously capture all stdout logs
+        let _log_thread = thread::spawn(move || {
+            for line in stdout_reader.lines() {
+                if let Ok(line) = line {
+                    let mut log_line = line;
+                    log_line.push('\n');
+                    logs_clone.lock().unwrap().push(log_line);
+                }
+            }
+        });
 
         let validator = SurfnetValidator {
             process,
             client: Arc::new(RpcClient::new("http://127.0.0.1:8899".to_string())),
             _keypair: Arc::new(keypair),
+            logs: Arc::clone(&logs),
         };
 
-        // Verify RPC connectivity
+        // Verify RPC connectivity and wait for deployment completion
         let rpc_start = time::Instant::now();
-        let mut line_buffer = String::new();
 
         loop {
             if rpc_start.elapsed() > Duration::from_secs(10) {
@@ -63,13 +78,18 @@ impl SurfnetValidator {
 
             match validator.client.get_version() {
                 Ok(_) => {
-                    // Check for deployment completion
-                    while stdout_reader.read_line(&mut line_buffer).unwrap_or(0) > 0 {
-                        if line_buffer.contains("Runbook 'deployment' execution completed") {
+                    // Check if deployment is complete by looking at the logs
+                    {
+                        if logs
+                            .lock()
+                            .unwrap()
+                            .iter()
+                            .any(|line| line.contains("Runbook 'deployment' execution completed"))
+                        {
                             return Ok(validator);
                         }
-                        line_buffer.clear();
                     }
+                    thread::sleep(Duration::from_millis(100));
                 }
                 Err(_) => thread::sleep(Duration::from_millis(500)),
             }
@@ -77,6 +97,9 @@ impl SurfnetValidator {
     }
 
     fn stop(&mut self) {
+        if let Ok(logs) = self.logs.lock() {
+            let _ = std::fs::write("surfpool_validator.log", logs.join(""));
+        }
         let _ = self.process.kill();
         let _ = self.process.wait();
     }
