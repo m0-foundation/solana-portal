@@ -16,6 +16,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
+#[instruction(_guardian_set_index: u32)]
 pub struct ReceiveMessage<'info> {
     #[account(mut)]
     pub relayer: Signer<'info>,
@@ -42,6 +43,11 @@ pub struct ReceiveMessage<'info> {
     /// CHECK: Account does not hold data
     pub messenger_authority: AccountInfo<'info>,
 
+    #[account(
+        seeds = [GUARDIAN_SET_SEED, &_guardian_set_index.to_be_bytes()],
+        seeds::program = CORE_BRIDGE_PROGRAM_ID,
+        bump
+    )]
     /// CHECK: Guardian set used for signature verification by shim (checked by the shim)
     pub guardian_set: UncheckedAccount<'info>,
 
@@ -70,16 +76,7 @@ pub struct ReceiveMessage<'info> {
 }
 
 impl ReceiveMessage<'_> {
-    fn validate(&self, guardian_set_index: u32, vaa_body: &Vec<u8>) -> Result<()> {
-        let (guardian_set_key, guardian_set_bump) = Pubkey::find_program_address(
-            &[GUARDIAN_SET_SEED, &guardian_set_index.to_be_bytes()],
-            &CORE_BRIDGE_PROGRAM_ID,
-        );
-
-        if guardian_set_key != self.guardian_set.key() {
-            return Err(ProgramError::InvalidArgument.into());
-        }
-
+    fn validate(&self, guardian_set_bump: u8, vaa_body: &Vec<u8>) -> Result<()> {
         // Compute the message hash.
         let message_hash = &keccak::hashv(&[&vaa_body]).to_bytes();
         let digest = keccak::hash(message_hash.as_slice()).to_bytes();
@@ -104,10 +101,10 @@ impl ReceiveMessage<'_> {
         Ok(())
     }
 
-    #[access_control(ctx.accounts.validate(guardian_set_index, &vaa_body))]
+    #[access_control(ctx.accounts.validate(ctx.bumps.guardian_set, &vaa_body))]
     pub fn handler<'info>(
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
-        guardian_set_index: u32,
+        _guardian_set_index: u32,
         vaa_body: Vec<u8>,
     ) -> Result<()> {
         portal::cpi::receive_message(
