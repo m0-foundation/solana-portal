@@ -22,3 +22,15 @@ action "initialize_portal" "svm::process_instructions" {
         }
     }
 }
+
+action "initialize_wormhole_adapter" "svm::process_instructions" {
+    description = "Initializes the Wormhole Adapter program"
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.wormhole_adapter_program.idl
+        instruction_name = "initialize"
+        admin {
+            public_key = signer.caller.public_key
+        }
+    }
+}

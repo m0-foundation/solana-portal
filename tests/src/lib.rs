@@ -30,10 +30,12 @@ impl SurfnetValidator {
             .output();
 
         let mut process = Command::new("surfpool")
-            .arg("start")
-            .arg("--no-tui")
-            .arg("--airdrop")
-            .arg(keypair.pubkey().to_string())
+            .args(&[
+                "start",
+                "--no-tui",
+                "--airdrop",
+                &keypair.pubkey().to_string(),
+            ])
             .current_dir("..")
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -73,13 +75,18 @@ impl SurfnetValidator {
             }
         }
     }
+
+    fn stop(&mut self) {
+        let _ = self.process.kill();
+        let _ = self.process.wait();
+    }
 }
 
-impl Drop for SurfnetValidator {
-    fn drop(&mut self) {
-        self.process.kill().unwrap();
-        self.process.wait().unwrap();
-    }
+// Ensure validator cleanup happens when tests complete
+#[ctor::dtor]
+fn cleanup() {
+    let mut validator = VALIDATOR.lock().unwrap();
+    validator.stop();
 }
 
 pub fn get_rpc_client() -> Arc<RpcClient> {
@@ -87,8 +94,28 @@ pub fn get_rpc_client() -> Arc<RpcClient> {
     Arc::clone(&validator.client)
 }
 
-#[cfg(test)]
-mod health_tests;
+pub fn run_surfpool_cmd(args: Vec<&str>) -> Result<()> {
+    let output = Command::new("surfpool")
+        .current_dir("..")
+        .args(args)
+        .args(&["--env", "localnet"])
+        .output()
+        .context("Failed to run command")?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+
+    if stdout.contains("x Failed") {
+        anyhow::bail!(
+            "Error executing surfpool command: \n{}",
+            stdout.split("x Failed: ").nth(1).unwrap()
+        );
+    }
+
+    Ok(())
+}
 
 #[cfg(test)]
-mod initialize_tests;
+mod tests_01_health;
+
+#[cfg(test)]
+mod tests_02_initialize;
