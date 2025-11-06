@@ -1,10 +1,12 @@
 pub mod accounts;
 pub mod conversions;
+pub mod interfaces;
 pub mod payloads;
 
 pub use accounts::*;
 use anchor_lang::prelude::*;
 pub use conversions::*;
+pub use interfaces::*;
 pub use payloads::*;
 
 declare_program!(wormhole_post_message_shim);
