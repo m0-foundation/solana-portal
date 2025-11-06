@@ -5,7 +5,8 @@ on:
 
 jobs:
   test:
-    name: Run Cargo Tests
+    runs-on: macos-latest
+    name: run cargo tests
     runs-on: ubuntu-latest
 
     steps:
@@ -39,6 +40,11 @@ jobs:
           path: target
           key: cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: cargo-build-target
+
+      - name: Install surfpool
+        run: |
+          brew tap txtx/taps
+          brew install txtx/taps/surfpool
 
       - name: Run tests
         run: cargo test --package tests
