@@ -16,14 +16,11 @@ static VALIDATOR: Lazy<Mutex<SurfnetValidator>> =
 pub struct SurfnetValidator {
     process: Child,
     client: Arc<RpcClient>,
-    _keypair: Arc<Keypair>,
     logs: Arc<Mutex<Vec<String>>>,
 }
 
 impl SurfnetValidator {
     fn start() -> Result<Self> {
-        let keypair = Keypair::new();
-
         // Ensure surfpool is not already running
         let _ = Command::new("sh")
             .arg("-c")
@@ -35,7 +32,7 @@ impl SurfnetValidator {
                 "start",
                 "--no-tui",
                 "--airdrop",
-                &keypair.pubkey().to_string(),
+                &Keypair::new().pubkey().to_string(),
             ])
             .current_dir("..")
             .stdout(Stdio::piped())
@@ -43,56 +40,41 @@ impl SurfnetValidator {
             .spawn()
             .context("Failed to start surfpool")?;
 
-        // Capture stdout and monitor for the ready log
-        let stdout = process.stdout.take().context("Failed to capture stdout")?;
-        let stdout_reader = BufReader::new(stdout);
-
         let logs = Arc::new(Mutex::new(Vec::new()));
         let logs_clone = Arc::clone(&logs);
+        let stdout = BufReader::new(process.stdout.take().context("Failed to capture stdout")?);
 
         // Spawn a background thread to continuously capture all stdout logs
-        let _log_thread = thread::spawn(move || {
-            for line in stdout_reader.lines() {
-                if let Ok(line) = line {
-                    let mut log_line = line;
-                    log_line.push('\n');
-                    logs_clone.lock().unwrap().push(log_line);
-                }
+        thread::spawn(move || {
+            for line in stdout.lines().flatten() {
+                logs_clone.lock().unwrap().push(format!("{}\n", line));
             }
         });
 
         let validator = SurfnetValidator {
             process,
             client: Arc::new(RpcClient::new("http://127.0.0.1:8899".to_string())),
-            _keypair: Arc::new(keypair),
             logs: Arc::clone(&logs),
         };
 
-        // Verify RPC connectivity and wait for deployment completion
-        let rpc_start = time::Instant::now();
-
+        // Wait for program deployments to complete
+        let start = time::Instant::now();
         loop {
-            if rpc_start.elapsed() > Duration::from_secs(10) {
+            if start.elapsed() > Duration::from_secs(10) {
                 anyhow::bail!("Timeout waiting for validator to be ready");
             }
 
-            match validator.client.get_version() {
-                Ok(_) => {
-                    // Check if deployment is complete by looking at the logs
-                    {
-                        if logs
-                            .lock()
-                            .unwrap()
-                            .iter()
-                            .any(|line| line.contains("Runbook 'deployment' execution completed"))
-                        {
-                            return Ok(validator);
-                        }
-                    }
-                    thread::sleep(Duration::from_millis(100));
-                }
-                Err(_) => thread::sleep(Duration::from_millis(500)),
+            if validator.client.get_version().is_ok()
+                && logs
+                    .lock()
+                    .unwrap()
+                    .iter()
+                    .any(|line| line.contains("Runbook 'deployment' execution completed"))
+            {
+                return Ok(validator);
             }
+
+            thread::sleep(Duration::from_millis(100));
         }
     }
 
@@ -101,7 +83,6 @@ impl SurfnetValidator {
             let _ = std::fs::write("surfpool_validator.log", logs.join(""));
         }
         let _ = self.process.kill();
-        let _ = self.process.wait();
     }
 }
 
@@ -126,14 +107,12 @@ pub fn run_surfpool_cmd(args: Vec<&str>) -> Result<()> {
         .context("Failed to run command")?;
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-
     if stdout.contains("x Failed") {
         anyhow::bail!(
             "Error executing surfpool command: \n{}",
             stdout.split("x Failed: ").nth(1).unwrap()
         );
     }
-
     Ok(())
 }
 
