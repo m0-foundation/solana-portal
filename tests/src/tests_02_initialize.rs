@@ -5,15 +5,13 @@ use crate::run_surfpool_cmd;
 
 #[test]
 fn initialize_programs() -> Result<()> {
-    run_surfpool_cmd(vec!["run", "initialize", "--unsupervised"])
+    run_surfpool_cmd(vec!["run", "initialize", "--unsupervised"])?;
+    Ok(())
 }
 
 #[test]
-fn rerun_initialize_programs() -> Result<()> {
-    let result = run_surfpool_cmd(vec!["run", "initialize", "--unsupervised"]);
-    assert!(result.is_err());
-    assert!(result.unwrap_err().to_string().contains(
-        "{ address: 54dGjbVChJseSS7zo1AWWazMtz4NXi89pQPF2HH2hM6W, base: None } already in use"
-    ),);
+fn initialize_programs_rerun() -> Result<()> {
+    let logs = run_surfpool_cmd(vec!["run", "initialize", "--unsupervised"])?;
+    assert!(logs.contains("Pre-condition failed"),);
     Ok(())
 }

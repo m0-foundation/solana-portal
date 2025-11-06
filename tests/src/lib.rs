@@ -98,7 +98,7 @@ pub fn get_rpc_client() -> Arc<RpcClient> {
     Arc::clone(&validator.client)
 }
 
-pub fn run_surfpool_cmd(args: Vec<&str>) -> Result<()> {
+pub fn run_surfpool_cmd(args: Vec<&str>) -> Result<String> {
     let output = Command::new("surfpool")
         .current_dir("..")
         .args(args)
@@ -113,7 +113,7 @@ pub fn run_surfpool_cmd(args: Vec<&str>) -> Result<()> {
             stdout.split("x Failed: ").nth(1).unwrap()
         );
     }
-    Ok(())
+    Ok(stdout)
 }
 
 #[cfg(test)]
