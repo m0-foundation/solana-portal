@@ -27,12 +27,15 @@ impl SurfnetValidator {
             .arg("kill -9 $(lsof -ti:8899)")
             .output();
 
+        // pubkey: test4MzZzYk2NAP1222FSuKqq83GuXY5tHakqREDHPo
+        let keypair = Keypair::from_base58_string("2MqZwxzsfaEvQvnj4CgvUo2aknYXxJW2bBn5ewbftnbjU9DAtWX1XzCHy7Wd8dBSq5bmRwj6Ya5XTAnEe8sy2qS9");
+
         let mut process = Command::new("surfpool")
             .args(&[
                 "start",
                 "--no-tui",
                 "--airdrop",
-                &Keypair::new().pubkey().to_string(),
+                &keypair.pubkey().to_string(),
             ])
             .current_dir("..")
             .stdout(Stdio::piped())
