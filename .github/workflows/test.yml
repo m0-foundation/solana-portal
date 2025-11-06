@@ -45,10 +45,10 @@ jobs:
           brew tap txtx/taps
           brew install txtx/taps/surfpool
 
-      - name: Install Anchor
+      - name: Install Solana + Anchor
         shell: bash
         run: |
-          cargo install anchor-cli@0.32.1
+          curl --proto '=https' --tlsv1.2 -sSfL https://solana-install.solana.workers.dev | bash
           anchor --version
 
       - name: Build programs
