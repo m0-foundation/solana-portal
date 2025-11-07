@@ -1,25 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::get_associated_token_address_with_program_id;
+use common_macros::ExtractAccounts;
 
 use crate::{ext_swap, order_book, CommonError, FillReportPayload, TokenTransferPayload};
 
-// Helper macro to convert remaining_accounts into a payload specific struct
-macro_rules! extract_accounts {
-    ($struct_type:ident, $accounts:expr, { $($field:ident : $idx:expr),* $(,)? }) => {{
-        $struct_type {
-            $(
-                $field: $accounts
-                    .get($idx)
-                    .cloned()
-                    .ok_or_else(|| {
-                        msg!("Missing account at index: {}", $idx);
-                        CommonError::MissingOptionalAccount
-                    })?,
-            )*
-        }
-    }};
-}
-
+#[derive(ExtractAccounts)]
 pub struct TokenTransferPayloadAccounts<'info> {
     pub extension_mint: AccountInfo<'info>,
     pub recipient_token_account: AccountInfo<'info>,
@@ -39,19 +24,8 @@ impl TokenTransferPayload {
         &self,
         remaining_accounts: Vec<AccountInfo<'info>>,
     ) -> Result<TokenTransferPayloadAccounts<'info>> {
-        let accounts = extract_accounts!(TokenTransferPayloadAccounts, &remaining_accounts, {
-            extension_mint: 0,
-            recipient_token_account: 1,
-            authority_m_token_account: 2,
-            extension_m_vault: 3,
-            extension_m_vault_authority: 4,
-            extension_mint_authority: 5,
-            extension_global: 6,
-            extension_token_program: 7,
-            extension_program: 8,
-            swap_global: 9,
-            swap_program: 10,
-        });
+        let accounts =
+            TokenTransferPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
 
         // Recipient matches transfer payload
         let recipient_token_account = get_associated_token_address_with_program_id(
@@ -71,6 +45,7 @@ impl TokenTransferPayload {
     }
 }
 
+#[derive(ExtractAccounts)]
 pub struct FillReportPayloadAccounts<'info> {
     pub orderbook_global_account: AccountInfo<'info>,
     pub order: AccountInfo<'info>,
@@ -89,18 +64,8 @@ impl FillReportPayload {
         &self,
         remaining_accounts: Vec<AccountInfo<'info>>,
     ) -> Result<FillReportPayloadAccounts<'info>> {
-        let accounts = extract_accounts!(FillReportPayloadAccounts, &remaining_accounts, {
-          orderbook_global_account: 0,
-          order: 1,
-          token_in_mint: 2,
-          origin_recipient: 3,
-          recipient_token_in_ata: 4,
-          order_token_in_ata: 5,
-          token_in_program: 6,
-          associated_token_program: 7,
-          event_authority: 8,
-          orderbook_program: 9,
-        });
+        let accounts =
+            FillReportPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
 
         if accounts.orderbook_program.key != &order_book::ID {
             return err!(CommonError::InvalidRemainingAccount);
