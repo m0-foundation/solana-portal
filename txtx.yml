@@ -12,6 +12,7 @@ environments:
   localnet:
     network_id: localnet
     rpc_api_url: http://127.0.0.1:8899
+    local_signer: 43fc825e966dfb386828d229d27f67d1fc9d2906d2f76903fde9e8a2a17e88460d3b72feead9928540668b0cc280f48ee1ecf91230b1cfae78190f21390d0e9a
   devnet:
     network_id: devnet
     rpc_api_url: https://lindsy-gxe51w-fast-devnet.helius-rpc.com

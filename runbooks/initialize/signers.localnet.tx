@@ -1,4 +1,4 @@
  signer "caller" "svm::secret_key" {
     description = "Local key that owns programs deployed to localnet"
-    keypair_json = "~/.config/solana/id.json"
+    secret_key = input.local_signer
 }
