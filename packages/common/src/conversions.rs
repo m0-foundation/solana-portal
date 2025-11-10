@@ -1,12 +1,9 @@
 use anchor_lang::prelude::*;
-use anchor_spl::{
-    token_2022::spl_token_2022::{
-        extension::{
-            scaled_ui_amount::ScaledUiAmountConfig, BaseStateWithExtensions, StateWithExtensions,
-        },
-        state,
+use anchor_spl::token_2022::spl_token_2022::{
+    extension::{
+        scaled_ui_amount::ScaledUiAmountConfig, BaseStateWithExtensions, StateWithExtensions,
     },
-    token_interface::Mint,
+    state,
 };
 
 const INDEX_SCALE_F64: f64 = 1e12;
@@ -26,12 +23,8 @@ pub fn amount_to_principal_down(amount: u128, multiplier: f64) -> u128 {
         .expect("underflow")
 }
 
-pub fn get_scaled_ui_config<'info>(
-    mint: &InterfaceAccount<'info, Mint>,
-) -> Result<ScaledUiAmountConfig> {
-    // Get the mint account data with extensions
-    let account_info = mint.to_account_info();
-    let mint_data = account_info.try_borrow_data()?;
+pub fn get_scaled_ui_config<'info>(mint: &AccountInfo<'info>) -> Result<ScaledUiAmountConfig> {
+    let mint_data = mint.try_borrow_data()?;
     let mint_ext_data = StateWithExtensions::<state::Mint>::unpack(&mint_data)?;
 
     // Get the scaled UI config extension

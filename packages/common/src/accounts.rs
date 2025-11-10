@@ -2,10 +2,57 @@ use anchor_lang::prelude::*;
 use anchor_spl::associated_token::get_associated_token_address_with_program_id;
 use common_macros::ExtractAccounts;
 
-use crate::{ext_swap, order_book, CommonError, FillReportPayload, TokenTransferPayload};
+use crate::{
+    earn, ext_swap, order_book, CommonError, EarnerMerkleRootPayload, FillReportPayload,
+    IndexPayload, TokenTransferPayload,
+};
+
+#[derive(ExtractAccounts)]
+pub struct IndexPayloadAccounts<'info> {
+    pub m_global: AccountInfo<'info>,
+    pub m_mint: AccountInfo<'info>,
+    pub earn_program: AccountInfo<'info>,
+    pub m_token_program: AccountInfo<'info>,
+}
+
+impl IndexPayload {
+    pub fn parse_and_validate_accounts<'info>(
+        &self,
+        remaining_accounts: Vec<AccountInfo<'info>>,
+    ) -> Result<IndexPayloadAccounts<'info>> {
+        let accounts = IndexPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
+
+        if accounts.earn_program.key != &earn::ID {
+            return err!(CommonError::InvalidRemainingAccount);
+        }
+
+        Ok(accounts)
+    }
+}
+
+impl EarnerMerkleRootPayload {
+    pub fn parse_and_validate_accounts<'info>(
+        &self,
+        remaining_accounts: Vec<AccountInfo<'info>>,
+    ) -> Result<IndexPayloadAccounts<'info>> {
+        let accounts = IndexPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
+
+        if accounts.earn_program.key != &earn::ID {
+            return err!(CommonError::InvalidRemainingAccount);
+        }
+
+        Ok(accounts)
+    }
+}
 
 #[derive(ExtractAccounts)]
 pub struct TokenTransferPayloadAccounts<'info> {
+    // Shared with IndexPayloadAccounts
+    pub m_global: AccountInfo<'info>,
+    pub m_mint: AccountInfo<'info>,
+    pub earn_program: AccountInfo<'info>,
+    pub m_token_program: AccountInfo<'info>,
+    // Remaining accounts specific to TokenTransferPayload
     pub extension_mint: AccountInfo<'info>,
     pub recipient_token_account: AccountInfo<'info>,
     pub authority_m_token_account: AccountInfo<'info>,

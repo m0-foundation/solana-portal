@@ -115,6 +115,15 @@ pub struct TokenTransferPayload {
     pub index: u64,
 }
 
+impl Into<EarnerMerkleRootPayload> for TokenTransferPayload {
+    fn into(self) -> EarnerMerkleRootPayload {
+        EarnerMerkleRootPayload {
+            index: self.index,
+            merkle_root: [0; 32],
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct FillReportPayload {
     pub order_id: [u8; 32],
@@ -133,4 +142,13 @@ pub struct IndexPayload {
 pub struct EarnerMerkleRootPayload {
     pub index: u64,
     pub merkle_root: [u8; 32],
+}
+
+impl Into<EarnerMerkleRootPayload> for IndexPayload {
+    fn into(self) -> EarnerMerkleRootPayload {
+        EarnerMerkleRootPayload {
+            index: self.index,
+            merkle_root: [0; 32],
+        }
+    }
 }

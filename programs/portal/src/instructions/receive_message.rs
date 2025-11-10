@@ -1,21 +1,18 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{self, Mint, TokenInterface};
+use anchor_spl::token_interface;
 use common::{
-    earn::{self, accounts::EarnGlobal, cpi::accounts::PropagateIndex, program::Earn},
+    earn::{self, cpi::accounts::PropagateIndex},
     ext_swap,
     order_book::{self, types::FillReport},
-    BridgeAdapter, FillReportPayload, Payload, TokenTransferPayload,
+    BridgeAdapter, EarnerMerkleRootPayload, FillReportPayload, Payload, TokenTransferPayload,
 };
 
-use crate::{
-    errors::PortalError,
-    state::{AUTHORITY_SEED, GLOBAL_SEED},
-};
+use crate::{errors::PortalError, state::AUTHORITY_SEED};
 
 #[derive(Accounts)]
 pub struct ReceiveMessage<'info> {
     #[account(mut)]
-    pub relayer: Signer<'info>,
+    pub sender: Signer<'info>,
 
     pub adapter_authority: Signer<'info>,
 
@@ -25,22 +22,6 @@ pub struct ReceiveMessage<'info> {
     )]
     /// CHECK: account does not hold data
     pub messenger_authority: UncheckedAccount<'info>,
-
-    #[account(
-        mut,
-        seeds = [GLOBAL_SEED],
-        seeds::program = earn::ID,
-        bump = m_global.bump,
-        has_one = m_mint,
-    )]
-    pub m_global: Account<'info, EarnGlobal>,
-
-    #[account(mut)]
-    pub m_mint: InterfaceAccount<'info, Mint>,
-
-    pub earn_program: Program<'info, Earn>,
-
-    pub m_token_program: Interface<'info, TokenInterface>,
 
     pub system_program: Program<'info, System>,
 }
@@ -69,11 +50,11 @@ impl ReceiveMessage<'_> {
             }
             Payload::Index(index_payload) => {
                 msg!("Received Index Payload: {}", index_payload.index);
-                return Self::handle_index_payload(&ctx, index_payload.index, [0; 32]);
+                return Self::handle_index_payload(&ctx, index_payload.into());
             }
             Payload::EarnerMerkleRoot(payload) => {
-                msg!("Received EarnerMerkleRoot Payload: {}", payload.index);
-                return Self::handle_index_payload(&ctx, payload.index, payload.merkle_root);
+                msg!("Received EarnerMerkleRoot Payload");
+                return Self::handle_index_payload(&ctx, payload);
             }
             Payload::FillReport(fill_report) => {
                 msg!("Received Fill Report Payload");
@@ -84,44 +65,41 @@ impl ReceiveMessage<'_> {
 
     fn handle_index_payload<'info>(
         ctx: &Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
-        index: u64,
-        earner_merkle_root: [u8; 32],
+        payload: EarnerMerkleRootPayload,
     ) -> Result<()> {
+        let accounts = payload.parse_and_validate_accounts(ctx.remaining_accounts.to_vec())?;
         let authority_seed: &[&[&[u8]]] = &[&[AUTHORITY_SEED, &[ctx.bumps.messenger_authority]]];
 
         let propogate_ctx = CpiContext::new_with_signer(
-            ctx.accounts.earn_program.to_account_info(),
+            accounts.earn_program.to_account_info(),
             PropagateIndex {
                 signer: ctx.accounts.messenger_authority.to_account_info(),
-                global_account: ctx.accounts.m_global.to_account_info(),
-                m_mint: ctx.accounts.m_mint.to_account_info(),
-                token_program: ctx.accounts.m_token_program.to_account_info(),
+                global_account: accounts.m_global,
+                m_mint: accounts.m_mint,
+                token_program: accounts.m_token_program,
             },
             authority_seed,
         );
 
-        msg!("Index update: {}", index);
-        earn::cpi::propagate_index(propogate_ctx, index, earner_merkle_root)
+        msg!("Index update: {}", payload.index);
+        earn::cpi::propagate_index(propogate_ctx, payload.index, payload.merkle_root)
     }
 
     fn handle_token_transfer_payload<'info>(
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
         payload: TokenTransferPayload,
     ) -> Result<()> {
-        if payload.index > 0 {
-            Self::handle_index_payload(&ctx, payload.index, [0; 32])?;
-
-            // Reload the mint to ensure the latest multiplier is used
-            ctx.accounts.m_mint.reload()?;
-        }
-
-        // Get payload specific accounts
         let accounts = payload.parse_and_validate_accounts(ctx.remaining_accounts.to_vec())?;
+        let amount = payload.amount;
+
+        if payload.index > 0 {
+            Self::handle_index_payload(&ctx, payload.into())?;
+        }
 
         // Get the principal amount of $M tokens to transfer using the multiplier
         let principal = common::amount_to_principal_down(
-            payload.amount,
-            common::get_scaled_ui_config(&ctx.accounts.m_mint)?
+            amount,
+            common::get_scaled_ui_config(&accounts.m_mint)?
                 .new_multiplier
                 .into(),
         );
@@ -129,9 +107,9 @@ impl ReceiveMessage<'_> {
         // Mint to authority account which will wrap it to the recipient
         token_interface::mint_to(
             CpiContext::new_with_signer(
-                ctx.accounts.m_token_program.to_account_info(),
+                accounts.m_token_program.to_account_info(),
                 token_interface::MintTo {
-                    mint: ctx.accounts.m_mint.to_account_info(),
+                    mint: accounts.m_mint.to_account_info(),
                     to: accounts.authority_m_token_account.clone(),
                     authority: ctx.accounts.messenger_authority.to_account_info(),
                 },
@@ -150,14 +128,14 @@ impl ReceiveMessage<'_> {
                     swap_global: accounts.swap_global,
                     to_global: accounts.extension_global,
                     to_mint: accounts.extension_mint,
-                    m_mint: ctx.accounts.m_mint.to_account_info(),
+                    m_mint: accounts.m_mint,
                     m_token_account: accounts.authority_m_token_account,
                     to_token_account: accounts.recipient_token_account,
                     to_m_vault_auth: accounts.extension_m_vault_authority,
                     to_mint_authority: accounts.extension_mint_authority,
                     to_m_vault: accounts.extension_m_vault,
                     to_token_program: accounts.extension_token_program,
-                    m_token_program: ctx.accounts.m_token_program.to_account_info(),
+                    m_token_program: accounts.m_token_program,
                     to_ext_program: accounts.extension_program,
                     system_program: ctx.accounts.system_program.to_account_info(),
                 },
@@ -180,7 +158,7 @@ impl ReceiveMessage<'_> {
             CpiContext::new_with_signer(
                 accounts.orderbook_program.clone(),
                 order_book::cpi::accounts::ReportOrderFill {
-                    relayer: ctx.accounts.relayer.to_account_info(),
+                    relayer: ctx.accounts.sender.to_account_info(),
                     messenger_authority: ctx.accounts.messenger_authority.to_account_info(),
                     global_account: accounts.orderbook_global_account,
                     order: accounts.order,
