@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::state::{MessengerGlobal, GLOBAL_SEED};
+use crate::state::{PortalGlobal, GLOBAL_SEED};
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
@@ -10,20 +10,20 @@ pub struct Initialize<'info> {
     #[account(
         init,
         payer = admin,
-        space =  MessengerGlobal::SIZE,
+        space =  PortalGlobal::SIZE,
         seeds = [GLOBAL_SEED],
         bump,
     )]
-    pub swap_global: Account<'info, MessengerGlobal>,
+    pub portal_global: Account<'info, PortalGlobal>,
 
     pub system_program: Program<'info, System>,
 }
 
 impl Initialize<'_> {
     pub fn handler(ctx: Context<Self>) -> Result<()> {
-        ctx.accounts.swap_global.set_inner(MessengerGlobal {
+        ctx.accounts.portal_global.set_inner(PortalGlobal {
             admin: ctx.accounts.admin.key(),
-            bump: ctx.bumps.swap_global,
+            bump: ctx.bumps.portal_global,
             paused: false,
         });
 

@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
-use common::{FillReportPayload, Payload};
+use common::{BridgeAdapter, FillReportPayload, Payload};
 
 use crate::{
-    instructions::{send_message, wormhole_adapter},
+    instructions::send_message,
     state::AUTHORITY_SEED,
 };
 
@@ -10,16 +10,14 @@ use crate::{
 pub struct SendFillReport<'info> {
     pub sender: Signer<'info>,
 
+    /// CHECK: account does not hold data
     #[account(
         seeds = [AUTHORITY_SEED],
         bump,
     )]
-    /// CHECK: account does not hold data
     pub messenger_authority: UncheckedAccount<'info>,
 
-    #[account(address = wormhole_adapter::ID)]
-    /// CHECK: checked against constraint
-    pub bridge_adapter: AccountInfo<'info>,
+    pub bridge_adapter: Interface<'info, BridgeAdapter>,
 
     pub system_program: Program<'info, System>,
 }

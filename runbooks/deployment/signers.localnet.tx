@@ -1,0 +1,9 @@
+signer "payer" "svm::secret_key" {
+    description = "Pays fees for program deployments and operations"
+    secret_key = input.local_signer
+}
+    
+signer "authority" "svm::secret_key" {
+    description = "Can upgrade programs and manage critical ops"
+    secret_key = input.local_signer
+}

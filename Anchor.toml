@@ -7,7 +7,7 @@ skip-lint = false
 
 [programs.localnet]
 portal = "MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce"
-wormhole-adapter = "3t6JFdg6r35rCQqurHtjbmEC6hdAjUiHF9wWYPZ4nACK"
+wormhole-adapter = "mzWh4w2CAHymGp89Z8VV2nKuCkdSFARS3fEaTBPq14b"
 
 [registry]
 url = "https://api.apr.dev"

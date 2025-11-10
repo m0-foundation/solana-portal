@@ -3,12 +3,13 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use common::{
     ext_swap::{self, accounts::SwapGlobal, program::ExtSwap},
     Payload, TokenTransferPayload,
+    BridgeAdapter,
 };
 
 use crate::{
     errors::PortalError,
-    instructions::{send_message, wormhole_adapter},
-    state::{MessengerGlobal, AUTHORITY_SEED, GLOBAL_SEED},
+    instructions::send_message,
+    state::{PortalGlobal, AUTHORITY_SEED, GLOBAL_SEED},
 };
 
 #[derive(Accounts)]
@@ -19,7 +20,7 @@ pub struct SendTokens<'info> {
         seeds = [GLOBAL_SEED],
         bump = messenger_global.bump,
     )]
-    pub messenger_global: Account<'info, MessengerGlobal>,
+    pub messenger_global: Account<'info, PortalGlobal>,
 
     #[account(
         seeds = [GLOBAL_SEED],
@@ -97,9 +98,7 @@ pub struct SendTokens<'info> {
 
     pub extension_token_program: Interface<'info, TokenInterface>,
 
-    #[account(address = wormhole_adapter::ID)]
-    /// CHECK: checked against constraint
-    pub bridge_adapter: AccountInfo<'info>,
+    pub bridge_adapter: Interface<'info, BridgeAdapter>,
 
     pub system_program: Program<'info, System>,
 }

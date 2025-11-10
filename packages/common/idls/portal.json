@@ -29,7 +29,7 @@
           "signer": true
         },
         {
-          "name": "swap_global",
+          "name": "portal_global",
           "writable": true,
           "pda": {
             "seeds": [
@@ -221,8 +221,7 @@
           }
         },
         {
-          "name": "bridge_adapter",
-          "address": "mzWh4w2CAHymGp89Z8VV2nKuCkdSFARS3fEaTBPq14b"
+          "name": "bridge_adapter"
         },
         {
           "name": "system_program",
@@ -588,8 +587,7 @@
           "name": "extension_token_program"
         },
         {
-          "name": "bridge_adapter",
-          "address": "mzWh4w2CAHymGp89Z8VV2nKuCkdSFARS3fEaTBPq14b"
+          "name": "bridge_adapter"
         },
         {
           "name": "system_program",
@@ -637,16 +635,16 @@
       ]
     },
     {
-      "name": "MessengerGlobal",
+      "name": "PortalGlobal",
       "discriminator": [
-        251,
-        108,
+        83,
+        250,
         129,
-        214,
-        209,
-        210,
-        35,
-        232
+        21,
+        172,
+        135,
+        20,
+        236
       ]
     },
     {
@@ -666,107 +664,48 @@
   "errors": [
     {
       "code": 6000,
-      "name": "InvalidTokenOutMint"
+      "name": "Paused"
     },
     {
       "code": 6001,
-      "name": "InvalidOrderType"
+      "name": "NotAuthorized",
+      "msg": "Signer is not authorized to perform this action"
     },
     {
       "code": 6002,
-      "name": "OrderNotFillable"
+      "name": "InvalidAmount"
     },
     {
       "code": 6003,
-      "name": "MathOverflow"
+      "name": "InvalidMint"
     },
     {
       "code": 6004,
-      "name": "MathUnderflow"
+      "name": "InvalidExtension"
     },
     {
       "code": 6005,
-      "name": "InvalidFillAmount"
+      "name": "InvalidBridgeAdapter",
+      "msg": "Bridge adapter not supported"
     },
     {
       "code": 6006,
-      "name": "InvalidOrderId"
+      "name": "MissingRequiredOptional",
+      "msg": "Account marked as optional is required"
     },
     {
       "code": 6007,
-      "name": "OrderExpired"
+      "name": "InvalidRemainingAccounts",
+      "msg": "Invalid number of remaining accounts"
     },
     {
       "code": 6008,
-      "name": "InvalidOrderVersion"
+      "name": "InvalidRecipientTokenAccount"
     },
     {
       "code": 6009,
-      "name": "InvalidDestChainId"
-    },
-    {
-      "code": 6010,
-      "name": "InvalidSolver"
-    },
-    {
-      "code": 6011,
-      "name": "InvalidAmountIn"
-    },
-    {
-      "code": 6012,
-      "name": "InvalidAmountOut"
-    },
-    {
-      "code": 6013,
-      "name": "InvalidFillDeadline"
-    },
-    {
-      "code": 6014,
-      "name": "InvalidFinalityBuffer"
-    },
-    {
-      "code": 6015,
-      "name": "NotAuthorized"
-    },
-    {
-      "code": 6016,
-      "name": "InvalidTokenMint"
-    },
-    {
-      "code": 6017,
-      "name": "InvalidOriginChainId"
-    },
-    {
-      "code": 6018,
-      "name": "Overfill"
-    },
-    {
-      "code": 6019,
-      "name": "InvalidRecipient"
-    },
-    {
-      "code": 6020,
-      "name": "InvalidOrderStatus"
-    },
-    {
-      "code": 6021,
-      "name": "OrderNotExpired"
-    },
-    {
-      "code": 6022,
-      "name": "DestinationNotSupported"
-    },
-    {
-      "code": 6023,
-      "name": "DestinationAccountRequired"
-    },
-    {
-      "code": 6024,
-      "name": "OrderFilled"
-    },
-    {
-      "code": 6025,
-      "name": "FinalityPending"
+      "name": "InvalidAdapterAuthority",
+      "msg": "Expected authority from a supported adapter"
     }
   ],
   "types": [
@@ -808,7 +747,7 @@
       }
     },
     {
-      "name": "MessengerGlobal",
+      "name": "PortalGlobal",
       "type": {
         "kind": "struct",
         "fields": [
@@ -881,11 +820,6 @@
     }
   ],
   "constants": [
-    {
-      "name": "AUTHORITY_SEED",
-      "type": "bytes",
-      "value": "[97, 117, 116, 104, 111, 114, 105, 116, 121]"
-    },
     {
       "name": "GLOBAL_SEED",
       "type": "bytes",

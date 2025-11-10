@@ -1,0 +1,72 @@
+addon "svm" {
+    rpc_api_url = input.rpc_api_url
+    network_id = input.network_id
+}
+
+variable "portal_program" {
+    value = svm::get_program_from_anchor_project("portal")
+}
+
+variable "wormhole_adapter_program" {
+    value = svm::get_program_from_anchor_project("wormhole_adapter")
+}
+
+action "portal_global_account" "std::send_http_request" {
+  url = input.rpc_api_url
+  method = "POST"
+  body = {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getAccountInfo",
+    "params": [
+        "54dGjbVChJseSS7zo1AWWazMtz4NXi89pQPF2HH2hM6W",
+        { "encoding": "base64" }
+    ]
+  }
+}
+
+action "wormhole_global_account" "std::send_http_request" {
+  url = input.rpc_api_url
+  method = "POST"
+  body = {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getAccountInfo",
+    "params": [
+        "3bhczvnEexwTjdwR8b1LFDh5beYb8CLYAXUukZR8ZNdy",
+        { "encoding": "base64" }
+    ]
+  }
+}
+
+action "initialize_portal" "svm::process_instructions" {
+    description = "Initializes the Portal program"
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.portal_program.idl
+        instruction_name = "initialize"
+        admin {
+            public_key = signer.caller.public_key
+        }
+    }
+    pre_condition {
+        behavior = "skip"
+        assertion = std::assert_eq(jq(action.portal_global_account.response_body, ".result.value"), null)
+    }
+}
+
+action "initialize_wormhole_adapter" "svm::process_instructions" {
+    description = "Initializes the Wormhole Adapter program"
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.wormhole_adapter_program.idl
+        instruction_name = "initialize"
+        admin {
+            public_key = signer.caller.public_key
+        }
+    }
+    pre_condition {
+        behavior = "skip"
+        assertion = std::assert_eq(jq(action.wormhole_global_account.response_body,  ".result.value"), null)
+    }
+}
