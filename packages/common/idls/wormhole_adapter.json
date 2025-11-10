@@ -9,7 +9,16 @@
   "instructions": [
     {
       "name": "initialize",
-      "discriminator": [175, 175, 109, 31, 13, 152, 155, 237],
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
       "accounts": [
         {
           "name": "admin",
@@ -23,7 +32,14 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [103, 108, 111, 98, 97, 108]
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
               }
             ]
           }
@@ -37,28 +53,263 @@
     },
     {
       "name": "receive_message",
-      "discriminator": [38, 144, 127, 225, 31, 225, 238, 25],
+      "discriminator": [
+        38,
+        144,
+        127,
+        225,
+        31,
+        225,
+        238,
+        25
+      ],
       "accounts": [
+        {
+          "name": "relayer",
+          "writable": true,
+          "signer": true
+        },
         {
           "name": "wormhole_global",
           "pda": {
             "seeds": [
               {
                 "kind": "const",
-                "value": [103, 108, 111, 98, 97, 108]
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
               }
             ]
           }
         },
         {
-          "name": "guardian_set"
+          "name": "wormhole_adapter_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "messenger_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                96,
+                71,
+                38,
+                195,
+                17,
+                0,
+                131,
+                79,
+                49,
+                225,
+                51,
+                140,
+                91,
+                229,
+                193,
+                101,
+                155,
+                214,
+                243,
+                111,
+                176,
+                88,
+                151,
+                248,
+                178,
+                69,
+                151,
+                27,
+                53,
+                202,
+                23
+              ]
+            }
+          }
+        },
+        {
+          "name": "guardian_set",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  71,
+                  117,
+                  97,
+                  114,
+                  100,
+                  105,
+                  97,
+                  110,
+                  83,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "_guardian_set_index"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                14,
+                10,
+                88,
+                154,
+                65,
+                165,
+                95,
+                189,
+                102,
+                197,
+                42,
+                71,
+                95,
+                45,
+                146,
+                166,
+                211,
+                220,
+                155,
+                71,
+                71,
+                17,
+                76,
+                185,
+                175,
+                130,
+                90,
+                152,
+                181,
+                69,
+                211,
+                206
+              ]
+            }
+          }
         },
         {
           "name": "guardian_signatures"
         },
         {
+          "name": "m_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                11,
+                134,
+                11,
+                7,
+                229,
+                245,
+                33,
+                49,
+                225,
+                170,
+                183,
+                171,
+                210,
+                177,
+                147,
+                110,
+                166,
+                55,
+                182,
+                49,
+                97,
+                242,
+                35,
+                170,
+                152,
+                135,
+                152,
+                108,
+                102,
+                78,
+                112,
+                208
+              ]
+            }
+          }
+        },
+        {
+          "name": "m_mint",
+          "writable": true,
+          "relations": [
+            "m_global"
+          ]
+        },
+        {
           "name": "wormhole_verify_vaa_shim",
           "address": "EFaNWErqAtVWufdNb7yofSHHfWFos843DFpu4JBw24at"
+        },
+        {
+          "name": "earn_program",
+          "address": "mz2vDzjbQDUDXBH6FPF5s4odCJ4y8YLE5QWaZ8XdZ9Z"
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -73,8 +324,52 @@
       ]
     },
     {
-      "name": "relay_message",
-      "discriminator": [187, 90, 182, 138, 51, 248, 175, 98],
+      "name": "resolve_execute",
+      "discriminator": [
+        148,
+        184,
+        169,
+        222,
+        207,
+        8,
+        154,
+        127
+      ],
+      "accounts": [],
+      "args": [
+        {
+          "name": "vaa_body",
+          "type": "bytes"
+        }
+      ],
+      "returns": {
+        "defined": {
+          "name": "Resolver",
+          "generics": [
+            {
+              "kind": "type",
+              "type": {
+                "defined": {
+                  "name": "InstructionGroups"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "send_message",
+      "discriminator": [
+        57,
+        40,
+        34,
+        178,
+        189,
+        10,
+        65,
+        26
+      ],
       "accounts": [
         {
           "name": "payer",
@@ -87,28 +382,76 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [103, 108, 111, 98, 97, 108]
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
               }
             ]
           }
         },
         {
           "name": "messenger_authority",
-          "docs": ["Only relay messages coming from the Messenger program"],
+          "docs": [
+            "Only relay messages coming from the Portal"
+          ],
           "signer": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
-                "value": [97, 117, 116, 104, 111, 114, 105, 116, 121]
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
               }
             ],
             "program": {
               "kind": "const",
               "value": [
-                5, 96, 71, 38, 195, 17, 0, 131, 79, 49, 225, 51, 140, 91, 229,
-                193, 101, 155, 214, 243, 111, 176, 88, 151, 248, 178, 69, 151,
-                27, 53, 202, 23
+                5,
+                96,
+                71,
+                38,
+                195,
+                17,
+                0,
+                131,
+                79,
+                49,
+                225,
+                51,
+                140,
+                91,
+                229,
+                193,
+                101,
+                155,
+                214,
+                243,
+                111,
+                176,
+                88,
+                151,
+                248,
+                178,
+                69,
+                151,
+                27,
+                53,
+                202,
+                23
               ]
             }
           }
@@ -131,9 +474,38 @@
             "program": {
               "kind": "const",
               "value": [
-                206, 93, 34, 116, 131, 143, 202, 41, 198, 209, 143, 152, 10,
-                211, 213, 245, 235, 78, 129, 210, 121, 29, 243, 98, 128, 136,
-                144, 147, 38, 68, 208, 24
+                206,
+                93,
+                34,
+                116,
+                131,
+                143,
+                202,
+                41,
+                198,
+                209,
+                143,
+                152,
+                10,
+                211,
+                213,
+                245,
+                235,
+                78,
+                129,
+                210,
+                121,
+                29,
+                243,
+                98,
+                128,
+                136,
+                144,
+                147,
+                38,
+                68,
+                208,
+                24
               ]
             }
           }
@@ -144,7 +516,15 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [101, 109, 105, 116, 116, 101, 114]
+                "value": [
+                  101,
+                  109,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114
+                ]
               }
             ]
           }
@@ -156,7 +536,16 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [83, 101, 113, 117, 101, 110, 99, 101]
+                "value": [
+                  83,
+                  101,
+                  113,
+                  117,
+                  101,
+                  110,
+                  99,
+                  101
+                ]
               },
               {
                 "kind": "account",
@@ -166,9 +555,38 @@
             "program": {
               "kind": "const",
               "value": [
-                14, 10, 88, 154, 65, 165, 95, 189, 102, 197, 42, 71, 95, 45,
-                146, 166, 211, 220, 155, 71, 71, 17, 76, 185, 175, 130, 90, 152,
-                181, 69, 211, 206
+                14,
+                10,
+                88,
+                154,
+                65,
+                165,
+                95,
+                189,
+                102,
+                197,
+                42,
+                71,
+                95,
+                45,
+                146,
+                166,
+                211,
+                220,
+                155,
+                71,
+                71,
+                17,
+                76,
+                185,
+                175,
+                130,
+                90,
+                152,
+                181,
+                69,
+                211,
+                206
               ]
             }
           }
@@ -197,17 +615,61 @@
               {
                 "kind": "const",
                 "value": [
-                  95, 95, 101, 118, 101, 110, 116, 95, 97, 117, 116, 104, 111,
-                  114, 105, 116, 121
+                  95,
+                  95,
+                  101,
+                  118,
+                  101,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
                 ]
               }
             ],
             "program": {
               "kind": "const",
               "value": [
-                206, 93, 34, 116, 131, 143, 202, 41, 198, 209, 143, 152, 10,
-                211, 213, 245, 235, 78, 129, 210, 121, 29, 243, 98, 128, 136,
-                144, 147, 38, 68, 208, 24
+                206,
+                93,
+                34,
+                116,
+                131,
+                143,
+                202,
+                41,
+                198,
+                209,
+                143,
+                152,
+                10,
+                211,
+                213,
+                245,
+                235,
+                78,
+                129,
+                210,
+                121,
+                29,
+                243,
+                98,
+                128,
+                136,
+                144,
+                147,
+                38,
+                68,
+                208,
+                24
               ]
             }
           }
@@ -227,11 +689,260 @@
   ],
   "accounts": [
     {
+      "name": "EarnGlobal",
+      "discriminator": [
+        229,
+        50,
+        25,
+        132,
+        207,
+        93,
+        185,
+        23
+      ]
+    },
+    {
       "name": "WormholeGlobal",
-      "discriminator": [116, 100, 187, 174, 88, 1, 91, 250]
+      "discriminator": [
+        116,
+        100,
+        187,
+        174,
+        88,
+        1,
+        91,
+        250
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "Paused"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidPeer",
+      "msg": "Invalid peer address or chain"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidVaa"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidReturnAccount",
+      "msg": "RESOLVER_RESULT_ACCOUNT needs to be writable"
+    },
+    {
+      "code": 6004,
+      "name": "MissingPayerAccount"
+    },
+    {
+      "code": 6005,
+      "name": "InvalidSwapConfig"
     }
   ],
   "types": [
+    {
+      "name": "EarnGlobal",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "m_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "portal_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "ext_swap_global_account",
+            "type": "pubkey"
+          },
+          {
+            "name": "earner_merkle_root",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "InstructionGroup",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "instructions",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "SerializableInstruction"
+                }
+              }
+            }
+          },
+          {
+            "name": "address_lookup_tables",
+            "type": {
+              "vec": "pubkey"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "InstructionGroups",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "vec": {
+              "defined": {
+                "name": "InstructionGroup"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MissingAccounts",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "accounts",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "address_lookup_tables",
+            "type": {
+              "vec": "pubkey"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Peer",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "address",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "chain_id",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Resolver",
+      "generics": [
+        {
+          "kind": "type",
+          "name": "T"
+        }
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Resolved",
+            "fields": [
+              {
+                "generic": "T"
+              }
+            ]
+          },
+          {
+            "name": "Missing",
+            "fields": [
+              {
+                "defined": {
+                  "name": "MissingAccounts"
+                }
+              }
+            ]
+          },
+          {
+            "name": "Account",
+            "fields": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "SerializableAccountMeta",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pubkey",
+            "type": "pubkey"
+          },
+          {
+            "name": "is_signer",
+            "type": "bool"
+          },
+          {
+            "name": "is_writable",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SerializableInstruction",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "program_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "accounts",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "SerializableAccountMeta"
+                }
+              }
+            }
+          },
+          {
+            "name": "data",
+            "type": "bytes"
+          }
+        ]
+      }
+    },
     {
       "name": "WormholeGlobal",
       "type": {
@@ -248,6 +959,16 @@
           {
             "name": "paused",
             "type": "bool"
+          },
+          {
+            "name": "peers",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "Peer"
+                }
+              }
+            }
           }
         ]
       }

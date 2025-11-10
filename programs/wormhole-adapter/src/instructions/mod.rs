@@ -1,14 +1,14 @@
 pub mod initialize;
 pub mod receive_message;
-pub mod relay_message;
 pub mod resolve_execute;
+pub mod send_message;
 
 use anchor_lang::prelude::*;
 use common::{Payload, TokenTransferPayload};
 pub use initialize::*;
 pub use receive_message::*;
-pub use relay_message::*;
 pub use resolve_execute::*;
+pub use send_message::*;
 
 use crate::errors::WormholeError;
 

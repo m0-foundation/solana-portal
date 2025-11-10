@@ -19,8 +19,8 @@ pub mod wormhole_adapter {
         Initialize::handler(ctx)
     }
 
-    pub fn relay_message(ctx: Context<RelayMessage>, message: Vec<u8>) -> Result<()> {
-        RelayMessage::handler(ctx, message)
+    pub fn send_message(ctx: Context<SendMessage>, message: Vec<u8>) -> Result<()> {
+        SendMessage::handler(ctx, message)
     }
 
     pub fn receive_message<'info>(

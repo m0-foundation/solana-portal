@@ -1,7 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{self, Mint, TokenInterface};
 use common::{
-    BridgeAdapter, FillReportPayload, Payload, TokenTransferPayload, earn::{self, accounts::EarnGlobal, cpi::accounts::PropagateIndex, program::Earn}, ext_swap, order_book::{self, types::FillReport}
+    earn::{self, accounts::EarnGlobal, cpi::accounts::PropagateIndex, program::Earn},
+    ext_swap,
+    order_book::{self, types::FillReport},
+    BridgeAdapter, FillReportPayload, Payload, TokenTransferPayload,
 };
 
 use crate::{
@@ -49,14 +52,6 @@ impl ReceiveMessage<'_> {
             return err!(PortalError::InvalidAdapterAuthority);
         }
 
-        // if [wormhole_adapter::ID]
-        //     .iter()
-        //     .find(|id| pda!(&[AUTHORITY_SEED], id) == self.adapter_authority.key())
-        //     .is_none()
-        // {
-        //     return err!(PortalError::InvalidAdapterAuthority);
-        // }
-
         Ok(())
     }
 
@@ -74,7 +69,11 @@ impl ReceiveMessage<'_> {
             }
             Payload::Index(index_payload) => {
                 msg!("Received Index Payload: {}", index_payload.index);
-                return Self::handle_index_payload(&ctx, index_payload.index);
+                return Self::handle_index_payload(&ctx, index_payload.index, [0; 32]);
+            }
+            Payload::EarnerMerkleRoot(payload) => {
+                msg!("Received EarnerMerkleRoot Payload: {}", payload.index);
+                return Self::handle_index_payload(&ctx, payload.index, payload.merkle_root);
             }
             Payload::FillReport(fill_report) => {
                 msg!("Received Fill Report Payload");
@@ -86,6 +85,7 @@ impl ReceiveMessage<'_> {
     fn handle_index_payload<'info>(
         ctx: &Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
         index: u64,
+        earner_merkle_root: [u8; 32],
     ) -> Result<()> {
         let authority_seed: &[&[&[u8]]] = &[&[AUTHORITY_SEED, &[ctx.bumps.messenger_authority]]];
 
@@ -101,7 +101,7 @@ impl ReceiveMessage<'_> {
         );
 
         msg!("Index update: {}", index);
-        earn::cpi::propagate_index(propogate_ctx, index, [0; 32])
+        earn::cpi::propagate_index(propogate_ctx, index, earner_merkle_root)
     }
 
     fn handle_token_transfer_payload<'info>(
@@ -109,7 +109,7 @@ impl ReceiveMessage<'_> {
         payload: TokenTransferPayload,
     ) -> Result<()> {
         if payload.index > 0 {
-            Self::handle_index_payload(&ctx, payload.index)?;
+            Self::handle_index_payload(&ctx, payload.index, [0; 32])?;
 
             // Reload the mint to ensure the latest multiplier is used
             ctx.accounts.m_mint.reload()?;

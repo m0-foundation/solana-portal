@@ -13,7 +13,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-pub struct RelayMessage<'info> {
+pub struct SendMessage<'info> {
     #[account(mut)]
     payer: Signer<'info>,
 
@@ -87,7 +87,7 @@ pub struct RelayMessage<'info> {
     wormhole_post_message_shim: Program<'info, WormholePostMessageShim>,
 }
 
-impl RelayMessage<'_> {
+impl SendMessage<'_> {
     pub fn handler(ctx: Context<Self>, message: Vec<u8>) -> Result<()> {
         let bridge_fee = parse_bridge_fee(&ctx.accounts.bridge.try_borrow_data()?);
 

@@ -21,7 +21,7 @@ pub fn send_message<'info>(
     remaining_accounts: Vec<AccountInfo<'info>>,
     message: Vec<u8>,
 ) -> Result<()> {
-    // Relay the message based on provided adapter
+    // Send the bridge message based on provided adapter
     if bridge_adapter.key() == wormhole_adapter::ID {
         // Delegate account validation to wormhole adapter
         let [
@@ -39,10 +39,10 @@ pub fn send_message<'info>(
                 .try_into()
                 .map_err(|_| PortalError::InvalidRemainingAccounts)?;
 
-        wormhole_adapter::cpi::relay_message(
+        wormhole_adapter::cpi::send_message(
             CpiContext::new_with_signer(
                 bridge_adapter.to_account_info(),
-                wormhole_adapter::cpi::accounts::RelayMessage {
+                wormhole_adapter::cpi::accounts::SendMessage {
                     payer: sender,
                     wormhole_global,
                     messenger_authority,
