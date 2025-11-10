@@ -52,6 +52,15 @@ jobs:
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
           cargo install anchor-cli@0.32.1
 
+      - name: Create deploy directory
+        run: mkdir -p target/deploy
+
+      - name: Write Portal keypair
+        run: echo "${{ secrets.PORTAL_KEYPAIR }}" > target/deploy/portal-keypair.json
+
+      - name: Write Wormhole Adapter keypair
+        run: echo "${{ secrets.WORMHOLE_ADAPTER_KEYPAIR }}" > target/deploy/wormhole_adapter-keypair.json
+
       - name: Build programs
         run: anchor build
         shell: bash
