@@ -54,23 +54,7 @@ pub struct ReceiveMessage<'info> {
     /// CHECK: Stored guardian signatures to be verified by shim (ownership ownership and discriminator is checked by the shim)
     pub guardian_signatures: UncheckedAccount<'info>,
 
-    #[account(
-        mut,
-        seeds = [GLOBAL_SEED],
-        seeds::program = earn::ID,
-        bump = m_global.bump,
-        has_one = m_mint,
-    )]
-    pub m_global: Account<'info, EarnGlobal>,
-
-    #[account(mut)]
-    pub m_mint: InterfaceAccount<'info, Mint>,
-
     pub wormhole_verify_vaa_shim: Program<'info, WormholeVerifyVaaShim>,
-
-    pub earn_program: Program<'info, Earn>,
-
-    pub token_program: Interface<'info, TokenInterface>,
 
     pub system_program: Program<'info, System>,
 }
@@ -111,13 +95,9 @@ impl ReceiveMessage<'_> {
             CpiContext::new(
                 ctx.accounts.wormhole_verify_vaa_shim.to_account_info(),
                 portal::cpi::accounts::ReceiveMessage {
-                    relayer: ctx.accounts.relayer.to_account_info(),
+                    sender: ctx.accounts.relayer.to_account_info(),
                     adapter_authority: ctx.accounts.wormhole_adapter_authority.to_account_info(),
                     messenger_authority: ctx.accounts.messenger_authority.to_account_info(),
-                    m_global: ctx.accounts.m_global.to_account_info(),
-                    m_mint: ctx.accounts.m_mint.to_account_info(),
-                    earn_program: ctx.accounts.earn_program.to_account_info(),
-                    m_token_program: ctx.accounts.token_program.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info(),
                 },
             )
