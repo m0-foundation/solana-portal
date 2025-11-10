@@ -1,13 +1,10 @@
 use anchor_lang::prelude::*;
-use common::BridgeError;
-
-use crate::instructions::VaaBody;
 
 #[constant]
 pub const GLOBAL_SEED: &[u8] = b"global";
 
 #[account]
-pub struct WormholeGlobal {
+pub struct HyperlaneGlobal {
     pub bump: u8,
     pub admin: Pubkey,
     pub paused: bool,
@@ -20,7 +17,7 @@ pub struct Peer {
     pub chain_id: u16,
 }
 
-impl WormholeGlobal {
+impl HyperlaneGlobal {
     pub fn size(peers: usize) -> usize {
         8 + // discriminator
         1 + // bump
@@ -28,18 +25,5 @@ impl WormholeGlobal {
         1 + // paused
         4 + // length of peers
         peers * 34 // each peer
-    }
-
-    pub fn validate(&self, vaa: &VaaBody) -> Result<()> {
-        if self
-            .peers
-            .iter()
-            .find(|p| p.chain_id == vaa.emitter_chain && p.address == vaa.emitter_address)
-            .is_none()
-        {
-            return err!(BridgeError::InvalidPeer);
-        }
-
-        Ok(())
     }
 }

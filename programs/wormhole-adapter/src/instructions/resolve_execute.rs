@@ -10,10 +10,7 @@ use anchor_spl::{
     token_2022,
 };
 use common::{
-    earn::{self, accounts::EarnGlobal},
-    ext_swap::{self, accounts::SwapGlobal, types::WhitelistedExtension},
-    order_book::{self, accounts::NativeOrder},
-    pda, portal, wormhole_verify_vaa_shim,
+    BridgeError, earn::{self, accounts::EarnGlobal}, ext_swap::{self, accounts::SwapGlobal, types::WhitelistedExtension}, order_book::{self, accounts::NativeOrder}, pda, portal, wormhole_verify_vaa_shim
 };
 use executor_account_resolver_svm::{
     find_account, InstructionGroup, InstructionGroups, MissingAccounts, Resolver,
@@ -22,7 +19,7 @@ use executor_account_resolver_svm::{
 };
 
 use crate::{
-    consts::AUTHORITY_SEED, errors::WormholeError, instruction::ReceiveMessage,
+    consts::AUTHORITY_SEED,  instruction::ReceiveMessage,
     instructions::VaaBody, state::GLOBAL_SEED,
 };
 
@@ -77,10 +74,10 @@ impl ResolveExecuteVaa {
                 .remaining_accounts
                 .iter()
                 .find(|acc_info| acc_info.is_signer && acc_info.is_writable)
-                .ok_or(WormholeError::MissingPayerAccount)?;
+                .ok_or(BridgeError::MissingPayerAccount)?;
 
             if !return_account.is_writable {
-                return err!(WormholeError::InvalidReturnAccount);
+                return err!(BridgeError::InvalidReturnAccount);
             }
 
             let size = usize::min(
@@ -187,7 +184,7 @@ impl ResolveExecuteVaa {
             common::Payload::TokenTransfer(token_transfer) => {
                 if swap_global_data.whitelisted_extensions.is_empty() {
                     msg!("No whitelisted extensions");
-                    return err!(WormholeError::InvalidSwapConfig);
+                    return err!(BridgeError::InvalidSwapConfig);
                 }
 
                 // Find the extension program ID based on the destination mint

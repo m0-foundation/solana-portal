@@ -3,7 +3,7 @@ use anchor_spl::associated_token::get_associated_token_address_with_program_id;
 use common_macros::ExtractAccounts;
 
 use crate::{
-    earn, ext_swap, order_book, CommonError, EarnerMerkleRootPayload, FillReportPayload,
+    earn, ext_swap, order_book, BridgeError, EarnerMerkleRootPayload, FillReportPayload,
     IndexPayload, TokenTransferPayload,
 };
 
@@ -23,7 +23,7 @@ impl IndexPayload {
         let accounts = IndexPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
 
         if accounts.earn_program.key != &earn::ID {
-            return err!(CommonError::InvalidRemainingAccount);
+            return err!(BridgeError::InvalidRemainingAccount);
         }
 
         Ok(accounts)
@@ -38,7 +38,7 @@ impl EarnerMerkleRootPayload {
         let accounts = IndexPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
 
         if accounts.earn_program.key != &earn::ID {
-            return err!(CommonError::InvalidRemainingAccount);
+            return err!(BridgeError::InvalidRemainingAccount);
         }
 
         Ok(accounts)
@@ -81,11 +81,11 @@ impl TokenTransferPayload {
             accounts.extension_token_program.key,
         );
         if accounts.recipient_token_account.key() != recipient_token_account {
-            return err!(CommonError::InvalidRemainingAccount);
+            return err!(BridgeError::InvalidRemainingAccount);
         }
 
         if accounts.swap_program.key != &ext_swap::ID {
-            return err!(CommonError::InvalidRemainingAccount);
+            return err!(BridgeError::InvalidRemainingAccount);
         }
 
         Ok(accounts)
@@ -115,7 +115,7 @@ impl FillReportPayload {
             FillReportPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
 
         if accounts.orderbook_program.key != &order_book::ID {
-            return err!(CommonError::InvalidRemainingAccount);
+            return err!(BridgeError::InvalidRemainingAccount);
         }
 
         Ok(accounts)

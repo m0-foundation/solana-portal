@@ -2,12 +2,14 @@ pub mod accounts;
 pub mod conversions;
 pub mod interfaces;
 pub mod payloads;
+pub mod errors;
 
 pub use accounts::*;
 use anchor_lang::prelude::*;
 pub use conversions::*;
 pub use interfaces::*;
 pub use payloads::*;
+pub use errors::*; 
 
 declare_program!(wormhole_post_message_shim);
 declare_program!(portal);
@@ -22,12 +24,4 @@ macro_rules! pda {
     ($seeds:expr, $program_id:expr) => {
         Pubkey::find_program_address($seeds, $program_id).0
     };
-}
-
-#[error_code]
-pub enum CommonError {
-    #[msg("Missing optional account required for payload type")]
-    MissingOptionalAccount,
-    #[msg("Remaining account invalid")]
-    InvalidRemainingAccount,
 }

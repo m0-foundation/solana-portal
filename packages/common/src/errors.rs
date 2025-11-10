@@ -1,7 +1,12 @@
+
 use anchor_lang::prelude::*;
 
 #[error_code]
-pub enum WormholeError {
+pub enum BridgeError {
+    #[msg("Missing optional account required for payload type")]
+    MissingOptionalAccount,
+    #[msg("Remaining account invalid")]
+    InvalidRemainingAccount,
     Paused,
     #[msg("Invalid peer address or chain")]
     InvalidPeer,
