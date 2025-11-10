@@ -1,11 +1,7 @@
 use anchor_lang::prelude::*;
-use anchor_spl::{
-    associated_token::spl_associated_token_account::solana_program::keccak,
-    token_interface::{Mint, TokenInterface},
-};
+use anchor_spl::associated_token::spl_associated_token_account::solana_program::keccak;
 use common::{
-    earn::{self, accounts::EarnGlobal, program::Earn},
-    portal,
+    portal::{self, program::Portal},
     wormhole_verify_vaa_shim::{self, cpi::accounts::VerifyHash, program::WormholeVerifyVaaShim},
 };
 
@@ -56,6 +52,8 @@ pub struct ReceiveMessage<'info> {
 
     pub wormhole_verify_vaa_shim: Program<'info, WormholeVerifyVaaShim>,
 
+    pub portal_program: Program<'info, Portal>,
+
     pub system_program: Program<'info, System>,
 }
 
@@ -93,7 +91,7 @@ impl ReceiveMessage<'_> {
     ) -> Result<()> {
         portal::cpi::receive_message(
             CpiContext::new(
-                ctx.accounts.wormhole_verify_vaa_shim.to_account_info(),
+                ctx.accounts.portal_program.to_account_info(),
                 portal::cpi::accounts::ReceiveMessage {
                     sender: ctx.accounts.relayer.to_account_info(),
                     adapter_authority: ctx.accounts.wormhole_adapter_authority.to_account_info(),
