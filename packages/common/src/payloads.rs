@@ -47,7 +47,7 @@ impl Payload {
         }
     }
 
-    pub fn decode(data: Vec<u8>) -> Self {
+    pub fn decode(data: &Vec<u8>) -> Self {
         let (payload_type, data) = data.split_at(1);
 
         match payload_type[0] {

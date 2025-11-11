@@ -61,7 +61,7 @@ pub struct SendMessage<'info> {
 }
 
 impl SendMessage<'_> {
-    pub fn handler(ctx: Context<Self>, message: Vec<u8>, destination_chain_id: u16) -> Result<()> {
+    pub fn handler(ctx: Context<Self>, message: Vec<u8>, destination_chain_id: u32) -> Result<()> {
         let peer = ctx
             .accounts
             .hyperlane_global

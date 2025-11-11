@@ -10,7 +10,6 @@ pub use receive_message::*;
 pub use resolve_execute::*;
 pub use send_message::*;
 
-
 #[derive(Debug)]
 pub struct VaaBody {
     pub timestamp: u32,
@@ -69,7 +68,7 @@ impl VaaBody {
             }
         } else {
             // M0 message format
-            Payload::decode(payload_bytes.to_vec())
+            Payload::decode(&payload_bytes.to_vec())
         };
 
         Ok(VaaBody {

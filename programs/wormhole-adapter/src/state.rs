@@ -17,7 +17,7 @@ pub struct WormholeGlobal {
 #[account]
 pub struct Peer {
     pub address: [u8; 32],
-    pub chain_id: u16,
+    pub chain_id: u32,
 }
 
 impl WormholeGlobal {
@@ -34,7 +34,7 @@ impl WormholeGlobal {
         if self
             .peers
             .iter()
-            .find(|p| p.chain_id == vaa.emitter_chain && p.address == vaa.emitter_address)
+            .find(|p| p.chain_id == (vaa.emitter_chain as u32) && p.address == vaa.emitter_address)
             .is_none()
         {
             return err!(BridgeError::InvalidPeer);

@@ -5,12 +5,14 @@ mod instructions;
 mod state;
 
 use anchor_lang::prelude::*;
+use consts::{HANDLE_ACCOUNT_METAS_DISCRIMINATOR, HANDLE_DISCRIMINATOR};
 use instructions::*;
 
 declare_id!("mZhPGteS36G7FhMTcRofLQU8ocBNAsGq7u8SKSHfL2X");
 
 #[program]
 pub mod hyperlane_adapter {
+
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
@@ -20,14 +22,28 @@ pub mod hyperlane_adapter {
     pub fn send_message(
         ctx: Context<SendMessage>,
         message: Vec<u8>,
-        destination_chain_id: u16,
+        destination_chain_id: u32,
     ) -> Result<()> {
         SendMessage::handler(ctx, message, destination_chain_id)
     }
 
+    #[instruction(discriminator = &HANDLE_DISCRIMINATOR)]
     pub fn receive_message<'info>(
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
+        origin: u32,
+        sender: [u8; 32],
+        message: Vec<u8>,
     ) -> Result<()> {
-        ReceiveMessage::handler(ctx)
+        ReceiveMessage::handler(ctx, origin, sender, message)
+    }
+
+    #[instruction(discriminator = &HANDLE_ACCOUNT_METAS_DISCRIMINATOR)]
+    pub fn receive_message_metas(
+        ctx: Context<ReceiveMessageMetas>,
+        origin: u32,
+        sender: [u8; 32],
+        message: Vec<u8>,
+    ) -> Result<()> {
+        ReceiveMessageMetas::handler(ctx, origin, sender, message)
     }
 }

@@ -15,7 +15,7 @@ pub struct HyperlaneGlobal {
 #[account]
 pub struct Peer {
     pub address: [u8; 32],
-    pub chain_id: u16,
+    pub chain_id: u32,
 }
 
 impl HyperlaneGlobal {
@@ -28,7 +28,7 @@ impl HyperlaneGlobal {
         peers * 34 // each peer
     }
 
-    pub fn get_peer_by_chain_id(&self, chain_id: u16) -> Result<Peer> {
+    pub fn get_peer_by_chain_id(&self, chain_id: u32) -> Result<Peer> {
         self.peers
             .iter()
             .find(|peer| peer.chain_id == chain_id)

@@ -26,3 +26,4 @@ anchor-lang.workspace = true
 anchor-spl.workspace = true
 common = { path = "../../packages/common" }
 cfg-if.workspace = true
+borsh = "0.10.3"
