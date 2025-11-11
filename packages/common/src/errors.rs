@@ -1,4 +1,3 @@
-
 use anchor_lang::prelude::*;
 
 #[error_code]
@@ -15,4 +14,6 @@ pub enum BridgeError {
     InvalidReturnAccount,
     MissingPayerAccount,
     InvalidSwapConfig,
+    #[msg("No registered peer for destination chain")]
+    UnsupportedDestinationChain,
 }

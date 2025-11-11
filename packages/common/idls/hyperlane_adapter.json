@@ -1,0 +1,550 @@
+{
+  "address": "mZhPGteS36G7FhMTcRofLQU8ocBNAsGq7u8SKSHfL2X",
+  "metadata": {
+    "name": "hyperlane_adapter",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "initialize",
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "hyperlane_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "receive_message",
+      "discriminator": [
+        38,
+        144,
+        127,
+        225,
+        31,
+        225,
+        238,
+        25
+      ],
+      "accounts": [
+        {
+          "name": "relayer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "hyperlane_global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "hyperlane_adapter_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "messenger_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                96,
+                71,
+                38,
+                195,
+                17,
+                0,
+                131,
+                79,
+                49,
+                225,
+                51,
+                140,
+                91,
+                229,
+                193,
+                101,
+                155,
+                214,
+                243,
+                111,
+                176,
+                88,
+                151,
+                248,
+                178,
+                69,
+                151,
+                27,
+                53,
+                202,
+                23
+              ]
+            }
+          }
+        },
+        {
+          "name": "portal_program",
+          "address": "MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "send_message",
+      "discriminator": [
+        57,
+        40,
+        34,
+        178,
+        189,
+        10,
+        65,
+        26
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "hyperlane_global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "messenger_authority",
+          "docs": [
+            "Only relay messages coming from the Portal"
+          ],
+          "signer": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                96,
+                71,
+                38,
+                195,
+                17,
+                0,
+                131,
+                79,
+                49,
+                225,
+                51,
+                140,
+                91,
+                229,
+                193,
+                101,
+                155,
+                214,
+                243,
+                111,
+                176,
+                88,
+                151,
+                248,
+                178,
+                69,
+                151,
+                27,
+                53,
+                202,
+                23
+              ]
+            }
+          }
+        },
+        {
+          "name": "mailbox_outbox",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  104,
+                  121,
+                  112,
+                  101,
+                  114,
+                  108,
+                  97,
+                  110,
+                  101
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  45
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  117,
+                  116,
+                  98,
+                  111,
+                  120
+                ]
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "mailbox_program"
+            }
+          }
+        },
+        {
+          "name": "dispatch_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  104,
+                  121,
+                  112,
+                  101,
+                  114,
+                  108,
+                  97,
+                  110,
+                  101,
+                  95,
+                  100,
+                  105,
+                  115,
+                  112,
+                  97,
+                  116,
+                  99,
+                  104,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  45
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  105,
+                  115,
+                  112,
+                  97,
+                  116,
+                  99,
+                  104,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "unique_message",
+          "signer": true
+        },
+        {
+          "name": "dispatched_message",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  104,
+                  121,
+                  112,
+                  101,
+                  114,
+                  108,
+                  97,
+                  110,
+                  101
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  45
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  105,
+                  115,
+                  112,
+                  97,
+                  116,
+                  99,
+                  104,
+                  101,
+                  100,
+                  95,
+                  109,
+                  101,
+                  115,
+                  115,
+                  97,
+                  103,
+                  101
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  45
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "unique_message"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "mailbox_program"
+            }
+          }
+        },
+        {
+          "name": "mailbox_program",
+          "address": "E588QtVUvresuXq2KoNEwAmoifCzYGpRBdHByN9KQMbi"
+        },
+        {
+          "name": "spl_noop_program",
+          "address": "noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "message",
+          "type": "bytes"
+        },
+        {
+          "name": "destination_chain_id",
+          "type": "u16"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "HyperlaneGlobal",
+      "discriminator": [
+        139,
+        60,
+        79,
+        223,
+        221,
+        146,
+        42,
+        102
+      ]
+    }
+  ],
+  "types": [
+    {
+      "name": "HyperlaneGlobal",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "paused",
+            "type": "bool"
+          },
+          {
+            "name": "peers",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "Peer"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Peer",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "address",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "chain_id",
+            "type": "u16"
+          }
+        ]
+      }
+    }
+  ],
+  "constants": [
+    {
+      "name": "GLOBAL_SEED",
+      "type": "bytes",
+      "value": "[103, 108, 111, 98, 97, 108]"
+    }
+  ]
+}

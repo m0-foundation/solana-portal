@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use common::BridgeError;
 
 #[constant]
 pub const GLOBAL_SEED: &[u8] = b"global";
@@ -25,5 +26,13 @@ impl HyperlaneGlobal {
         1 + // paused
         4 + // length of peers
         peers * 34 // each peer
+    }
+
+    pub fn get_peer_by_chain_id(&self, chain_id: u16) -> Result<Peer> {
+        self.peers
+            .iter()
+            .find(|peer| peer.chain_id == chain_id)
+            .cloned()
+            .ok_or_else(|| BridgeError::UnsupportedDestinationChain.into())
     }
 }

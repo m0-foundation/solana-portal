@@ -9,7 +9,7 @@ crate-type = ["cdylib", "lib"]
 name = "hyperlane_adapter"
 
 [features]
-default = []
+default = ["mainnet"]
 cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []
@@ -18,8 +18,11 @@ idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 anchor-debug = []
 custom-heap = []
 custom-panic = []
+mainnet = []
+devnet = []
 
 [dependencies]
 anchor-lang.workspace = true
 anchor-spl.workspace = true
 common = { path = "../../packages/common" }
+cfg-if.workspace = true

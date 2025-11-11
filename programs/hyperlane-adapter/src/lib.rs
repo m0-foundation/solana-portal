@@ -1,5 +1,6 @@
 #![allow(unexpected_cfgs)]
 
+mod consts;
 mod instructions;
 mod state;
 
@@ -16,8 +17,12 @@ pub mod hyperlane_adapter {
         Initialize::handler(ctx)
     }
 
-    pub fn send_message(ctx: Context<SendMessage>, message: Vec<u8>) -> Result<()> {
-        SendMessage::handler(ctx, message)
+    pub fn send_message(
+        ctx: Context<SendMessage>,
+        message: Vec<u8>,
+        destination_chain_id: u16,
+    ) -> Result<()> {
+        SendMessage::handler(ctx, message, destination_chain_id)
     }
 
     pub fn receive_message<'info>(
