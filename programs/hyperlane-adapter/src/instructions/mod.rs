@@ -24,7 +24,7 @@ impl anchor_lang::Id for SplNoop {
     }
 }
 
-#[derive(Debug, BorshSerialize, BorshDeserialize)]
+#[derive(Debug, BorshSerialize, BorshDeserialize, Clone)]
 pub struct SerializableAccountMeta {
     pub pubkey: Pubkey,
     pub is_signer: bool,

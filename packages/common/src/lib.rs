@@ -3,6 +3,7 @@ pub mod conversions;
 pub mod errors;
 pub mod interfaces;
 pub mod payloads;
+pub mod receive_metas;
 
 pub use accounts::*;
 use anchor_lang::prelude::*;
@@ -10,6 +11,7 @@ pub use conversions::*;
 pub use errors::*;
 pub use interfaces::*;
 pub use payloads::*;
+pub use receive_metas::*;
 
 declare_program!(wormhole_post_message_shim);
 declare_program!(portal);
