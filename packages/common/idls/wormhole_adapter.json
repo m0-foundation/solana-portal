@@ -234,78 +234,12 @@
           "name": "guardian_signatures"
         },
         {
-          "name": "m_global",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  108,
-                  111,
-                  98,
-                  97,
-                  108
-                ]
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                11,
-                134,
-                11,
-                7,
-                229,
-                245,
-                33,
-                49,
-                225,
-                170,
-                183,
-                171,
-                210,
-                177,
-                147,
-                110,
-                166,
-                55,
-                182,
-                49,
-                97,
-                242,
-                35,
-                170,
-                152,
-                135,
-                152,
-                108,
-                102,
-                78,
-                112,
-                208
-              ]
-            }
-          }
-        },
-        {
-          "name": "m_mint",
-          "writable": true,
-          "relations": [
-            "m_global"
-          ]
-        },
-        {
           "name": "wormhole_verify_vaa_shim",
           "address": "EFaNWErqAtVWufdNb7yofSHHfWFos843DFpu4JBw24at"
         },
         {
-          "name": "earn_program",
-          "address": "mz2vDzjbQDUDXBH6FPF5s4odCJ4y8YLE5QWaZ8XdZ9Z"
-        },
-        {
-          "name": "token_program"
+          "name": "portal_program",
+          "address": "MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce"
         },
         {
           "name": "system_program",
@@ -689,19 +623,6 @@
   ],
   "accounts": [
     {
-      "name": "EarnGlobal",
-      "discriminator": [
-        229,
-        50,
-        25,
-        132,
-        207,
-        93,
-        185,
-        23
-      ]
-    },
-    {
       "name": "WormholeGlobal",
       "discriminator": [
         116,
@@ -715,72 +636,7 @@
       ]
     }
   ],
-  "errors": [
-    {
-      "code": 6000,
-      "name": "Paused"
-    },
-    {
-      "code": 6001,
-      "name": "InvalidPeer",
-      "msg": "Invalid peer address or chain"
-    },
-    {
-      "code": 6002,
-      "name": "InvalidVaa"
-    },
-    {
-      "code": 6003,
-      "name": "InvalidReturnAccount",
-      "msg": "RESOLVER_RESULT_ACCOUNT needs to be writable"
-    },
-    {
-      "code": 6004,
-      "name": "MissingPayerAccount"
-    },
-    {
-      "code": 6005,
-      "name": "InvalidSwapConfig"
-    }
-  ],
   "types": [
-    {
-      "name": "EarnGlobal",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "admin",
-            "type": "pubkey"
-          },
-          {
-            "name": "m_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "portal_authority",
-            "type": "pubkey"
-          },
-          {
-            "name": "ext_swap_global_account",
-            "type": "pubkey"
-          },
-          {
-            "name": "earner_merkle_root",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
-    },
     {
       "name": "InstructionGroup",
       "type": {
@@ -856,7 +712,7 @@
           },
           {
             "name": "chain_id",
-            "type": "u16"
+            "type": "u32"
           }
         ]
       }

@@ -8,3 +8,4 @@ test-verbose:
 
 build:
 	anchor build
+	cp -f target/idl/*.json packages/common/idls/

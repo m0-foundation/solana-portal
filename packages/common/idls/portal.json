@@ -184,6 +184,10 @@
               32
             ]
           }
+        },
+        {
+          "name": "origin_chain_id",
+          "type": "u16"
         }
       ]
     },
@@ -537,6 +541,10 @@
               32
             ]
           }
+        },
+        {
+          "name": "destination_chain_id",
+          "type": "u16"
         },
         {
           "name": "recipient",

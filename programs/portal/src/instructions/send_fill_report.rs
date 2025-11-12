@@ -33,6 +33,7 @@ impl SendFillReport<'_> {
             amount_in_to_release,
             amount_out_filled,
             origin_recipient,
+            token_in: [0; 32], // TODO: fill new field?
         });
 
         send_message(
