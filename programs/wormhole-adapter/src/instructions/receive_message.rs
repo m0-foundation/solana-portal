@@ -90,7 +90,7 @@ impl ReceiveMessage<'_> {
         vaa_body: Vec<u8>,
     ) -> Result<()> {
         portal::cpi::receive_message(
-            CpiContext::new(
+            CpiContext::new_with_signer(
                 ctx.accounts.portal_program.to_account_info(),
                 portal::cpi::accounts::ReceiveMessage {
                     sender: ctx.accounts.relayer.to_account_info(),
@@ -98,6 +98,7 @@ impl ReceiveMessage<'_> {
                     messenger_authority: ctx.accounts.messenger_authority.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info(),
                 },
+                &[&[AUTHORITY_SEED, &[ctx.bumps.wormhole_adapter_authority]]],
             )
             .with_remaining_accounts(ctx.remaining_accounts.to_vec()),
             VaaBody::from_bytes(&vaa_body)?.payload.encode(),

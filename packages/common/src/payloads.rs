@@ -31,17 +31,18 @@ impl Payload {
                 data
             }
             Payload::EarnerMerkleRoot(payload) => {
-                let mut data = vec![Self::FILL_REPORT_DISCRIMINANT];
+                let mut data = vec![Self::EARNER_MERKLE_ROOT_DISCRIMINANT];
                 data.extend_from_slice(&payload.index.to_be_bytes());
                 data.extend_from_slice(&payload.merkle_root);
                 data
             }
             Payload::FillReport(payload) => {
-                let mut data = vec![Self::EARNER_MERKLE_ROOT_DISCRIMINANT];
+                let mut data = vec![Self::FILL_REPORT_DISCRIMINANT];
                 data.extend_from_slice(&payload.order_id);
                 data.extend_from_slice(&payload.amount_in_to_release.to_be_bytes());
                 data.extend_from_slice(&payload.amount_out_filled.to_be_bytes());
                 data.extend_from_slice(&payload.origin_recipient);
+                data.extend_from_slice(&payload.token_in);
                 data
             }
         }
@@ -80,6 +81,7 @@ impl Payload {
                 let (amount_in_to_release_bytes, data) = data.split_at(16);
                 let (amount_out_filled_bytes, data) = data.split_at(16);
                 let (origin_recipient_bytes, _) = data.split_at(32);
+                let (token_in_bytes, _) = data.split_at(32);
 
                 Payload::FillReport(FillReportPayload {
                     order_id: order_id_bytes.try_into().unwrap(),
@@ -90,6 +92,7 @@ impl Payload {
                         amount_out_filled_bytes.try_into().unwrap(),
                     ),
                     origin_recipient: origin_recipient_bytes.try_into().unwrap(),
+                    token_in: token_in_bytes.try_into().unwrap(),
                 })
             }
             Self::EARNER_MERKLE_ROOT_DISCRIMINANT => {
@@ -130,6 +133,7 @@ pub struct FillReportPayload {
     pub amount_in_to_release: u128,
     pub amount_out_filled: u128,
     pub origin_recipient: [u8; 32],
+    pub token_in: [u8; 32],
 }
 
 #[derive(Debug)]

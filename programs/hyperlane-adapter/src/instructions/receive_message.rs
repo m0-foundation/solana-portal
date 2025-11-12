@@ -1,11 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::{
-    associated_token::{self, get_associated_token_address_with_program_id},
-    token_2022,
-};
 use common::{
-    ext_swap::{self, types::WhitelistedExtension},
-    order_book::{self, accounts::NativeOrder},
     pda,
     portal::{self, program::Portal},
     require_metas, BridgeError, Payload, AUTHORITY_SEED,
@@ -14,7 +8,10 @@ use common::{
 use crate::{
     consts::MAILBOX_PROGRAM_ID,
     instructions::{SerializableAccountMeta, SimulationReturnData},
-    state::{HyperlaneGlobal, GLOBAL_SEED},
+    state::{
+        AccountMetasData, HyperlaneGlobal, DASH_SEED, GLOBAL_SEED, HYPERLANE_SEED, METADATA_SEED_1,
+        METADATA_SEED_2, METADATA_SEED_3, PROCESS_AUTHORITY,
+    },
 };
 
 #[derive(Accounts)]
@@ -22,10 +19,10 @@ pub struct ReceiveMessage<'info> {
     #[account(
         mut,
         seeds = [
-            b"hyperlane",
-            b"-",
-            b"process_authority",
-            b"-",
+            HYPERLANE_SEED,
+            DASH_SEED,
+            PROCESS_AUTHORITY,
+            DASH_SEED,
             crate::ID.as_ref(),
         ],
         seeds::program = MAILBOX_PROGRAM_ID,
@@ -81,7 +78,7 @@ impl ReceiveMessage<'_> {
         message: Vec<u8>,
     ) -> Result<()> {
         portal::cpi::receive_message(
-            CpiContext::new(
+            CpiContext::new_with_signer(
                 ctx.accounts.portal_program.to_account_info(),
                 portal::cpi::accounts::ReceiveMessage {
                     sender: ctx.accounts.hyperlane_adapter_authority.to_account_info(),
@@ -89,6 +86,7 @@ impl ReceiveMessage<'_> {
                     messenger_authority: ctx.accounts.messenger_authority.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info(),
                 },
+                &[&[AUTHORITY_SEED, &[ctx.bumps.hyperlane_adapter_authority]]],
             )
             .with_remaining_accounts(ctx.remaining_accounts.to_vec()),
             message,
@@ -97,10 +95,22 @@ impl ReceiveMessage<'_> {
 }
 
 #[derive(Accounts)]
-pub struct ReceiveMessageMetas {}
+pub struct ReceiveMessageMetas<'info> {
+    #[account(
+        seeds = [
+            METADATA_SEED_1,
+            DASH_SEED,
+            METADATA_SEED_2,
+            DASH_SEED,
+            METADATA_SEED_3,
+        ],
+        bump = account_metas_data.bump,
+    )]
+    pub account_metas_data: Account<'info, AccountMetasData>,
+}
 
-impl ReceiveMessageMetas {
-    pub fn handler<'info>(
+impl<'info> ReceiveMessageMetas<'info> {
+    pub fn handler(
         ctx: Context<Self>,
         _origin: u32,
         _sender: [u8; 32],

@@ -1,9 +1,12 @@
 use anchor_lang::prelude::{instruction::Instruction, program::invoke_signed, *};
-use common::portal;
+use common::{portal, AUTHORITY_SEED};
 
 use crate::{
     instructions::{Mailbox, SplNoop},
-    state::{HyperlaneGlobal, GLOBAL_SEED},
+    state::{
+        HyperlaneGlobal, DASH_SEED, DISPATCHED_MESSGAGE_SEED, DISPATCH_SEED_1, DISPATCH_SEED_2,
+        GLOBAL_SEED, HYPERLANE_SEED, OUTBOX_SEED,
+    },
 };
 
 #[derive(Accounts)]
@@ -19,7 +22,7 @@ pub struct SendMessage<'info> {
     pub hyperlane_global: Account<'info, HyperlaneGlobal>,
 
     #[account(
-        seeds = [b"authority"], 
+        seeds = [AUTHORITY_SEED],
         seeds::program = portal::ID,
         bump
     )]
@@ -28,7 +31,7 @@ pub struct SendMessage<'info> {
 
     #[account(
         mut,
-        seeds = [b"hyperlane", b"-", b"outbox"],
+        seeds = [HYPERLANE_SEED, DASH_SEED, OUTBOX_SEED],
         seeds::program = mailbox_program,
         bump
     )]
@@ -36,7 +39,7 @@ pub struct SendMessage<'info> {
     pub mailbox_outbox: AccountInfo<'info>,
 
     #[account(
-        seeds = [b"hyperlane_dispatcher", b"-", b"dispatch_authority"],
+        seeds = [DISPATCH_SEED_1, DASH_SEED, DISPATCH_SEED_2],
         bump
     )]
     /// CHECK: dispatch authority for mailbox
@@ -46,7 +49,13 @@ pub struct SendMessage<'info> {
     pub unique_message: Signer<'info>,
 
     #[account(
-        seeds = [b"hyperlane", b"-", b"dispatched_message", b"-", unique_message.key().as_ref()],
+        seeds = [
+            HYPERLANE_SEED,
+            DASH_SEED,
+            DISPATCHED_MESSGAGE_SEED,
+            DASH_SEED,
+            unique_message.key().as_ref(),
+        ],
         seeds::program = mailbox_program,
         bump
     )]
@@ -101,9 +110,9 @@ impl SendMessage<'_> {
                 ctx.accounts.dispatched_message.clone(),
             ],
             &[&[
-                b"hyperlane_dispatcher",
-                b"-",
-                b"dispatch_authority",
+                DISPATCH_SEED_1,
+                DASH_SEED,
+                DISPATCH_SEED_2,
                 &[ctx.bumps.dispatch_authority],
             ]],
         )?;

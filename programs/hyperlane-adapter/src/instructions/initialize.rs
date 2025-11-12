@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 
-use crate::state::{HyperlaneGlobal, GLOBAL_SEED};
+use crate::state::{
+    AccountMetasData, HyperlaneGlobal, DASH_SEED, GLOBAL_SEED, METADATA_SEED_1, METADATA_SEED_2,
+    METADATA_SEED_3,
+};
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
@@ -16,6 +19,21 @@ pub struct Initialize<'info> {
     )]
     pub hyperlane_global: Account<'info, HyperlaneGlobal>,
 
+    #[account(
+        init,
+        payer = admin,
+        space =  AccountMetasData::size(),
+        seeds = [
+            METADATA_SEED_1,
+            DASH_SEED,
+            METADATA_SEED_2,
+            DASH_SEED,
+            METADATA_SEED_3,
+        ],
+        bump
+    )]
+    pub account_metas_data: Account<'info, AccountMetasData>,
+
     pub system_program: Program<'info, System>,
 }
 
@@ -26,6 +44,10 @@ impl Initialize<'_> {
             admin: ctx.accounts.admin.key(),
             paused: false,
             peers: Vec::new(),
+        });
+
+        ctx.accounts.account_metas_data.set_inner(AccountMetasData {
+            bump: ctx.bumps.account_metas_data,
         });
 
         Ok(())

@@ -3,6 +3,26 @@ use common::BridgeError;
 
 #[constant]
 pub const GLOBAL_SEED: &[u8] = b"global";
+#[constant]
+pub const HYPERLANE_SEED: &[u8] = b"hyperlane";
+#[constant]
+pub const METADATA_SEED_1: &[u8] = b"hyperlane_message_recipient";
+#[constant]
+pub const METADATA_SEED_2: &[u8] = b"handle";
+#[constant]
+pub const METADATA_SEED_3: &[u8] = b"account_metas";
+#[constant]
+pub const DISPATCH_SEED_1: &[u8] = b"hyperlane_dispatcher";
+#[constant]
+pub const DISPATCH_SEED_2: &[u8] = b"dispatch_authority";
+#[constant]
+pub const PROCESS_AUTHORITY: &[u8] = b"process_authority";
+#[constant]
+pub const OUTBOX_SEED: &[u8] = b"outbox";
+#[constant]
+pub const DISPATCHED_MESSGAGE_SEED: &[u8] = b"dispatched_message";
+#[constant]
+pub const DASH_SEED: &[u8] = b"-";
 
 #[account]
 pub struct HyperlaneGlobal {
@@ -34,5 +54,17 @@ impl HyperlaneGlobal {
             .find(|peer| peer.chain_id == chain_id)
             .cloned()
             .ok_or_else(|| BridgeError::UnsupportedDestinationChain.into())
+    }
+}
+
+#[account]
+pub struct AccountMetasData {
+    pub bump: u8,
+}
+
+impl AccountMetasData {
+    pub fn size() -> usize {
+        8 + // discriminator
+        1 // bump
     }
 }
