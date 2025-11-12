@@ -40,6 +40,7 @@ pub mod portal {
     pub fn send_fill_report<'info>(
         ctx: Context<'_, '_, '_, 'info, SendFillReport<'info>>,
         order_id: [u8; 32],
+        token_in: [u8; 32],
         amount_in_to_release: u128,
         amount_out_filled: u128,
         origin_recipient: [u8; 32],
@@ -48,6 +49,7 @@ pub mod portal {
         SendFillReport::handler(
             ctx,
             order_id,
+            token_in,
             amount_in_to_release,
             amount_out_filled,
             origin_recipient,

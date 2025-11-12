@@ -15,7 +15,6 @@ variable "hyperlane_adapter_program" {
     value = svm::get_program_from_anchor_project("hyperlane_adapter")
 }
 
-// Check if the Portal Global account exists
 action "portal_global_account" "std::send_http_request" {
   url = input.rpc_api_url
   method = "POST"

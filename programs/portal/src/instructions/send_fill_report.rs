@@ -23,6 +23,7 @@ impl SendFillReport<'_> {
     pub fn handler<'info>(
         ctx: Context<'_, '_, '_, 'info, SendFillReport<'info>>,
         order_id: [u8; 32],
+        token_in: [u8; 32],
         amount_in_to_release: u128,
         amount_out_filled: u128,
         origin_recipient: [u8; 32],
@@ -33,7 +34,7 @@ impl SendFillReport<'_> {
             amount_in_to_release,
             amount_out_filled,
             origin_recipient,
-            token_in: [0; 32], // TODO: fill new field?
+            token_in,
         });
 
         send_message(
