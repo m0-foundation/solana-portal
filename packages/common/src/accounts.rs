@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::get_associated_token_address_with_program_id;
+use borsh::{BorshDeserialize, BorshSerialize};
 use common_macros::ExtractAccounts;
 
 use crate::{
@@ -121,3 +122,27 @@ impl FillReportPayload {
         Ok(accounts)
     }
 }
+
+#[derive(Clone, BorshSerialize, BorshDeserialize, Debug)]
+pub struct Extension {
+    pub program_id: Pubkey,
+    pub mint: Pubkey,
+    pub token_program: Pubkey,
+}
+
+impl Extension {
+    pub const SIZE: usize = 96;
+}
+
+impl From<ext_swap::types::WhitelistedExtension> for Extension {
+    fn from(ext: ext_swap::types::WhitelistedExtension) -> Self {
+        Extension {
+            program_id: Pubkey::from(ext.program_id),
+            mint: Pubkey::from(ext.mint),
+            token_program: Pubkey::from(ext.token_program),
+        }
+    }
+}
+
+#[cfg(feature = "idl-build")]
+impl anchor_lang::IdlBuild for Extension {}

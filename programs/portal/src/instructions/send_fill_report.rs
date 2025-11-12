@@ -26,7 +26,7 @@ impl SendFillReport<'_> {
         amount_in_to_release: u128,
         amount_out_filled: u128,
         origin_recipient: [u8; 32],
-        origin_chain_id: u16,
+        origin_chain_id: u32,
     ) -> Result<()> {
         let message = Payload::FillReport(FillReportPayload {
             order_id,

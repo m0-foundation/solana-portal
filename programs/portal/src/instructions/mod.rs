@@ -20,7 +20,7 @@ pub fn send_message<'info>(
     system_program: AccountInfo<'info>,
     remaining_accounts: Vec<AccountInfo<'info>>,
     message: Vec<u8>,
-    destination_chain_id: u16,
+    destination_chain_id: u32,
 ) -> Result<()> {
     // Send the bridge message based on provided adapter
     if bridge_adapter.key() == wormhole_adapter::ID {

@@ -126,6 +126,24 @@
           }
         },
         {
+          "name": "earn_global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
@@ -813,6 +831,130 @@
           "type": "u32"
         }
       ]
+    },
+    {
+      "name": "sync_extensions",
+      "discriminator": [
+        247,
+        48,
+        135,
+        179,
+        251,
+        166,
+        75,
+        181
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "account_metas_data",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  104,
+                  121,
+                  112,
+                  101,
+                  114,
+                  108,
+                  97,
+                  110,
+                  101,
+                  95,
+                  109,
+                  101,
+                  115,
+                  115,
+                  97,
+                  103,
+                  101,
+                  95,
+                  114,
+                  101,
+                  99,
+                  105,
+                  112,
+                  105,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  45
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  104,
+                  97,
+                  110,
+                  100,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  45
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  109,
+                  101,
+                  116,
+                  97,
+                  115
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "swap_global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -830,6 +972,19 @@
       ]
     },
     {
+      "name": "EarnGlobal",
+      "discriminator": [
+        229,
+        50,
+        25,
+        132,
+        207,
+        93,
+        185,
+        23
+      ]
+    },
+    {
       "name": "HyperlaneGlobal",
       "discriminator": [
         139,
@@ -841,6 +996,19 @@
         42,
         102
       ]
+    },
+    {
+      "name": "SwapGlobal",
+      "discriminator": [
+        15,
+        184,
+        147,
+        129,
+        183,
+        219,
+        223,
+        163
+      ]
     }
   ],
   "types": [
@@ -849,6 +1017,57 @@
       "type": {
         "kind": "struct",
         "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "m_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "extensions",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "Extension"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "EarnGlobal",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "m_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "portal_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "ext_swap_global_account",
+            "type": "pubkey"
+          },
+          {
+            "name": "earner_merkle_root",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
           {
             "name": "bump",
             "type": "u8"
@@ -903,6 +1122,58 @@
           {
             "name": "chain_id",
             "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SwapGlobal",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "whitelisted_unwrappers",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "whitelisted_extensions",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "WhitelistedExtension"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "WhitelistedExtension",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "program_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "token_program",
+            "type": "pubkey"
           }
         ]
       }

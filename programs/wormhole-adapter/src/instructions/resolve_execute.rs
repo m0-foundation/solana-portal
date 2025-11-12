@@ -8,7 +8,7 @@ use anchor_spl::{
     }
 };
 use common::{
-    BridgeError, earn::{self, accounts::EarnGlobal}, ext_swap::{self, accounts::SwapGlobal}, order_book::{self, accounts::NativeOrder, constants::ORDER_SEED_PREFIX}, pda, portal, require_metas, wormhole_verify_vaa_shim
+    BridgeError, Extension, earn::{self, accounts::EarnGlobal}, ext_swap::{self, accounts::SwapGlobal}, pda, portal, require_metas, wormhole_verify_vaa_shim
 };
 use executor_account_resolver_svm::{
     find_account, InstructionGroup, InstructionGroups, MissingAccounts, Resolver,
@@ -34,10 +34,9 @@ impl ResolveExecuteVaa {
         let vaa = VaaBody::from_bytes(&vaa_body)?;
 
         let result_account = pda!(&[RESOLVER_RESULT_ACCOUNT_SEED], &crate::ID);
-        let mut earn_global_data: Option<EarnGlobal> = None;
-        let mut swap_global_data: Option<SwapGlobal> = None;
-        let mut order_data: Option<NativeOrder> = None;
-        let mut order_token_in: Option<AccountInfo> = None;
+        let mut m_mint: Option<Pubkey> = None;
+        let mut whitelisted_extensions: Option<Vec<Extension>> = None;
+        let mut orderbook_token_in: Option<&AccountInfo> = None;
 
         // Check for missing accounts
         {
@@ -46,28 +45,35 @@ impl ResolveExecuteVaa {
             match vaa.payload {
                 common::Payload::TokenTransfer(_) => {
                     let earn_global = pda!(&[GLOBAL_SEED], &earn::ID);
-                    earn_global_data =
+                    let earn_global_data: Option<EarnGlobal> =
                         deserialize_account(ctx.remaining_accounts, earn_global).ok();
 
+                    if let Some(ref earn_global) = earn_global_data {
+                        m_mint = Some(earn_global.m_mint);
+                    }
+
                     let swap_global = pda!(&[GLOBAL_SEED], &ext_swap::ID);
-                    swap_global_data =
+                    let swap_global_data: Option<SwapGlobal> =
                         deserialize_account(ctx.remaining_accounts, swap_global).ok();
+
+                    if let Some(ref swap_global) = swap_global_data {
+                        whitelisted_extensions = Some(
+                            swap_global
+                                .whitelisted_extensions
+                                .iter()
+                                .map(|&ext| Extension::from(ext))
+                                .collect(),
+                        );
+                    }
 
                     accounts_required.extend([earn_global, swap_global]);
                 }
                 common::Payload::FillReport(ref report) => {
-                    // Need order data to get mint
-                    let order = pda!(&[ORDER_SEED_PREFIX, &report.order_id], &order_book::ID);
-                    order_data =
-                        deserialize_account::<NativeOrder>(ctx.remaining_accounts, order).ok();
+                    accounts_required.push(report.token_in.into());
 
-                    accounts_required.push(order);
-
-                    if let Some(ref o) = order_data {
-                        // Need mint account to see token program
-                        order_token_in = find_account(ctx.remaining_accounts, o.token_in).cloned();
-                        accounts_required.push(o.token_in);
-                    }
+                    // Need mint account to see token program
+                    orderbook_token_in =
+                        find_account(ctx.remaining_accounts, report.token_in.into());
                 }
                 _ => {}
             }
@@ -187,10 +193,9 @@ impl ResolveExecuteVaa {
         let required_remaining = require_metas(
             &vaa.payload,
             RESOLVER_PUBKEY_PAYER,
-            swap_global_data,
-            earn_global_data,
-            order_data,
-            order_token_in,
+            whitelisted_extensions,
+            m_mint,
+            orderbook_token_in,
         )?;
 
         // Add expected remaining accounts based on payload type

@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use common::earn::accounts::EarnGlobal;
 
 use crate::state::{
     AccountMetasData, HyperlaneGlobal, DASH_SEED, GLOBAL_SEED, METADATA_SEED_1, METADATA_SEED_2,
@@ -22,7 +23,7 @@ pub struct Initialize<'info> {
     #[account(
         init,
         payer = admin,
-        space =  AccountMetasData::size(),
+        space =  AccountMetasData::size(0),
         seeds = [
             METADATA_SEED_1,
             DASH_SEED,
@@ -33,6 +34,12 @@ pub struct Initialize<'info> {
         bump
     )]
     pub account_metas_data: Account<'info, AccountMetasData>,
+
+    #[account(
+        seeds = [GLOBAL_SEED],
+        bump = earn_global.bump,
+    )]
+    pub earn_global: Account<'info, EarnGlobal>,
 
     pub system_program: Program<'info, System>,
 }
@@ -48,6 +55,8 @@ impl Initialize<'_> {
 
         ctx.accounts.account_metas_data.set_inner(AccountMetasData {
             bump: ctx.bumps.account_metas_data,
+            m_mint: ctx.accounts.earn_global.m_mint,
+            extensions: Vec::new(),
         });
 
         Ok(())

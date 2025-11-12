@@ -11,6 +11,11 @@ variable "wormhole_adapter_program" {
     value = svm::get_program_from_anchor_project("wormhole_adapter")
 }
 
+variable "hyperlane_adapter_program" {
+    value = svm::get_program_from_anchor_project("hyperlane_adapter")
+}
+
+// Check if the Portal Global account exists
 action "portal_global_account" "std::send_http_request" {
   url = input.rpc_api_url
   method = "POST"
@@ -38,6 +43,21 @@ action "wormhole_global_account" "std::send_http_request" {
     ]
   }
 }
+
+action "hyperlane_global_account" "std::send_http_request" {
+  url = input.rpc_api_url
+  method = "POST"
+  body = {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getAccountInfo",
+    "params": [
+        "5ePctQxFYbWVUAwpiG2imQJQK3dLjU4BZqBkAtxbXuY4",
+        { "encoding": "base64" }
+    ]
+  }
+}
+
 
 action "initialize_portal" "svm::process_instructions" {
     description = "Initializes the Portal program"
@@ -67,6 +87,22 @@ action "initialize_wormhole_adapter" "svm::process_instructions" {
     }
     pre_condition {
         behavior = "skip"
-        assertion = std::assert_eq(jq(action.wormhole_global_account.response_body,  ".result.value"), null)
+        assertion = std::and_bool(input.wormhole_adapter, std::assert_eq(jq(action.wormhole_global_account.response_body,  ".result.value"), null))
+    }
+}
+
+action "initialize_hyperlane_adapter" "svm::process_instructions" {
+    description = "Initializes the Hyperlane Adapter program"
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.hyperlane_adapter_program.idl
+        instruction_name = "initialize"
+        admin {
+            public_key = signer.caller.public_key
+        }
+    }
+    pre_condition {
+        behavior = "skip"
+        assertion = std::and_bool(input.hyperlane_adapter, std::assert_eq(jq(action.hyperlane_global_account.response_body,  ".result.value"), null))
     }
 }

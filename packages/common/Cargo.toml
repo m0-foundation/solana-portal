@@ -14,3 +14,4 @@ idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 anchor-lang.workspace = true
 anchor-spl.workspace = true
 common-macros = { path = "../common-macros" }
+borsh.workspace = true

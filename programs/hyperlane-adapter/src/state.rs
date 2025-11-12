@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::BridgeError;
+use common::{BridgeError, Extension};
 
 #[constant]
 pub const GLOBAL_SEED: &[u8] = b"global";
@@ -60,11 +60,16 @@ impl HyperlaneGlobal {
 #[account]
 pub struct AccountMetasData {
     pub bump: u8,
+    pub m_mint: Pubkey,
+    pub extensions: Vec<Extension>,
 }
 
 impl AccountMetasData {
-    pub fn size() -> usize {
+    pub fn size(extensions: usize) -> usize {
         8 + // discriminator
-        1 // bump
+        1 + // bump
+        32 + // m_mint
+        4 + // length of extensions vector
+        extensions * Extension::SIZE
     }
 }

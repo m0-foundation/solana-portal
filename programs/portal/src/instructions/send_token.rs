@@ -133,7 +133,7 @@ impl SendTokens<'_> {
         ctx: Context<'_, '_, '_, 'info, SendTokens<'info>>,
         amount: u64,
         destination_token: [u8; 32],
-        destination_chain_id: u16,
+        destination_chain_id: u32,
         recipient: [u8; 32],
     ) -> Result<()> {
         let m_pre_balance = ctx.accounts.m_token_account.amount;

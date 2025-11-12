@@ -25,7 +25,7 @@ pub mod portal {
         ctx: Context<'_, '_, '_, 'info, SendTokens<'info>>,
         amount: u64,
         destination_token: [u8; 32],
-        destination_chain_id: u16,
+        destination_chain_id: u32,
         recipient: [u8; 32],
     ) -> Result<()> {
         SendTokens::handler(
@@ -43,7 +43,7 @@ pub mod portal {
         amount_in_to_release: u128,
         amount_out_filled: u128,
         origin_recipient: [u8; 32],
-        origin_chain_id: u16,
+        origin_chain_id: u32,
     ) -> Result<()> {
         SendFillReport::handler(
             ctx,

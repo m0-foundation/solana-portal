@@ -1,12 +1,14 @@
 pub mod initialize;
 pub mod receive_message;
 pub mod send_message;
+pub mod sync_extensions;
 
 use anchor_lang::prelude::*;
 use borsh::{BorshDeserialize, BorshSerialize};
 pub use initialize::*;
 pub use receive_message::*;
 pub use send_message::*;
+pub use sync_extensions::*;
 
 use crate::consts::{MAILBOX_PROGRAM_ID, SPL_NOOP};
 

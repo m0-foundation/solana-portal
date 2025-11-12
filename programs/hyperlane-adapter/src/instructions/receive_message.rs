@@ -131,17 +131,16 @@ impl<'info> ReceiveMessageMetas<'info> {
             AccountMeta::new_readonly(system_program::ID, false).into(),
         ];
 
-        // let required_remaining = require_metas(
-        //     &payload,
-        //     RESOLVER_PUBKEY_PAYER,
-        //     swap_global_data,
-        //     earn_global_data,
-        //     order_data,
-        //     order_token_in,
-        // )?;
+        let required_remaining = require_metas(
+            &payload,
+            ctx.accounts.account_metas_data.key(),
+            Some(ctx.accounts.account_metas_data.extensions.clone()),
+            Some(ctx.accounts.account_metas_data.m_mint),
+            None,
+        )?;
 
-        // // Add expected remaining accounts based on payload type
-        // account_metas.extend(required_remaining.iter().cloned().map(|a| a.into()));
+        // Add expected remaining accounts based on payload type
+        account_metas.extend(required_remaining.iter().cloned().map(|a| a.into()));
 
         let bytes = SimulationReturnData::new(account_metas)
             .try_to_vec()

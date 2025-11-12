@@ -9,3 +9,6 @@ test-verbose:
 build:
 	anchor build
 	cp -f target/idl/*.json packages/common/idls/
+
+localnet:
+	surfpool start -r deployment -r initialize -a test4MzZzYk2NAP1222FSuKqq83GuXY5tHakqREDHPo

@@ -19,6 +19,10 @@ pub mod hyperlane_adapter {
         Initialize::handler(ctx)
     }
 
+    pub fn sync_extensions(ctx: Context<SyncExtensions>) -> Result<()> {
+        SyncExtensions::handler(ctx)
+    }
+
     pub fn send_message(
         ctx: Context<SendMessage>,
         message: Vec<u8>,
