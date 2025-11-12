@@ -17,7 +17,10 @@ action "deploy_wormhole_adapter" "svm::deploy_program" {
     authority = signer.authority
     payer = signer.payer
     instant_surfnet_deployment = true
-    pre_condition = input.wormhole_adatper
+    pre_condition {
+        behavior = "skip"
+        assertion = input.wormhole_adapter == "true"
+    }
 }
 
 action "deploy_hyperlane_adapter" "svm::deploy_program" {
@@ -26,5 +29,8 @@ action "deploy_hyperlane_adapter" "svm::deploy_program" {
     authority = signer.authority
     payer = signer.payer
     instant_surfnet_deployment = true
-    pre_condition = input.hyperlane_adapter
+    pre_condition {
+        behavior = "skip"
+        assertion = input.hyperlane_adapter == "true"
+    }
 }

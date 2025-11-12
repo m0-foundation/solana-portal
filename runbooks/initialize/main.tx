@@ -58,7 +58,6 @@ action "hyperlane_global_account" "std::send_http_request" {
   }
 }
 
-
 action "initialize_portal" "svm::process_instructions" {
     description = "Initializes the Portal program"
     signers = [signer.caller]
@@ -71,7 +70,7 @@ action "initialize_portal" "svm::process_instructions" {
     }
     pre_condition {
         behavior = "skip"
-        assertion = std::assert_eq(jq(action.portal_global_account.response_body, ".result.value"), null)
+        assertion = jq(action.portal_global_account.response_body, ".result.value") == null
     }
 }
 
@@ -87,7 +86,7 @@ action "initialize_wormhole_adapter" "svm::process_instructions" {
     }
     pre_condition {
         behavior = "skip"
-        assertion = std::and_bool(input.wormhole_adapter, std::assert_eq(jq(action.wormhole_global_account.response_body,  ".result.value"), null))
+        assertion = and_bool(input.wormhole_adapter == "true", jq(action.wormhole_global_account.response_body,  ".result.value") == null)
     }
 }
 
@@ -103,6 +102,6 @@ action "initialize_hyperlane_adapter" "svm::process_instructions" {
     }
     pre_condition {
         behavior = "skip"
-        assertion = std::and_bool(input.hyperlane_adapter, std::assert_eq(jq(action.hyperlane_global_account.response_body,  ".result.value"), null))
+        assertion = and_bool(input.hyperlane_adapter == "true", jq(action.hyperlane_global_account.response_body,  ".result.value") == null)
     }
 }
