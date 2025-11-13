@@ -1,9 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::get_associated_token_address_with_program_id;
+use borsh::{BorshDeserialize, BorshSerialize};
 use common_macros::ExtractAccounts;
 
 use crate::{
-    earn, ext_swap, order_book, CommonError, EarnerMerkleRootPayload, FillReportPayload,
+    earn, ext_swap, order_book, BridgeError, EarnerMerkleRootPayload, FillReportPayload,
     IndexPayload, TokenTransferPayload,
 };
 
@@ -23,7 +24,7 @@ impl IndexPayload {
         let accounts = IndexPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
 
         if accounts.earn_program.key != &earn::ID {
-            return err!(CommonError::InvalidRemainingAccount);
+            return err!(BridgeError::InvalidRemainingAccount);
         }
 
         Ok(accounts)
@@ -38,7 +39,7 @@ impl EarnerMerkleRootPayload {
         let accounts = IndexPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
 
         if accounts.earn_program.key != &earn::ID {
-            return err!(CommonError::InvalidRemainingAccount);
+            return err!(BridgeError::InvalidRemainingAccount);
         }
 
         Ok(accounts)
@@ -81,11 +82,11 @@ impl TokenTransferPayload {
             accounts.extension_token_program.key,
         );
         if accounts.recipient_token_account.key() != recipient_token_account {
-            return err!(CommonError::InvalidRemainingAccount);
+            return err!(BridgeError::InvalidRemainingAccount);
         }
 
         if accounts.swap_program.key != &ext_swap::ID {
-            return err!(CommonError::InvalidRemainingAccount);
+            return err!(BridgeError::InvalidRemainingAccount);
         }
 
         Ok(accounts)
@@ -115,9 +116,67 @@ impl FillReportPayload {
             FillReportPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
 
         if accounts.orderbook_program.key != &order_book::ID {
-            return err!(CommonError::InvalidRemainingAccount);
+            return err!(BridgeError::InvalidRemainingAccount);
         }
 
         Ok(accounts)
+    }
+}
+
+#[derive(Clone, BorshSerialize, BorshDeserialize, Debug)]
+pub struct Extension {
+    pub program_id: Pubkey,
+    pub mint: Pubkey,
+    pub token_program: Pubkey,
+}
+
+impl Extension {
+    pub const SIZE: usize = 96;
+}
+
+impl From<ext_swap::types::WhitelistedExtension> for Extension {
+    fn from(ext: ext_swap::types::WhitelistedExtension) -> Self {
+        Extension {
+            program_id: Pubkey::from(ext.program_id),
+            mint: Pubkey::from(ext.mint),
+            token_program: Pubkey::from(ext.token_program),
+        }
+    }
+}
+
+#[cfg(feature = "idl-build")]
+use anchor_lang_idl::types::{
+    Idl, IdlDefinedFields, IdlField, IdlSerialization, IdlType, IdlTypeDef, IdlTypeDefTy,
+};
+
+#[cfg(feature = "idl-build")]
+impl anchor_lang::IdlBuild for Extension {
+    fn create_type() -> Option<IdlTypeDef> {
+        Some(IdlTypeDef {
+            name: "Extension".to_string(),
+            docs: vec![],
+            serialization: IdlSerialization::Borsh,
+            repr: None,
+            generics: vec![],
+            ty: IdlTypeDefTy::Struct {
+                fields: Some(IdlDefinedFields::Named(vec![
+                    IdlField {
+                        name: "program_id".to_string(),
+                        docs: Default::default(),
+                        ty: IdlType::Pubkey,
+                    },
+                    IdlField {
+                        name: "mint".to_string(),
+                        docs: Default::default(),
+                        ty: IdlType::Pubkey,
+                    },
+                    IdlField {
+                        name: "token_program".to_string(),
+                        docs: Default::default(),
+                        ty: IdlType::Pubkey,
+                    },
+                ])),
+            },
+        })
     }
 }

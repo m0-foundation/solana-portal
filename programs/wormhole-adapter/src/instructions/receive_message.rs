@@ -12,7 +12,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-#[instruction(_guardian_set_index: u32)]
+#[instruction(guardian_set_index: u32)]
 pub struct ReceiveMessage<'info> {
     #[account(mut)]
     pub relayer: Signer<'info>,
@@ -40,7 +40,7 @@ pub struct ReceiveMessage<'info> {
     pub messenger_authority: AccountInfo<'info>,
 
     #[account(
-        seeds = [GUARDIAN_SET_SEED, &_guardian_set_index.to_be_bytes()],
+        seeds = [GUARDIAN_SET_SEED, &guardian_set_index.to_be_bytes()],
         seeds::program = CORE_BRIDGE_PROGRAM_ID,
         bump
     )]
@@ -86,11 +86,11 @@ impl ReceiveMessage<'_> {
     #[access_control(ctx.accounts.validate(ctx.bumps.guardian_set, &vaa_body))]
     pub fn handler<'info>(
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
-        _guardian_set_index: u32,
+        #[allow(unused_variables)] guardian_set_index: u32,
         vaa_body: Vec<u8>,
     ) -> Result<()> {
         portal::cpi::receive_message(
-            CpiContext::new(
+            CpiContext::new_with_signer(
                 ctx.accounts.portal_program.to_account_info(),
                 portal::cpi::accounts::ReceiveMessage {
                     sender: ctx.accounts.relayer.to_account_info(),
@@ -98,6 +98,7 @@ impl ReceiveMessage<'_> {
                     messenger_authority: ctx.accounts.messenger_authority.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info(),
                 },
+                &[&[AUTHORITY_SEED, &[ctx.bumps.wormhole_adapter_authority]]],
             )
             .with_remaining_accounts(ctx.remaining_accounts.to_vec()),
             VaaBody::from_bytes(&vaa_body)?.payload.encode(),

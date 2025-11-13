@@ -4,13 +4,11 @@ pub mod resolve_execute;
 pub mod send_message;
 
 use anchor_lang::prelude::*;
-use common::{Payload, TokenTransferPayload};
+use common::{BridgeError, Payload, TokenTransferPayload};
 pub use initialize::*;
 pub use receive_message::*;
 pub use resolve_execute::*;
 pub use send_message::*;
-
-use crate::errors::WormholeError;
 
 #[derive(Debug)]
 pub struct VaaBody {
@@ -26,7 +24,7 @@ pub struct VaaBody {
 impl VaaBody {
     pub fn from_bytes(data: &Vec<u8>) -> Result<Self> {
         if data.len() < 51 {
-            return err!(WormholeError::InvalidVaa);
+            return err!(BridgeError::InvalidVaa);
         }
 
         let (timestamp_bytes, data) = data.split_at(4);
@@ -66,11 +64,11 @@ impl VaaBody {
                     sender: [0u8; 32], // NTT does not provide sender info
                 })
             } else {
-                return err!(WormholeError::InvalidVaa);
+                return err!(BridgeError::InvalidVaa);
             }
         } else {
             // M0 message format
-            Payload::decode(payload_bytes.to_vec())
+            Payload::decode(&payload_bytes.to_vec())
         };
 
         Ok(VaaBody {

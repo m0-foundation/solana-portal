@@ -1,10 +1,7 @@
 use anchor_lang::prelude::*;
 use common::{BridgeAdapter, FillReportPayload, Payload};
 
-use crate::{
-    instructions::send_message,
-    state::AUTHORITY_SEED,
-};
+use crate::{instructions::send_message, state::AUTHORITY_SEED};
 
 #[derive(Accounts)]
 pub struct SendFillReport<'info> {
@@ -26,15 +23,18 @@ impl SendFillReport<'_> {
     pub fn handler<'info>(
         ctx: Context<'_, '_, '_, 'info, SendFillReport<'info>>,
         order_id: [u8; 32],
+        token_in: [u8; 32],
         amount_in_to_release: u128,
         amount_out_filled: u128,
         origin_recipient: [u8; 32],
+        origin_chain_id: u32,
     ) -> Result<()> {
         let message = Payload::FillReport(FillReportPayload {
             order_id,
             amount_in_to_release,
             amount_out_filled,
             origin_recipient,
+            token_in,
         });
 
         send_message(
@@ -45,6 +45,7 @@ impl SendFillReport<'_> {
             ctx.accounts.system_program.to_account_info(),
             ctx.remaining_accounts.to_vec(),
             message.encode(),
+            origin_chain_id,
         )
     }
 }

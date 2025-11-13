@@ -41,7 +41,7 @@ impl ReceiveMessage<'_> {
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
         payload: Vec<u8>,
     ) -> Result<()> {
-        let message = Payload::decode(payload);
+        let message = Payload::decode(&payload);
 
         match message {
             Payload::TokenTransfer(token_transfer) => {

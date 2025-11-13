@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
+use common::BridgeError;
 
-use crate::{errors::WormholeError, instructions::VaaBody};
+use crate::instructions::VaaBody;
 
 #[constant]
 pub const GLOBAL_SEED: &[u8] = b"global";
@@ -16,7 +17,7 @@ pub struct WormholeGlobal {
 #[account]
 pub struct Peer {
     pub address: [u8; 32],
-    pub chain_id: u16,
+    pub chain_id: u32,
 }
 
 impl WormholeGlobal {
@@ -33,10 +34,10 @@ impl WormholeGlobal {
         if self
             .peers
             .iter()
-            .find(|p| p.chain_id == vaa.emitter_chain && p.address == vaa.emitter_address)
+            .find(|p| p.chain_id == (vaa.emitter_chain as u32) && p.address == vaa.emitter_address)
             .is_none()
         {
-            return err!(WormholeError::InvalidPeer);
+            return err!(BridgeError::InvalidPeer);
         }
 
         Ok(())

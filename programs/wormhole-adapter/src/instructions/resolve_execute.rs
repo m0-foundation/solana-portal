@@ -1,29 +1,40 @@
 use anchor_lang::{
-    prelude::*, solana_program::entrypoint::MAX_PERMITTED_DATA_INCREASE, system_program,
+    prelude::*,
+    solana_program::entrypoint::MAX_PERMITTED_DATA_INCREASE,
+    system_program,
     InstructionData,
 };
-use anchor_spl::{
-    associated_token::{
-        self, get_associated_token_address_with_program_id,
-        spl_associated_token_account::solana_program::system_instruction::MAX_PERMITTED_DATA_LENGTH,
-    },
-    token_2022,
-};
+use anchor_spl::associated_token::spl_associated_token_account::solana_program::system_instruction::MAX_PERMITTED_DATA_LENGTH;
 use common::{
     earn::{self, accounts::EarnGlobal},
-    ext_swap::{self, accounts::SwapGlobal, types::WhitelistedExtension},
-    order_book::{self, accounts::NativeOrder},
-    pda, portal, wormhole_verify_vaa_shim,
+    ext_swap::{self, accounts::SwapGlobal},
+    pda,
+    portal,
+    require_metas,
+    wormhole_verify_vaa_shim,
+    BridgeError,
+    Extension,
 };
 use executor_account_resolver_svm::{
-    find_account, InstructionGroup, InstructionGroups, MissingAccounts, Resolver,
-    SerializableAccountMeta, SerializableInstruction, RESOLVER_PUBKEY_PAYER,
-    RESOLVER_PUBKEY_SHIM_VAA_SIGS, RESOLVER_RESULT_ACCOUNT, RESOLVER_RESULT_ACCOUNT_SEED,
+    find_account,
+    InstructionGroup,
+    InstructionGroups,
+    MissingAccounts,
+    Resolver,
+    SerializableInstruction,
+    RESOLVER_PUBKEY_GUARDIAN_SET,
+    RESOLVER_PUBKEY_PAYER,
+    RESOLVER_PUBKEY_SHIM_VAA_SIGS,
+    RESOLVER_RESULT_ACCOUNT,
+    RESOLVER_RESULT_ACCOUNT_SEED,
 };
+use wormhole_svm_definitions::{zero_copy::GuardianSet, GUARDIAN_SET_SEED};
 
 use crate::{
-    consts::AUTHORITY_SEED, errors::WormholeError, instruction::ReceiveMessage,
-    instructions::VaaBody, state::GLOBAL_SEED,
+    consts::{AUTHORITY_SEED, CORE_BRIDGE_PROGRAM_ID},
+    instruction::ReceiveMessage,
+    instructions::VaaBody,
+    state::GLOBAL_SEED,
 };
 
 #[derive(Accounts)]
@@ -39,25 +50,59 @@ impl ResolveExecuteVaa {
     ) -> Result<Resolver<InstructionGroups>> {
         let vaa = VaaBody::from_bytes(&vaa_body)?;
 
-        // Accounts we need read data on
-        let swap_global = pda!(&[GLOBAL_SEED], &ext_swap::ID);
-        let earn_global = pda!(&[GLOBAL_SEED], &earn::ID);
         let result_account = pda!(&[RESOLVER_RESULT_ACCOUNT_SEED], &crate::ID);
+        let mut m_mint: Option<Pubkey> = None;
+        let mut whitelisted_extensions: Option<Vec<Extension>> = None;
+        let mut orderbook_token_in: Option<&AccountInfo> = None;
 
         // Check for missing accounts
         {
-            let mut missing = Vec::new();
-
-            for account in [
-                swap_global,
-                earn_global,
+            let mut accounts_required = vec![
                 result_account,
                 RESOLVER_PUBKEY_SHIM_VAA_SIGS,
-            ] {
-                if find_account(ctx.remaining_accounts, account).is_none() {
-                    missing.push(account);
+                RESOLVER_PUBKEY_GUARDIAN_SET,
+            ];
+
+            match vaa.payload {
+                common::Payload::TokenTransfer(_) => {
+                    let earn_global = pda!(&[GLOBAL_SEED], &earn::ID);
+                    let earn_global_data: Option<EarnGlobal> =
+                        deserialize_account(ctx.remaining_accounts, earn_global).ok();
+
+                    if let Some(ref earn_global) = earn_global_data {
+                        m_mint = Some(earn_global.m_mint);
+                    }
+
+                    let swap_global = pda!(&[GLOBAL_SEED], &ext_swap::ID);
+                    let swap_global_data: Option<SwapGlobal> =
+                        deserialize_account(ctx.remaining_accounts, swap_global).ok();
+
+                    if let Some(ref swap_global) = swap_global_data {
+                        whitelisted_extensions = Some(
+                            swap_global
+                                .whitelisted_extensions
+                                .iter()
+                                .map(|&ext| Extension::from(ext))
+                                .collect(),
+                        );
+                    }
+
+                    accounts_required.extend([earn_global, swap_global]);
                 }
+                common::Payload::FillReport(ref report) => {
+                    accounts_required.push(report.token_in.into());
+
+                    // Need mint account to see token program
+                    orderbook_token_in =
+                        find_account(ctx.remaining_accounts, report.token_in.into());
+                }
+                _ => {}
             }
+
+            let missing: Vec<_> = accounts_required
+                .into_iter()
+                .filter(|&account| find_account(ctx.remaining_accounts, account).is_none())
+                .collect();
 
             if !missing.is_empty() {
                 return Ok(Resolver::Missing(MissingAccounts {
@@ -66,6 +111,33 @@ impl ResolveExecuteVaa {
                 }));
             }
         }
+
+        let mut guardian_set_index: Option<u32> = None;
+        let mut guardian_set_pubkey: Option<Pubkey> = None;
+
+        // Attempt to find guardian set account.
+        for account_info in ctx.remaining_accounts.iter() {
+            // Try to deserialize as GuardianSet
+            if let Ok(data) = account_info.try_borrow_data() {
+                if let Some(guardian_set_account) = GuardianSet::new(&data) {
+                    let index = guardian_set_account.guardian_set_index();
+                    let (derived_guardian_set_pubkey, _) = Pubkey::find_program_address(
+                        &[GUARDIAN_SET_SEED, &index.to_be_bytes()],
+                        &CORE_BRIDGE_PROGRAM_ID,
+                    );
+
+                    // Verify the account matches the expected PDA
+                    if *account_info.key == derived_guardian_set_pubkey {
+                        guardian_set_index = Some(index);
+                        guardian_set_pubkey = Some(derived_guardian_set_pubkey);
+                        break;
+                    }
+                }
+            }
+        }
+
+        let guardian_set = guardian_set_pubkey.ok_or(BridgeError::MissingGuardianAccount)?;
+        let guardian_index = guardian_set_index.ok_or(BridgeError::MissingGuardianAccount)?;
 
         // Increase the size of the return account then parse it
         let mut ret = {
@@ -77,10 +149,10 @@ impl ResolveExecuteVaa {
                 .remaining_accounts
                 .iter()
                 .find(|acc_info| acc_info.is_signer && acc_info.is_writable)
-                .ok_or(WormholeError::MissingPayerAccount)?;
+                .ok_or(BridgeError::MissingPayerAccount)?;
 
             if !return_account.is_writable {
-                return err!(WormholeError::InvalidReturnAccount);
+                return err!(BridgeError::InvalidReturnAccount);
             }
 
             let size = usize::min(
@@ -109,283 +181,39 @@ impl ResolveExecuteVaa {
             Account::<ExecutorAccountResolverResult>::try_from(return_account)?
         };
 
-        // Parse accounts we know are on remaining_accounts
-        let swap_global_data =
-            deserialize_account::<SwapGlobal>(ctx.remaining_accounts, swap_global)?;
-        let earn_global_data =
-            deserialize_account::<EarnGlobal>(ctx.remaining_accounts, earn_global)?;
-
-        // Receive instruction for Portal
+        // Receive instruction on Wormhole adapter
         let mut receive_message_ix = SerializableInstruction {
             program_id: crate::ID,
             data: ReceiveMessage {
-                guardian_set_index: 0, // TODO
+                guardian_set_index: guardian_index,
                 vaa_body,
             }
             .data(),
             accounts: vec![
-                SerializableAccountMeta {
-                    pubkey: RESOLVER_PUBKEY_PAYER,
-                    is_writable: true,
-                    is_signer: false,
-                },
-                SerializableAccountMeta {
-                    pubkey: pda!(&[GLOBAL_SEED], &crate::ID),
-                    is_writable: false,
-                    is_signer: false,
-                },
-                SerializableAccountMeta {
-                    pubkey: pda!(&[AUTHORITY_SEED], &crate::ID),
-                    is_writable: false,
-                    is_signer: false,
-                },
-                SerializableAccountMeta {
-                    pubkey: pda!(&[AUTHORITY_SEED], &portal::ID),
-                    is_writable: false,
-                    is_signer: false,
-                },
-                // SerializableAccountMeta {
-                //     pubkey: guardian_set,
-                //     is_writable: false,
-                //     is_signer: false,
-                // },
-                // SerializableAccountMeta {
-                //     pubkey: guardian_signatures,
-                //     is_writable: false,
-                //     is_signer: false,
-                // },
-                SerializableAccountMeta {
-                    pubkey: pda!(&[GLOBAL_SEED], &earn::ID),
-                    is_writable: false,
-                    is_signer: false,
-                },
-                SerializableAccountMeta {
-                    pubkey: earn_global_data.m_mint,
-                    is_writable: false,
-                    is_signer: false,
-                },
-                SerializableAccountMeta {
-                    pubkey: wormhole_verify_vaa_shim::ID,
-                    is_writable: false,
-                    is_signer: false,
-                },
-                SerializableAccountMeta {
-                    pubkey: earn::ID,
-                    is_writable: false,
-                    is_signer: false,
-                },
-                SerializableAccountMeta {
-                    pubkey: token_2022::ID,
-                    is_writable: false,
-                    is_signer: false,
-                },
+                AccountMeta::new(RESOLVER_PUBKEY_PAYER, true).into(),
+                AccountMeta::new_readonly(pda!(&[GLOBAL_SEED], &crate::ID), false).into(),
+                AccountMeta::new_readonly(pda!(&[AUTHORITY_SEED], &crate::ID), false).into(),
+                AccountMeta::new_readonly(pda!(&[AUTHORITY_SEED], &portal::ID), false).into(),
+                AccountMeta::new_readonly(guardian_set, false).into(),
+                AccountMeta::new_readonly(RESOLVER_PUBKEY_SHIM_VAA_SIGS, false).into(),
+                AccountMeta::new_readonly(wormhole_verify_vaa_shim::ID, false).into(),
+                AccountMeta::new_readonly(portal::ID, false).into(),
+                AccountMeta::new_readonly(system_program::ID, false).into(),
             ],
         };
 
-        // Add expected remaining accounts based on payload types
-        match vaa.payload {
-            common::Payload::TokenTransfer(token_transfer) => {
-                if swap_global_data.whitelisted_extensions.is_empty() {
-                    msg!("No whitelisted extensions");
-                    return err!(WormholeError::InvalidSwapConfig);
-                }
+        let required_remaining = require_metas(
+            &vaa.payload,
+            RESOLVER_PUBKEY_PAYER,
+            whitelisted_extensions,
+            m_mint,
+            orderbook_token_in,
+        )?;
 
-                // Find the extension program ID based on the destination mint
-                let ext_program = swap_global_data
-                    .whitelisted_extensions
-                    .iter()
-                    .find(|ext| ext.mint.eq(&token_transfer.destination_token.into()))
-                    .unwrap_or_else(|| {
-                        // If the extension program is not found, fallback to first whitelisted extension
-                        let fallback = &swap_global_data.whitelisted_extensions[0];
-                        msg!(
-                            "Extension for {} not found, falling back to first whitelisted extension: {}",
-                            Pubkey::from(token_transfer.destination_token).to_string(),
-                            fallback.mint.to_string(),
-                        );
-                        fallback
-                    });
-
-                let &WhitelistedExtension {
-                    mint: extension_mint,
-                    program_id: extension_pid,
-                    token_program: extension_token_program,
-                } = ext_program;
-
-                // PDAs
-                let extension_m_vault_auth = pda!(&[b"m_vault"], &extension_pid);
-                let extension_mint_auth = pda!(&[b"mint_authority"], &extension_pid);
-                let extension_global = pda!(&[GLOBAL_SEED], &extension_pid);
-
-                // Token accounts
-                let recipient_token_account = get_associated_token_address_with_program_id(
-                    &token_transfer.recipient.into(),
-                    &extension_mint,
-                    &extension_token_program,
-                );
-                let extention_m_vault = get_associated_token_address_with_program_id(
-                    &extension_m_vault_auth,
-                    &earn_global_data.m_mint,
-                    &token_2022::ID,
-                );
-                let authority_m_token_account = get_associated_token_address_with_program_id(
-                    &pda!(&[b"authority"], &portal::ID),
-                    &earn_global_data.m_mint,
-                    &token_2022::ID,
-                );
-
-                receive_message_ix.accounts.extend_from_slice(&[
-                    SerializableAccountMeta {
-                        pubkey: extension_mint,
-                        is_writable: true,
-                        is_signer: false,
-                    },
-                    SerializableAccountMeta {
-                        pubkey: recipient_token_account,
-                        is_writable: true,
-                        is_signer: false,
-                    },
-                    SerializableAccountMeta {
-                        pubkey: authority_m_token_account,
-                        is_writable: false,
-                        is_signer: true,
-                    },
-                    SerializableAccountMeta {
-                        pubkey: extention_m_vault,
-                        is_writable: true,
-                        is_signer: false,
-                    },
-                    SerializableAccountMeta {
-                        pubkey: extension_m_vault_auth,
-                        is_writable: false,
-                        is_signer: false,
-                    },
-                    SerializableAccountMeta {
-                        pubkey: extension_mint_auth,
-                        is_writable: false,
-                        is_signer: false,
-                    },
-                    SerializableAccountMeta {
-                        pubkey: extension_global,
-                        is_writable: false,
-                        is_signer: false,
-                    },
-                    SerializableAccountMeta {
-                        pubkey: extension_token_program,
-                        is_writable: false,
-                        is_signer: false,
-                    },
-                    SerializableAccountMeta {
-                        pubkey: extension_pid,
-                        is_writable: false,
-                        is_signer: false,
-                    },
-                    SerializableAccountMeta {
-                        pubkey: swap_global,
-                        is_writable: false,
-                        is_signer: false,
-                    },
-                    SerializableAccountMeta {
-                        pubkey: ext_swap::ID,
-                        is_writable: false,
-                        is_signer: false,
-                    },
-                ]);
-            }
-            common::Payload::FillReport(report) => {
-                // PDAs
-                let order = pda!(&[b"order", &report.order_id], &order_book::ID);
-                let event_auth = pda!(&[b"__event_authority"], &order_book::ID);
-
-                // Need order data to get mint
-                if find_account(ctx.remaining_accounts, order).is_none() {
-                    return Ok(Resolver::Missing(MissingAccounts {
-                        accounts: vec![order],
-                        address_lookup_tables: Vec::new(),
-                    }));
-                }
-
-                let order_data = deserialize_account::<NativeOrder>(ctx.remaining_accounts, order)?;
-
-                // Need mint account to see token program
-                if find_account(ctx.remaining_accounts, order_data.token_in).is_none() {
-                    return Ok(Resolver::Missing(MissingAccounts {
-                        accounts: vec![order_data.token_in],
-                        address_lookup_tables: Vec::new(),
-                    }));
-                }
-
-                let token_in_program = find_account(ctx.remaining_accounts, order_data.token_in)
-                    .unwrap()
-                    .owner;
-
-                // Token accounts
-                let recipient_token_account = get_associated_token_address_with_program_id(
-                    &report.origin_recipient.into(),
-                    &order_data.token_in,
-                    token_in_program,
-                );
-                let order_token_account = get_associated_token_address_with_program_id(
-                    &order,
-                    &order_data.token_in,
-                    token_in_program,
-                );
-
-                receive_message_ix.accounts.extend_from_slice(&[
-                    SerializableAccountMeta {
-                        pubkey: RESOLVER_PUBKEY_PAYER,
-                        is_writable: true,
-                        is_signer: false,
-                    },
-                    SerializableAccountMeta {
-                        pubkey: order,
-                        is_writable: true,
-                        is_signer: false,
-                    },
-                    SerializableAccountMeta {
-                        pubkey: order_data.token_in,
-                        is_writable: false,
-                        is_signer: false,
-                    },
-                    SerializableAccountMeta {
-                        pubkey: report.origin_recipient.into(),
-                        is_writable: false,
-                        is_signer: false,
-                    },
-                    SerializableAccountMeta {
-                        pubkey: recipient_token_account,
-                        is_writable: true,
-                        is_signer: false,
-                    },
-                    SerializableAccountMeta {
-                        pubkey: order_token_account,
-                        is_writable: true,
-                        is_signer: false,
-                    },
-                    SerializableAccountMeta {
-                        pubkey: *token_in_program,
-                        is_writable: false,
-                        is_signer: false,
-                    },
-                    SerializableAccountMeta {
-                        pubkey: associated_token::ID,
-                        is_writable: false,
-                        is_signer: false,
-                    },
-                    SerializableAccountMeta {
-                        pubkey: order_book::ID,
-                        is_writable: false,
-                        is_signer: false,
-                    },
-                    SerializableAccountMeta {
-                        pubkey: event_auth,
-                        is_writable: false,
-                        is_signer: false,
-                    },
-                ]);
-            }
-            _ => {}
-        }
+        // Add expected remaining accounts based on payload type
+        receive_message_ix
+            .accounts
+            .extend(required_remaining.iter().cloned().map(|a| a.into()));
 
         ret.set_inner(ExecutorAccountResolverResult(Resolver::Resolved(
             InstructionGroups(vec![InstructionGroup {
@@ -394,6 +222,7 @@ impl ResolveExecuteVaa {
             }]),
         )));
         ret.exit(ctx.program_id)?;
+
         Ok(Resolver::Account())
     }
 }
@@ -402,7 +231,8 @@ fn deserialize_account<T: AccountDeserialize>(
     remaining_accounts: &[AccountInfo],
     pubkey: Pubkey,
 ) -> Result<T> {
-    let account = find_account(remaining_accounts, pubkey).unwrap();
+    let account =
+        find_account(remaining_accounts, pubkey).ok_or(BridgeError::MissingOptionalAccount)?;
 
     match T::try_deserialize(&mut &account.try_borrow_mut_data()?[..]) {
         Ok(data) => Ok(data),

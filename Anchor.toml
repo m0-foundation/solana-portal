@@ -6,6 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
+hyperlane-adapter = "mZhPGteS36G7FhMTcRofLQU8ocBNAsGq7u8SKSHfL2X"
 portal = "MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce"
 wormhole-adapter = "mzWh4w2CAHymGp89Z8VV2nKuCkdSFARS3fEaTBPq14b"
 

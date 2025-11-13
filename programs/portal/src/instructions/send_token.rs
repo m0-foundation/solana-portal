@@ -2,8 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use common::{
     ext_swap::{self, accounts::SwapGlobal, program::ExtSwap},
-    Payload, TokenTransferPayload,
-    BridgeAdapter,
+    BridgeAdapter, Payload, TokenTransferPayload,
 };
 
 use crate::{
@@ -134,6 +133,7 @@ impl SendTokens<'_> {
         ctx: Context<'_, '_, '_, 'info, SendTokens<'info>>,
         amount: u64,
         destination_token: [u8; 32],
+        destination_chain_id: u32,
         recipient: [u8; 32],
     ) -> Result<()> {
         let m_pre_balance = ctx.accounts.m_token_account.amount;
@@ -185,6 +185,7 @@ impl SendTokens<'_> {
             ctx.accounts.system_program.to_account_info(),
             ctx.remaining_accounts.to_vec(),
             message.encode(),
+            destination_chain_id,
         )
     }
 }

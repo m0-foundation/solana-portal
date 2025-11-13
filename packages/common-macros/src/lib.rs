@@ -30,7 +30,7 @@ pub fn extract_accounts_derive(input: TokenStream) -> TokenStream {
                 .cloned()
                 .ok_or_else(|| {
                     anchor_lang::prelude::msg!("Missing account at index: {}", #idx);
-                    crate::CommonError::MissingOptionalAccount
+                    crate::BridgeError::MissingOptionalAccount
                 })?
         }
     });

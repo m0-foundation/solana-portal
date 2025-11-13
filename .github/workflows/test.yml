@@ -61,6 +61,9 @@ jobs:
       - name: Write Wormhole Adapter keypair
         run: echo "${{ secrets.WORMHOLE_ADAPTER_KEYPAIR }}" > target/deploy/wormhole_adapter-keypair.json
 
+      - name: Write Hyperlane Adapter keypair
+        run: echo "${{ secrets.HYPERLANE_ADAPTER_KEYPAIR }}" > target/deploy/hyperlane_adapter-keypair.json
+
       - name: Build programs
         run: anchor build
         shell: bash

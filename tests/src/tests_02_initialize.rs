@@ -1,8 +1,13 @@
 use anchor_lang::AccountDeserialize;
 use anyhow::{Ok, Result};
-use common::{portal::accounts::PortalGlobal, wormhole_adapter::accounts::WormholeGlobal};
+use common::{
+    hyperlane_adapter::{self, accounts::HyperlaneGlobal},
+    pda,
+    portal::{self, accounts::PortalGlobal},
+    wormhole_adapter::{self, accounts::WormholeGlobal},
+};
 use solana_sdk::pubkey::Pubkey;
-use std::{str::FromStr, vec};
+use std::vec;
 
 use crate::run_surfpool_cmd;
 
@@ -23,19 +28,19 @@ fn test_02_rerun_initailize() -> Result<()> {
 fn test_03_check_globals() -> Result<()> {
     let client = crate::get_rpc_client();
 
-    let data_portal = client.get_account_data(&Pubkey::from_str(
-        "54dGjbVChJseSS7zo1AWWazMtz4NXi89pQPF2HH2hM6W",
-    )?)?;
-    let data_wh = client.get_account_data(&Pubkey::from_str(
-        "3bhczvnEexwTjdwR8b1LFDh5beYb8CLYAXUukZR8ZNdy",
-    )?)?;
+    let data_portal = client.get_account_data(&pda!(&[b"global"], &portal::ID))?;
+    let data_wh = client.get_account_data(&pda!(&[b"global"], &wormhole_adapter::ID))?;
+    let data_hyp = client.get_account_data(&pda!(&[b"global"], &hyperlane_adapter::ID))?;
 
     let global_portal = PortalGlobal::try_deserialize(&mut data_portal.as_slice())?;
     let global_wh = WormholeGlobal::try_deserialize(&mut data_wh.as_slice())?;
+    let global_hp = HyperlaneGlobal::try_deserialize(&mut data_hyp.as_slice())?;
 
     assert_eq!(global_portal.admin, global_wh.admin);
+    assert_eq!(global_portal.admin, global_hp.admin);
     assert!(!global_portal.paused);
     assert!(!global_wh.paused);
+    assert!(!global_hp.paused);
 
     Ok(())
 }

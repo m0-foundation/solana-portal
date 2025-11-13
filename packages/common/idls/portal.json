@@ -169,6 +169,15 @@
           }
         },
         {
+          "name": "token_in",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
           "name": "amount_in_to_release",
           "type": "u128"
         },
@@ -184,6 +193,10 @@
               32
             ]
           }
+        },
+        {
+          "name": "origin_chain_id",
+          "type": "u32"
         }
       ]
     },
@@ -537,6 +550,10 @@
               32
             ]
           }
+        },
+        {
+          "name": "destination_chain_id",
+          "type": "u32"
         },
         {
           "name": "recipient",

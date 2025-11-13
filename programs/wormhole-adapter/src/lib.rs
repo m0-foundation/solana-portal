@@ -1,7 +1,6 @@
 #![allow(unexpected_cfgs)]
 
 mod consts;
-mod errors;
 mod instructions;
 mod state;
 
