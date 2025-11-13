@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::earn::accounts::EarnGlobal;
+use common::earn::{self, accounts::EarnGlobal};
 
 use crate::state::{
     AccountMetasData, HyperlaneGlobal, DASH_SEED, GLOBAL_SEED, METADATA_SEED_1, METADATA_SEED_2,
@@ -37,6 +37,7 @@ pub struct Initialize<'info> {
 
     #[account(
         seeds = [GLOBAL_SEED],
+        seeds::program = earn::ID,
         bump = earn_global.bump,
     )]
     pub earn_global: Account<'info, EarnGlobal>,
