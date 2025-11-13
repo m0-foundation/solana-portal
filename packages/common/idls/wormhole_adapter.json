@@ -188,7 +188,7 @@
               },
               {
                 "kind": "arg",
-                "path": "_guardian_set_index"
+                "path": "guardian_set_index"
               }
             ],
             "program": {

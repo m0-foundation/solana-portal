@@ -47,6 +47,7 @@ impl HyperlaneGlobal {
     pub fn size(peers: usize) -> usize {
         8 + // discriminator
         1 + // bump
+        8 + // nonce
         32 + // admin
         1 + // paused
         4 + // length of peers
