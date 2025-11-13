@@ -868,6 +868,7 @@ name = "common"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
+ "anchor-lang-idl",
  "anchor-spl",
  "borsh 0.10.4",
  "common-macros",

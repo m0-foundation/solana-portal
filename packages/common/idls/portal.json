@@ -169,6 +169,15 @@
           }
         },
         {
+          "name": "token_in",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
           "name": "amount_in_to_release",
           "type": "u128"
         },

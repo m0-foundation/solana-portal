@@ -145,4 +145,38 @@ impl From<ext_swap::types::WhitelistedExtension> for Extension {
 }
 
 #[cfg(feature = "idl-build")]
-impl anchor_lang::IdlBuild for Extension {}
+use anchor_lang_idl::types::{
+    Idl, IdlDefinedFields, IdlField, IdlSerialization, IdlType, IdlTypeDef, IdlTypeDefTy,
+};
+
+#[cfg(feature = "idl-build")]
+impl anchor_lang::IdlBuild for Extension {
+    fn create_type() -> Option<IdlTypeDef> {
+        Some(IdlTypeDef {
+            name: "Extension".to_string(),
+            docs: vec![],
+            serialization: IdlSerialization::Borsh,
+            repr: None,
+            generics: vec![],
+            ty: IdlTypeDefTy::Struct {
+                fields: Some(IdlDefinedFields::Named(vec![
+                    IdlField {
+                        name: "program_id".to_string(),
+                        docs: Default::default(),
+                        ty: IdlType::Pubkey,
+                    },
+                    IdlField {
+                        name: "mint".to_string(),
+                        docs: Default::default(),
+                        ty: IdlType::Pubkey,
+                    },
+                    IdlField {
+                        name: "token_program".to_string(),
+                        docs: Default::default(),
+                        ty: IdlType::Pubkey,
+                    },
+                ])),
+            },
+        })
+    }
+}
