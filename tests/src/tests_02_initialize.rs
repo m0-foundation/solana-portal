@@ -7,7 +7,7 @@ use common::{
     wormhole_adapter::{self, accounts::WormholeGlobal},
 };
 use solana_sdk::pubkey::Pubkey;
-use std::{str::FromStr, vec};
+use std::vec;
 
 use crate::run_surfpool_cmd;
 
