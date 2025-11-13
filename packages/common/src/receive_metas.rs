@@ -90,13 +90,11 @@ pub fn require_metas(
         Payload::FillReport(report) => {
             let token_in = Pubkey::from(report.token_in);
 
-            let (token_in_program, unknown_token_program) =
-                if let Some(order_token_in_info) = orderbook_token_in {
-                    (*order_token_in_info.owner, false)
-                } else {
-                    // Default to SPL Token program if not provided
-                    (token::ID, true)
-                };
+            // Get token program from token account if provided
+            // Default to SPL Token program otherwise
+            let token_in_program = orderbook_token_in
+                .map(|info| *info.owner)
+                .unwrap_or(token::ID);
 
             // PDAs
             let order = pda!(&[ORDER_SEED_PREFIX, &report.order_id], &order_book::ID);
@@ -125,7 +123,7 @@ pub fn require_metas(
             ];
 
             // Append token accounts in case token program guess was wrong
-            if unknown_token_program {
+            if orderbook_token_in.is_none() {
                 let recipient_token_account = get_associated_token_address_with_program_id(
                     &report.origin_recipient.into(),
                     &token_in,

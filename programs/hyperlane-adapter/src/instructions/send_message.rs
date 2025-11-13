@@ -5,7 +5,7 @@ use crate::{
     instructions::{Mailbox, SplNoop},
     state::{
         HyperlaneGlobal, DASH_SEED, DISPATCHED_MESSGAGE_SEED, DISPATCH_SEED_1, DISPATCH_SEED_2,
-        GLOBAL_SEED, HYPERLANE_SEED, OUTBOX_SEED,
+        GLOBAL_SEED, HYPERLANE_SEED, OUTBOX_SEED, UNIQUE_MESSGAGE_SEED,
     },
 };
 
@@ -15,6 +15,7 @@ pub struct SendMessage<'info> {
     payer: Signer<'info>,
 
     #[account(
+        mut,
         constraint = !hyperlane_global.paused,
         seeds = [GLOBAL_SEED],
         bump,
@@ -45,8 +46,12 @@ pub struct SendMessage<'info> {
     /// CHECK: dispatch authority for mailbox
     pub dispatch_authority: AccountInfo<'info>,
 
-    // TODO: can we make this a PDA instead of a Keypair?
-    pub unique_message: Signer<'info>,
+    #[account(
+        seeds = [UNIQUE_MESSGAGE_SEED, &hyperlane_global.nonce.to_le_bytes()],
+        bump
+    )]
+    /// CHECK: only used to create unique message accounts
+    pub unique_message: AccountInfo<'info>,
 
     #[account(
         seeds = [
@@ -76,17 +81,19 @@ impl SendMessage<'_> {
             .hyperlane_global
             .get_peer_by_chain_id(destination_chain_id)?;
 
-        // MailboxInstruction::OutboxDispatch
-        let instrunction_data = vec![
-            ctx.accounts.payer.key().to_bytes().to_vec(),
-            destination_chain_id.to_le_bytes().to_vec(), // TODO: convert our internal chain ID to Hyperlane chain ID
-            peer.address.to_vec(),
-            message,
-        ];
+        // OutboxDispatch discriminant
+        let mut instruction_data = vec![4u8];
+
+        // Serialize OutboxDispatch struct fields
+        instruction_data.extend_from_slice(&ctx.accounts.payer.key().to_bytes());
+        instruction_data.extend_from_slice(&destination_chain_id.to_le_bytes()); // TODO: convert our internal chain ID to Hyperlane chain ID
+        instruction_data.extend_from_slice(&peer.address);
+        instruction_data.extend_from_slice(&(message.len() as u32).to_le_bytes());
+        instruction_data.extend_from_slice(&message);
 
         let mailbox_ixn = Instruction {
             program_id: ctx.accounts.mailbox_program.key(),
-            data: instrunction_data.iter().flatten().copied().collect(),
+            data: instruction_data,
             accounts: vec![
                 AccountMeta::new(ctx.accounts.mailbox_outbox.key(), false),
                 AccountMeta::new_readonly(ctx.accounts.dispatch_authority.key(), true),
@@ -116,6 +123,9 @@ impl SendMessage<'_> {
                 &[ctx.bumps.dispatch_authority],
             ]],
         )?;
+
+        // Bump the nonce used to generate unique message accounts
+        ctx.accounts.hyperlane_global.nonce += 1;
 
         Ok(())
     }

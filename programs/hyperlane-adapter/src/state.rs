@@ -22,11 +22,16 @@ pub const OUTBOX_SEED: &[u8] = b"outbox";
 #[constant]
 pub const DISPATCHED_MESSGAGE_SEED: &[u8] = b"dispatched_message";
 #[constant]
+pub const UNIQUE_MESSGAGE_SEED: &[u8] = b"unique_message";
+#[constant]
+pub const PAYER_SEED: &[u8] = b"payer";
+#[constant]
 pub const DASH_SEED: &[u8] = b"-";
 
 #[account]
 pub struct HyperlaneGlobal {
     pub bump: u8,
+    pub nonce: u64,
     pub admin: Pubkey,
     pub paused: bool,
     pub peers: Vec<Peer>,

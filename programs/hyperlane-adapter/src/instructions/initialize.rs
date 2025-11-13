@@ -49,6 +49,7 @@ impl Initialize<'_> {
     pub fn handler(ctx: Context<Self>) -> Result<()> {
         ctx.accounts.hyperlane_global.set_inner(HyperlaneGlobal {
             bump: ctx.bumps.hyperlane_global,
+            nonce: 0,
             admin: ctx.accounts.admin.key(),
             paused: false,
             peers: Vec::new(),

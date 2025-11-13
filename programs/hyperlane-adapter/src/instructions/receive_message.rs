@@ -10,7 +10,7 @@ use crate::{
     instructions::{SerializableAccountMeta, SimulationReturnData},
     state::{
         AccountMetasData, HyperlaneGlobal, DASH_SEED, GLOBAL_SEED, HYPERLANE_SEED, METADATA_SEED_1,
-        METADATA_SEED_2, METADATA_SEED_3, PROCESS_AUTHORITY,
+        METADATA_SEED_2, METADATA_SEED_3, PAYER_SEED, PROCESS_AUTHORITY,
     },
 };
 
@@ -36,8 +36,16 @@ pub struct ReceiveMessage<'info> {
         bump
     )]
     /// CHECK: Account does not hold data
-    /// Payer for Portal CPI (needs to be funded)
     pub hyperlane_adapter_authority: AccountInfo<'info>,
+
+    #[account(
+        mut,
+        seeds = [PAYER_SEED],
+        bump
+    )]
+    /// CHECK: Account does not hold data
+    /// Payer for Portal CPI (needs to be funded)
+    pub receive_payer: AccountInfo<'info>,
 
     #[account(
         constraint = !hyperlane_global.paused,
@@ -81,7 +89,7 @@ impl ReceiveMessage<'_> {
             CpiContext::new_with_signer(
                 ctx.accounts.portal_program.to_account_info(),
                 portal::cpi::accounts::ReceiveMessage {
-                    sender: ctx.accounts.hyperlane_adapter_authority.to_account_info(),
+                    sender: ctx.accounts.receive_payer.to_account_info(),
                     adapter_authority: ctx.accounts.hyperlane_adapter_authority.to_account_info(),
                     messenger_authority: ctx.accounts.messenger_authority.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info(),
@@ -120,11 +128,13 @@ impl<'info> ReceiveMessageMetas<'info> {
 
         let hyperlane_adapter_authority = pda!(&[AUTHORITY_SEED], &crate::ID);
         let hyperlane_global = pda!(&[GLOBAL_SEED], &crate::ID);
+        let payer = pda!(&[PAYER_SEED], &crate::ID);
         let messenger_authority = pda!(&[AUTHORITY_SEED], &portal::ID);
 
         // Accounts needed by all payload types
         let mut account_metas: Vec<SerializableAccountMeta> = vec![
             AccountMeta::new(hyperlane_adapter_authority, false).into(),
+            AccountMeta::new(payer, false).into(),
             AccountMeta::new_readonly(hyperlane_global, false).into(),
             AccountMeta::new_readonly(messenger_authority, false).into(),
             AccountMeta::new_readonly(portal::ID, false).into(),
