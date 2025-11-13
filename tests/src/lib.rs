@@ -36,6 +36,8 @@ impl SurfnetValidator {
                 "--no-tui",
                 "--airdrop",
                 &keypair.pubkey().to_string(),
+                "--rpc-url",
+                "https://hatty-73mn84-fast-mainnet.helius-rpc.com",
             ])
             .current_dir("..")
             .stdout(Stdio::piped())
