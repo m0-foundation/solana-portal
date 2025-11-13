@@ -16,4 +16,6 @@ pub enum BridgeError {
     InvalidSwapConfig,
     #[msg("No registered peer for destination chain")]
     UnsupportedDestinationChain,
+    #[msg("Missing Wormhole guardian account")]
+    MissingGuardianAccount,
 }

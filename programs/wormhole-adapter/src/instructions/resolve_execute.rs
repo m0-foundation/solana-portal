@@ -1,23 +1,40 @@
 use anchor_lang::{
-    prelude::*, solana_program::entrypoint::MAX_PERMITTED_DATA_INCREASE, system_program,
+    prelude::*,
+    solana_program::entrypoint::MAX_PERMITTED_DATA_INCREASE,
+    system_program,
     InstructionData,
 };
-use anchor_spl::{
-    associated_token::{
-        spl_associated_token_account::solana_program::system_instruction::MAX_PERMITTED_DATA_LENGTH,
-    }
-};
+use anchor_spl::associated_token::spl_associated_token_account::solana_program::system_instruction::MAX_PERMITTED_DATA_LENGTH;
 use common::{
-    BridgeError, Extension, earn::{self, accounts::EarnGlobal}, ext_swap::{self, accounts::SwapGlobal}, pda, portal, require_metas, wormhole_verify_vaa_shim
+    earn::{self, accounts::EarnGlobal},
+    ext_swap::{self, accounts::SwapGlobal},
+    pda,
+    portal,
+    require_metas,
+    wormhole_verify_vaa_shim,
+    BridgeError,
+    Extension,
 };
 use executor_account_resolver_svm::{
-    find_account, InstructionGroup, InstructionGroups, MissingAccounts, Resolver,
-    SerializableAccountMeta, SerializableInstruction, RESOLVER_PUBKEY_PAYER,
-    RESOLVER_PUBKEY_SHIM_VAA_SIGS, RESOLVER_RESULT_ACCOUNT, RESOLVER_RESULT_ACCOUNT_SEED,
+    find_account,
+    InstructionGroup,
+    InstructionGroups,
+    MissingAccounts,
+    Resolver,
+    SerializableInstruction,
+    RESOLVER_PUBKEY_GUARDIAN_SET,
+    RESOLVER_PUBKEY_PAYER,
+    RESOLVER_PUBKEY_SHIM_VAA_SIGS,
+    RESOLVER_RESULT_ACCOUNT,
+    RESOLVER_RESULT_ACCOUNT_SEED,
 };
+use wormhole_svm_definitions::{zero_copy::GuardianSet, GUARDIAN_SET_SEED};
 
 use crate::{
-    consts::AUTHORITY_SEED, instruction::ReceiveMessage, instructions::VaaBody, state::GLOBAL_SEED,
+    consts::{AUTHORITY_SEED, CORE_BRIDGE_PROGRAM_ID},
+    instruction::ReceiveMessage,
+    instructions::VaaBody,
+    state::GLOBAL_SEED,
 };
 
 #[derive(Accounts)]
@@ -40,7 +57,11 @@ impl ResolveExecuteVaa {
 
         // Check for missing accounts
         {
-            let mut accounts_required = vec![result_account, RESOLVER_PUBKEY_SHIM_VAA_SIGS];
+            let mut accounts_required = vec![
+                result_account,
+                RESOLVER_PUBKEY_SHIM_VAA_SIGS,
+                RESOLVER_PUBKEY_GUARDIAN_SET,
+            ];
 
             match vaa.payload {
                 common::Payload::TokenTransfer(_) => {
@@ -91,6 +112,33 @@ impl ResolveExecuteVaa {
             }
         }
 
+        let mut guardian_set_index: Option<u32> = None;
+        let mut guardian_set_pubkey: Option<Pubkey> = None;
+
+        // Attempt to find guardian set account.
+        for account_info in ctx.remaining_accounts.iter() {
+            // Try to deserialize as GuardianSet
+            if let Ok(data) = account_info.try_borrow_data() {
+                if let Some(guardian_set_account) = GuardianSet::new(&data) {
+                    let index = guardian_set_account.guardian_set_index();
+                    let (derived_guardian_set_pubkey, _) = Pubkey::find_program_address(
+                        &[GUARDIAN_SET_SEED, &index.to_be_bytes()],
+                        &CORE_BRIDGE_PROGRAM_ID,
+                    );
+
+                    // Verify the account matches the expected PDA
+                    if *account_info.key == derived_guardian_set_pubkey {
+                        guardian_set_index = Some(index);
+                        guardian_set_pubkey = Some(derived_guardian_set_pubkey);
+                        break;
+                    }
+                }
+            }
+        }
+
+        let guardian_set = guardian_set_pubkey.ok_or(BridgeError::MissingGuardianAccount)?;
+        let guardian_index = guardian_set_index.ok_or(BridgeError::MissingGuardianAccount)?;
+
         // Increase the size of the return account then parse it
         let mut ret = {
             let return_account = find_account(ctx.remaining_accounts, result_account).unwrap();
@@ -137,56 +185,20 @@ impl ResolveExecuteVaa {
         let mut receive_message_ix = SerializableInstruction {
             program_id: crate::ID,
             data: ReceiveMessage {
-                guardian_set_index: 0, // TODO
+                guardian_set_index: guardian_index,
                 vaa_body,
             }
             .data(),
             accounts: vec![
-                SerializableAccountMeta {
-                    pubkey: RESOLVER_PUBKEY_PAYER,
-                    is_writable: true,
-                    is_signer: false,
-                },
-                SerializableAccountMeta {
-                    pubkey: pda!(&[GLOBAL_SEED], &crate::ID),
-                    is_writable: false,
-                    is_signer: false,
-                },
-                SerializableAccountMeta {
-                    pubkey: pda!(&[AUTHORITY_SEED], &crate::ID),
-                    is_writable: false,
-                    is_signer: false,
-                },
-                SerializableAccountMeta {
-                    pubkey: pda!(&[AUTHORITY_SEED], &portal::ID),
-                    is_writable: false,
-                    is_signer: false,
-                },
-                // SerializableAccountMeta {
-                //     pubkey: guardian_set,
-                //     is_writable: false,
-                //     is_signer: false,
-                // },
-                // SerializableAccountMeta {
-                //     pubkey: guardian_signatures,
-                //     is_writable: false,
-                //     is_signer: false,
-                // },
-                SerializableAccountMeta {
-                    pubkey: wormhole_verify_vaa_shim::ID,
-                    is_writable: false,
-                    is_signer: false,
-                },
-                SerializableAccountMeta {
-                    pubkey: portal::ID,
-                    is_writable: false,
-                    is_signer: false,
-                },
-                SerializableAccountMeta {
-                    pubkey: system_program::ID,
-                    is_writable: false,
-                    is_signer: false,
-                },
+                AccountMeta::new(RESOLVER_PUBKEY_PAYER, true).into(),
+                AccountMeta::new_readonly(pda!(&[GLOBAL_SEED], &crate::ID), false).into(),
+                AccountMeta::new_readonly(pda!(&[AUTHORITY_SEED], &crate::ID), false).into(),
+                AccountMeta::new_readonly(pda!(&[AUTHORITY_SEED], &portal::ID), false).into(),
+                AccountMeta::new_readonly(guardian_set, false).into(),
+                AccountMeta::new_readonly(RESOLVER_PUBKEY_SHIM_VAA_SIGS, false).into(),
+                AccountMeta::new_readonly(wormhole_verify_vaa_shim::ID, false).into(),
+                AccountMeta::new_readonly(portal::ID, false).into(),
+                AccountMeta::new_readonly(system_program::ID, false).into(),
             ],
         };
 

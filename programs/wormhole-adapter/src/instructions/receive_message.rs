@@ -12,7 +12,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-#[instruction(_guardian_set_index: u32)]
+#[instruction(guardian_set_index: u32)]
 pub struct ReceiveMessage<'info> {
     #[account(mut)]
     pub relayer: Signer<'info>,
@@ -40,7 +40,7 @@ pub struct ReceiveMessage<'info> {
     pub messenger_authority: AccountInfo<'info>,
 
     #[account(
-        seeds = [GUARDIAN_SET_SEED, &_guardian_set_index.to_be_bytes()],
+        seeds = [GUARDIAN_SET_SEED, &guardian_set_index.to_be_bytes()],
         seeds::program = CORE_BRIDGE_PROGRAM_ID,
         bump
     )]
@@ -86,7 +86,7 @@ impl ReceiveMessage<'_> {
     #[access_control(ctx.accounts.validate(ctx.bumps.guardian_set, &vaa_body))]
     pub fn handler<'info>(
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
-        _guardian_set_index: u32,
+        #[allow(unused_variables)] guardian_set_index: u32,
         vaa_body: Vec<u8>,
     ) -> Result<()> {
         portal::cpi::receive_message(
