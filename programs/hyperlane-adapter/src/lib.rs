@@ -19,8 +19,8 @@ pub mod hyperlane_adapter {
         Initialize::handler(ctx)
     }
 
-    pub fn set_peers(ctx: Context<SetPeers>, peers: Vec<Peer>) -> Result<()> {
-        SetPeers::handler(ctx, peers)
+    pub fn set_peer(ctx: Context<SetPeer>, peer: Peer) -> Result<()> {
+        SetPeer::handler(ctx, peer)
     }
 
     pub fn sync_extensions(ctx: Context<SyncExtensions>) -> Result<()> {

@@ -11,24 +11,60 @@ variable "hyperlane_adapter_program" {
     value = svm::get_program_from_anchor_project("hyperlane_adapter")
 }
 
-variable "wornhole_peers" {
-    value = [
-        {
-            address = [11, 134, 236, 24, 28, 212, 197, 201, 132, 233, 6, 43, 19, 242, 178, 222, 123, 159, 91, 94, 104, 232, 67, 73, 35, 29, 102, 20, 205, 243, 249, 159]
-            chain_id = 1
-        }
-    ]
+variable "evm_peer_address" {
+    value = [11, 134, 236, 24, 28, 212, 197, 201, 132, 233, 6, 43, 19, 242, 178, 222, 123, 159, 91, 94, 104, 232, 67, 73, 35, 29, 102, 20, 205, 243, 249, 159]
 }
 
-action "initialize_wormhole_adapter" "svm::process_instructions" {
-    description = "Set Peers on Wormhole Adapter"
+action "set_wormhole_peer_etherum" "svm::process_instructions" {
+    description = "Set peer on Wormhole Adapter"
     signers = [signer.caller]
     instruction {
         program_idl = variable.wormhole_adapter_program.idl
-        instruction_name = "set_peers"
+        instruction_name = "set_peer"
         admin {
             public_key = signer.caller.public_key
         }
-        instruction_args = [variable.wornhole_peers]
+        instruction_args = [
+            {
+                address = variable.evm_peer_address
+                chain_id = 1
+            }
+        ]
+    }
+}
+
+action "set_wormhole_peer_arbitrum" "svm::process_instructions" {
+    description = "Set peer on Wormhole Adapter"
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.wormhole_adapter_program.idl
+        instruction_name = "set_peer"
+        admin {
+            public_key = signer.caller.public_key
+        }
+        instruction_args = [
+            {
+                address = variable.evm_peer_address
+                chain_id = 2
+            }
+        ]
+    }
+}
+
+action "set_hyperlane_peer_ethereum" "svm::process_instructions" {
+    description = "Set peer on Hyperlane Adapter"
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.hyperlane_adapter_program.idl
+        instruction_name = "set_peer"
+        admin {
+            public_key = signer.caller.public_key
+        }
+        instruction_args = [
+            {
+                address = variable.evm_peer_address
+                chain_id = 1
+            }
+        ]
     }
 }

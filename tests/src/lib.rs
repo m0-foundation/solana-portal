@@ -134,3 +134,6 @@ mod tests_01_health;
 
 #[cfg(test)]
 mod tests_02_initialize;
+
+#[cfg(test)]
+mod tests_03_set_peers;

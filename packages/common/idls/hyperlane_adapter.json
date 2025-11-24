@@ -916,16 +916,16 @@
       ]
     },
     {
-      "name": "set_peers",
+      "name": "set_peer",
       "discriminator": [
-        207,
-        4,
-        105,
-        106,
-        180,
-        196,
-        39,
-        47
+        32,
+        70,
+        184,
+        229,
+        200,
+        115,
+        227,
+        177
       ],
       "accounts": [
         {
@@ -962,12 +962,10 @@
       ],
       "args": [
         {
-          "name": "peers",
+          "name": "peer",
           "type": {
-            "vec": {
-              "defined": {
-                "name": "Peer"
-              }
+            "defined": {
+              "name": "Peer"
             }
           }
         }

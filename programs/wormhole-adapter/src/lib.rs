@@ -19,8 +19,8 @@ pub mod wormhole_adapter {
         Initialize::handler(ctx)
     }
 
-    pub fn set_peers(ctx: Context<SetPeers>, peers: Vec<Peer>) -> Result<()> {
-        SetPeers::handler(ctx, peers)
+    pub fn set_peer(ctx: Context<SetPeer>, peer: Peer) -> Result<()> {
+        SetPeer::handler(ctx, peer)
     }
 
     pub fn send_message(ctx: Context<SendMessage>, message: Vec<u8>) -> Result<()> {

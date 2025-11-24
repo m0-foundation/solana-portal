@@ -51,7 +51,7 @@ impl HyperlaneGlobal {
         32 + // admin
         1 + // paused
         4 + // length of peers
-        peers * 34 // each peer
+        peers * 36 // each peer
     }
 
     pub fn get_peer(&self, chain_id: u32) -> Result<Peer> {

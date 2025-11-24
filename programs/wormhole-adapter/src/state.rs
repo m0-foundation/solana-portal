@@ -27,7 +27,7 @@ impl WormholeGlobal {
         32 + // admin
         1 + // paused
         4 + // length of peers
-        peers * 34 // each peer
+        peers * 36 // each peer
     }
 
     pub fn validate(&self, vaa: &VaaBody) -> Result<()> {
@@ -43,14 +43,11 @@ impl WormholeGlobal {
         Ok(())
     }
 
-    pub fn extended_peers(&self, peers: Vec<Peer>) -> Vec<Peer> {
-        let mut result = self.peers.clone();
-        for peer in peers {
-            match result.iter_mut().find(|p| p.chain_id == peer.chain_id) {
-                Some(existing_peer) => *existing_peer = peer, // Overwrite existing peer
-                None => result.push(peer),
-            }
-        }
-        result
+    pub fn get_peer(&self, chain_id: u32) -> Result<Peer> {
+        self.peers
+            .iter()
+            .find(|peer| peer.chain_id == chain_id)
+            .cloned()
+            .ok_or_else(|| BridgeError::UnsupportedDestinationChain.into())
     }
 }
