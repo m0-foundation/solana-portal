@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use common::{
     pda,
-    portal::{self, program::Portal},
+    portal::{self, accounts::PortalGlobal, program::Portal},
     require_metas, BridgeError, Payload, AUTHORITY_SEED,
 };
 
@@ -55,6 +55,13 @@ pub struct ReceiveMessage<'info> {
     pub hyperlane_global: Account<'info, HyperlaneGlobal>,
 
     #[account(
+        mut,
+        seeds = [GLOBAL_SEED],
+        bump = portal_global.bump,
+    )]
+    pub portal_global: Account<'info, PortalGlobal>,
+
+    #[account(
         seeds = [AUTHORITY_SEED],
         seeds::program = portal::ID,
         bump
@@ -93,6 +100,7 @@ impl ReceiveMessage<'_> {
                     adapter_authority: ctx.accounts.hyperlane_adapter_authority.to_account_info(),
                     messenger_authority: ctx.accounts.messenger_authority.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info(),
+                    portal_global: ctx.accounts.portal_global.to_account_info(),
                 },
                 &[&[AUTHORITY_SEED, &[ctx.bumps.hyperlane_adapter_authority]]],
             )

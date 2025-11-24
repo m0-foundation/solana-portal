@@ -5,7 +5,6 @@ use common::{
     pda,
     wormhole_adapter::{self, accounts::WormholeGlobal},
 };
-use solana_sdk::pubkey::Pubkey;
 use std::vec;
 
 use crate::run_surfpool_cmd;

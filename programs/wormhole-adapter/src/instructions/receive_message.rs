@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::spl_associated_token_account::solana_program::keccak;
 use common::{
-    portal::{self, program::Portal},
+    portal::{self, accounts::PortalGlobal, program::Portal},
     wormhole_verify_vaa_shim::{self, cpi::accounts::VerifyHash, program::WormholeVerifyVaaShim},
 };
 
@@ -23,6 +23,13 @@ pub struct ReceiveMessage<'info> {
         bump,
     )]
     pub wormhole_global: Account<'info, WormholeGlobal>,
+
+    #[account(
+        mut,
+        seeds = [GLOBAL_SEED],
+        bump = portal_global.bump,
+    )]
+    pub portal_global: Account<'info, PortalGlobal>,
 
     #[account(
         seeds = [AUTHORITY_SEED],
@@ -96,6 +103,7 @@ impl ReceiveMessage<'_> {
                     sender: ctx.accounts.relayer.to_account_info(),
                     adapter_authority: ctx.accounts.wormhole_adapter_authority.to_account_info(),
                     messenger_authority: ctx.accounts.messenger_authority.to_account_info(),
+                    portal_global: ctx.accounts.portal_global.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info(),
                 },
                 &[&[AUTHORITY_SEED, &[ctx.bumps.wormhole_adapter_authority]]],

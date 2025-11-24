@@ -393,6 +393,25 @@
           }
         },
         {
+          "name": "portal_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "messenger_authority",
           "pda": {
             "seeds": [
@@ -1174,6 +1193,19 @@
       ]
     },
     {
+      "name": "PortalGlobal",
+      "discriminator": [
+        83,
+        250,
+        129,
+        21,
+        172,
+        135,
+        20,
+        236
+      ]
+    },
+    {
       "name": "SwapGlobal",
       "discriminator": [
         15,
@@ -1322,6 +1354,38 @@
           {
             "name": "chain_id",
             "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PortalGlobal",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "paused",
+            "type": "bool"
+          },
+          {
+            "name": "m_index",
+            "type": "u64"
+          },
+          {
+            "name": "message_nonce",
+            "type": "u64"
           }
         ]
       }

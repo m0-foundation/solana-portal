@@ -1,4 +1,5 @@
 pub mod accounts;
+pub mod adapter_accounts;
 pub mod conversions;
 pub mod errors;
 pub mod interfaces;
@@ -6,6 +7,7 @@ pub mod payloads;
 pub mod receive_metas;
 
 pub use accounts::*;
+pub use adapter_accounts::*;
 use anchor_lang::prelude::*;
 pub use conversions::*;
 pub use errors::*;
@@ -25,6 +27,6 @@ declare_program!(hyperlane_adapter);
 #[macro_export]
 macro_rules! pda {
     ($seeds:expr, $program_id:expr) => {
-        Pubkey::find_program_address($seeds, $program_id).0
+        anchor_lang::prelude::Pubkey::find_program_address($seeds, $program_id).0
     };
 }

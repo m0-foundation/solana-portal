@@ -5,11 +5,14 @@ use anchor_lang::{
 use common::{
     portal,
     wormhole_post_message_shim::{self, program::WormholePostMessageShim, types::Finality},
-    BridgeError,
+    BridgeError, AUTHORITY_SEED,
 };
 
 use crate::{
-    consts::{CORE_BRIDGE_CONFIG, CORE_BRIDGE_FEE_COLLECTOR, CORE_BRIDGE_PROGRAM_ID},
+    consts::{
+        CORE_BRIDGE_CONFIG, CORE_BRIDGE_FEE_COLLECTOR, CORE_BRIDGE_PROGRAM_ID, EMITTER_SEED,
+        EVENT_AUTHORITY_SEED, SEQUENCE_SEED,
+    },
     state::{WormholeGlobal, GLOBAL_SEED},
 };
 
@@ -26,7 +29,7 @@ pub struct SendMessage<'info> {
     pub wormhole_global: Account<'info, WormholeGlobal>,
 
     #[account(
-        seeds = [b"authority"],
+        seeds = [AUTHORITY_SEED],
         seeds::program = portal::ID,
         bump
     )]
@@ -50,7 +53,7 @@ pub struct SendMessage<'info> {
     pub message: UncheckedAccount<'info>,
 
     #[account(
-        seeds = [b"emitter"],
+        seeds = [EMITTER_SEED],
         bump
     )]
     /// CHECK: emitter enforced on the CPI
@@ -58,14 +61,17 @@ pub struct SendMessage<'info> {
 
     #[account(
         mut,
-        seeds = [b"Sequence", &emitter.key.to_bytes()], 
+        seeds = [SEQUENCE_SEED, &emitter.key.to_bytes()],
         seeds::program = CORE_BRIDGE_PROGRAM_ID,
         bump
     )]
     /// CHECK: Emitter's sequence account. [`wormhole::post_message`] requires this account be mutable.
     pub sequence: UncheckedAccount<'info>,
 
-    #[account(mut, address = CORE_BRIDGE_FEE_COLLECTOR)]
+    #[account(
+        mut,
+        address = CORE_BRIDGE_FEE_COLLECTOR
+    )]
     /// CHECK: Wormhole fee collector. [`wormhole::post_message`] requires this account be mutable.
     pub fee_collector: UncheckedAccount<'info>,
 
@@ -78,7 +84,7 @@ pub struct SendMessage<'info> {
     pub wormhole_program: UncheckedAccount<'info>,
 
     #[account(
-        seeds = [b"__event_authority"],
+        seeds = [EVENT_AUTHORITY_SEED],
         seeds::program = wormhole_post_message_shim::ID,
         bump
     )]
@@ -121,7 +127,7 @@ impl SendMessage<'_> {
                     program: ctx.accounts.wormhole_post_message_shim.to_account_info(),
                     event_authority: ctx.accounts.wormhole_post_message_shim_ea.to_account_info(),
                 },
-                &[&[b"emitter", &[ctx.bumps.emitter]]],
+                &[&[EMITTER_SEED, &[ctx.bumps.emitter]]],
             ),
             0,
             Finality::Finalized,
@@ -132,8 +138,9 @@ impl SendMessage<'_> {
     }
 }
 
+// https://github.com/wormhole-foundation/wormhole/blob/main/solana/bridge/program/src/accounts/bridge.rs#L23
 fn parse_bridge_fee(bridge_data: &[u8]) -> u64 {
-    let fee_offset = 24;
+    let fee_offset = 16;
     let fee_bytes = &bridge_data[fee_offset..fee_offset + 8];
     u64::from_le_bytes(fee_bytes.try_into().unwrap_or_default())
 }

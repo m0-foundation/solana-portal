@@ -6027,6 +6027,7 @@ dependencies = [
  "common",
  "ctor",
  "once_cell",
+ "portal",
  "serde_json",
  "solana-client",
  "solana-sdk",

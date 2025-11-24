@@ -113,6 +113,11 @@ pub fn get_rpc_client() -> Arc<RpcClient> {
     Arc::clone(&validator.client)
 }
 
+pub fn get_signer() -> Arc<Keypair> {
+    let validator = VALIDATOR.lock().unwrap();
+    Arc::clone(&validator.keypair)
+}
+
 pub fn run_surfpool_cmd(args: Vec<&str>) -> Result<String> {
     let output = Command::new("surfpool")
         .current_dir("..")

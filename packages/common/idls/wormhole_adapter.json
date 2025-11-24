@@ -88,6 +88,25 @@
           }
         },
         {
+          "name": "portal_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "wormhole_adapter_authority",
           "pda": {
             "seeds": [
@@ -679,6 +698,19 @@
   ],
   "accounts": [
     {
+      "name": "PortalGlobal",
+      "discriminator": [
+        83,
+        250,
+        129,
+        21,
+        172,
+        135,
+        20,
+        236
+      ]
+    },
+    {
       "name": "WormholeGlobal",
       "discriminator": [
         116,
@@ -769,6 +801,38 @@
           {
             "name": "chain_id",
             "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PortalGlobal",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "paused",
+            "type": "bool"
+          },
+          {
+            "name": "m_index",
+            "type": "u64"
+          },
+          {
+            "name": "message_nonce",
+            "type": "u64"
           }
         ]
       }
@@ -888,9 +952,44 @@
   ],
   "constants": [
     {
+      "name": "AUTHORITY_SEED",
+      "type": "bytes",
+      "value": "[97, 117, 116, 104, 111, 114, 105, 116, 121]"
+    },
+    {
+      "name": "CORE_BRIDGE_CONFIG",
+      "type": "pubkey",
+      "value": "2yVjuQwpsvdsrywzsJJVs9Ueh4zayyo5DYJbBNc3DDpn"
+    },
+    {
+      "name": "CORE_BRIDGE_FEE_COLLECTOR",
+      "type": "pubkey",
+      "value": "9bFNrXNb2WTx8fMHXCheaZqkLZ3YCCaiqTftHxeintHy"
+    },
+    {
+      "name": "CORE_BRIDGE_PROGRAM_ID",
+      "type": "pubkey",
+      "value": "worm2ZoG2kUd4vFXhvjh93UUH596ayRfgQ2MgjNMTth"
+    },
+    {
+      "name": "EMITTER_SEED",
+      "type": "bytes",
+      "value": "[101, 109, 105, 116, 116, 101, 114]"
+    },
+    {
       "name": "GLOBAL_SEED",
       "type": "bytes",
       "value": "[103, 108, 111, 98, 97, 108]"
+    },
+    {
+      "name": "GUARDIAN_SET_SEED",
+      "type": "bytes",
+      "value": "[71, 117, 97, 114, 100, 105, 97, 110, 83, 101, 116]"
+    },
+    {
+      "name": "SEQUENCE_SEED",
+      "type": "bytes",
+      "value": "[83, 101, 113, 117, 101, 110, 99, 101]"
     }
   ]
 }
