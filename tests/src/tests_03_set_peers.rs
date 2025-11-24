@@ -1,5 +1,5 @@
 use anchor_lang::AccountDeserialize;
-use anyhow::{Ok, Result};
+use anyhow::Result;
 use common::{
     hyperlane_adapter::{self, accounts::HyperlaneGlobal},
     pda,
@@ -17,7 +17,7 @@ fn test_01_set_peers() -> Result<()> {
 }
 
 #[test]
-fn test_03_check_globals() -> Result<()> {
+fn test_02_check_globals() -> Result<()> {
     let client = crate::get_rpc_client();
 
     let data_wh = client.get_account_data(&pda!(&[b"global"], &wormhole_adapter::ID))?;
@@ -37,10 +37,10 @@ fn test_03_check_globals() -> Result<()> {
         ]
     );
 
-    assert_eq!(global_wh.peers[0].chain_id, 1);
-    assert_eq!(global_wh.peers[1].chain_id, 42161);
-    assert_eq!(global_wh.peers[2].chain_id, 10);
-    assert_eq!(global_wh.peers[3].chain_id, 8453);
+    assert_eq!(global_wh.peers[0].chain_id, 2);
+    assert_eq!(global_wh.peers[1].chain_id, 23);
+    assert_eq!(global_wh.peers[2].chain_id, 24);
+    assert_eq!(global_wh.peers[3].chain_id, 30);
 
     Ok(())
 }

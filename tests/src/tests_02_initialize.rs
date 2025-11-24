@@ -1,7 +1,10 @@
 use anchor_lang::AccountDeserialize;
-use anyhow::{Ok, Result};
+use anyhow::Result;
 use common::{
-    hyperlane_adapter::{self, accounts::HyperlaneGlobal},
+    hyperlane_adapter::{
+        self,
+        accounts::{AccountMetasData, HyperlaneGlobal},
+    },
     pda,
     portal::{self, accounts::PortalGlobal},
     wormhole_adapter::{self, accounts::WormholeGlobal},
@@ -41,6 +44,27 @@ fn test_03_check_globals() -> Result<()> {
     assert!(!global_portal.paused);
     assert!(!global_wh.paused);
     assert!(!global_hp.paused);
+
+    Ok(())
+}
+
+#[test]
+fn test_04_check_hyperlane_metas_pda() -> Result<()> {
+    let client = crate::get_rpc_client();
+
+    let data_account_metas = client.get_account_data(&pda!(
+        &[
+            b"hyperlane_message_recipient",
+            b"-",
+            b"handle",
+            b"-",
+            b"account_metas"
+        ],
+        &hyperlane_adapter::ID
+    ))?;
+
+    let account_metas = AccountMetasData::try_deserialize(&mut data_account_metas.as_slice())?;
+    assert_eq!(account_metas.extensions.len(), 3);
 
     Ok(())
 }

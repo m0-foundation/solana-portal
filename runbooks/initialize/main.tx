@@ -104,3 +104,15 @@ action "initialize_hyperlane_adapter" "svm::process_instructions" {
         assertion = and_bool(input.hyperlane_adapter == "true", jq(action.hyperlane_global_account.response_body,  ".result.value") == null)
     }
 }
+
+action "sync_ext_hyperlane_adapter" "svm::process_instructions" {
+    description = "Sync extensions on the Hyperlane Adapter program"
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.hyperlane_adapter_program.idl
+        instruction_name = "sync_extensions"
+        payer {
+            public_key = signer.caller.public_key
+        }
+    }
+}

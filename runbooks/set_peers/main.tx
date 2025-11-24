@@ -27,7 +27,7 @@ action "set_wormhole_peer_etherum" "svm::process_instructions" {
         instruction_args = [
             {
                 address = variable.evm_peer_address
-                chain_id = 1
+                chain_id = 2
             }
         ]
     }
@@ -44,7 +44,7 @@ action "set_wormhole_peer_arbitrum" "svm::process_instructions" {
         instruction_args = [
             {
                 address = variable.evm_peer_address
-                chain_id = 42161
+                chain_id = 23
             }
         ]
     }
@@ -61,7 +61,7 @@ action "set_wormhole_peer_optimism" "svm::process_instructions" {
         instruction_args = [
             {
                 address = variable.evm_peer_address
-                chain_id = 10
+                chain_id = 24
             }
         ]
     }
@@ -78,7 +78,7 @@ action "set_wormhole_peer_base" "svm::process_instructions" {
         instruction_args = [
             {
                 address = variable.evm_peer_address
-                chain_id = 8453
+                chain_id = 30
             }
         ]
     }

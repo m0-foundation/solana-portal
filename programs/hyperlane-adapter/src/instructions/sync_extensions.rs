@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::ext_swap::accounts::SwapGlobal;
+use common::ext_swap::{self, accounts::SwapGlobal};
 
 use crate::state::{
     AccountMetasData, DASH_SEED, GLOBAL_SEED, METADATA_SEED_1, METADATA_SEED_2, METADATA_SEED_3,
@@ -28,6 +28,7 @@ pub struct SyncExtensions<'info> {
 
     #[account(
         seeds = [GLOBAL_SEED],
+        seeds::program = ext_swap::ID,
         bump = swap_global.bump,
     )]
     pub swap_global: Account<'info, SwapGlobal>,
