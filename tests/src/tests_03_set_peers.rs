@@ -26,23 +26,21 @@ fn test_03_check_globals() -> Result<()> {
     let global_wh = WormholeGlobal::try_deserialize(&mut data_wh.as_slice())?;
     let global_hp = HyperlaneGlobal::try_deserialize(&mut data_hyp.as_slice())?;
 
-    assert_eq!(global_wh.peers.len(), 2);
-    assert_eq!(global_hp.peers.len(), 1);
+    assert_eq!(global_wh.peers.len(), 4);
+    assert_eq!(global_hp.peers.len(), 0);
 
     assert_eq!(
         global_wh.peers[0].address,
         [
-            11, 134, 236, 24, 28, 212, 197, 201, 132, 233, 6, 43, 19, 242, 178, 222, 123, 159, 91,
-            94, 104, 232, 67, 73, 35, 29, 102, 20, 205, 243, 249, 159,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 217, 37, 200, 75, 85, 228, 228, 74, 83, 116, 159,
+            245, 242, 165, 161, 63, 99, 209, 40, 253
         ]
     );
-    assert_eq!(
-        global_hp.peers[0].address,
-        [
-            11, 134, 236, 24, 28, 212, 197, 201, 132, 233, 6, 43, 19, 242, 178, 222, 123, 159, 91,
-            94, 104, 232, 67, 73, 35, 29, 102, 20, 205, 243, 249, 159,
-        ]
-    );
+
+    assert_eq!(global_wh.peers[0].chain_id, 1);
+    assert_eq!(global_wh.peers[1].chain_id, 42161);
+    assert_eq!(global_wh.peers[2].chain_id, 10);
+    assert_eq!(global_wh.peers[3].chain_id, 8453);
 
     Ok(())
 }
