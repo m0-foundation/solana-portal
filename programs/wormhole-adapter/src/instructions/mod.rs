@@ -43,7 +43,7 @@ impl VaaBody {
             let (_ntt_manager_payload_len, rest) = rest.split_at(2);
 
             // NttManagerMessage
-            let (_id, rest) = rest.split_at(32);
+            let (id, rest) = rest.split_at(32);
             let (_sender, rest) = rest.split_at(32);
             let (_payload_len, rest) = rest.split_at(2);
 
@@ -64,6 +64,7 @@ impl VaaBody {
                     recipient: to.try_into().unwrap(),
                     index: u64::from_be_bytes(index.try_into().unwrap()),
                     sender: [0u8; 32], // NTT does not provide sender info
+                    message_id: id.try_into().unwrap(),
                 })
             } else {
                 return err!(BridgeError::InvalidVaa);

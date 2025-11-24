@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::{BridgeAdapter, BridgeError, FillReportPayload, Payload};
+use common::{BridgeAdapter, BridgeError, IndexPayload, Payload};
 
 use crate::{
     instructions::send_message,
@@ -7,7 +7,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-pub struct SendFillReport<'info> {
+pub struct SendIndex<'info> {
     pub sender: Signer<'info>,
 
     #[account(
@@ -30,22 +30,13 @@ pub struct SendFillReport<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl SendFillReport<'_> {
+impl SendIndex<'_> {
     pub fn handler<'info>(
-        ctx: Context<'_, '_, '_, 'info, SendFillReport<'info>>,
-        order_id: [u8; 32],
-        token_in: [u8; 32],
-        amount_in_to_release: u128,
-        amount_out_filled: u128,
-        origin_recipient: [u8; 32],
-        origin_chain_id: u32,
+        ctx: Context<'_, '_, '_, 'info, SendIndex<'info>>,
+        destination_chain_id: u32,
     ) -> Result<()> {
-        let message = Payload::FillReport(FillReportPayload {
-            order_id,
-            amount_in_to_release,
-            amount_out_filled,
-            origin_recipient,
-            token_in,
+        let message = Payload::Index(IndexPayload {
+            index: ctx.accounts.portal_global.m_index,
             message_id: ctx.accounts.portal_global.generate_message_id(),
         });
 
@@ -57,7 +48,7 @@ impl SendFillReport<'_> {
             ctx.accounts.system_program.to_account_info(),
             ctx.remaining_accounts.to_vec(),
             message.encode(),
-            origin_chain_id,
+            destination_chain_id,
         )
     }
 }

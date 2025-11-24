@@ -16,6 +16,7 @@ static VALIDATOR: Lazy<Mutex<SurfnetValidator>> =
 pub struct SurfnetValidator {
     process: Child,
     client: Arc<RpcClient>,
+    keypair: Arc<Keypair>,
     logs: Arc<Mutex<Vec<String>>>,
 }
 
@@ -60,6 +61,7 @@ impl SurfnetValidator {
             process,
             client: Arc::new(RpcClient::new("http://127.0.0.1:8899".to_string())),
             logs: Arc::clone(&logs),
+            keypair: Arc::new(keypair),
         };
 
         // Wait for program deployments to complete

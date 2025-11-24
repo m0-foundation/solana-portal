@@ -18,4 +18,18 @@ pub enum BridgeError {
     UnsupportedDestinationChain,
     #[msg("Missing Wormhole guardian account")]
     MissingGuardianAccount,
+    #[msg("Signer is not authorized to perform this action")]
+    NotAuthorized,
+    InvalidAmount,
+    InvalidMint,
+    InvalidExtension,
+    #[msg("Bridge adapter not supported")]
+    InvalidBridgeAdapter,
+    #[msg("Account marked as optional is required")]
+    MissingRequiredOptional,
+    #[msg("Invalid number of remaining accounts")]
+    InvalidRemainingAccounts,
+    InvalidRecipientTokenAccount,
+    #[msg("Expected authority from a supported adapter")]
+    InvalidAdapterAuthority,
 }

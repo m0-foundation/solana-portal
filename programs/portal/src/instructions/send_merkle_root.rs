@@ -1,5 +1,8 @@
 use anchor_lang::prelude::*;
-use common::{BridgeAdapter, BridgeError, FillReportPayload, Payload};
+use common::{
+    earn::{self, accounts::EarnGlobal},
+    BridgeAdapter, BridgeError, EarnerMerkleRootPayload, Payload,
+};
 
 use crate::{
     instructions::send_message,
@@ -7,7 +10,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-pub struct SendFillReport<'info> {
+pub struct SendMerkleRoot<'info> {
     pub sender: Signer<'info>,
 
     #[account(
@@ -17,6 +20,13 @@ pub struct SendFillReport<'info> {
         constraint = !portal_global.paused @ BridgeError::Paused,
     )]
     pub portal_global: Account<'info, PortalGlobal>,
+
+    #[account(
+        seeds = [GLOBAL_SEED],
+        seeds::program = earn::ID,
+        bump = earn_global.bump,
+    )]
+    pub earn_global: Account<'info, EarnGlobal>,
 
     /// CHECK: account does not hold data
     #[account(
@@ -30,22 +40,14 @@ pub struct SendFillReport<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl SendFillReport<'_> {
+impl SendMerkleRoot<'_> {
     pub fn handler<'info>(
-        ctx: Context<'_, '_, '_, 'info, SendFillReport<'info>>,
-        order_id: [u8; 32],
-        token_in: [u8; 32],
-        amount_in_to_release: u128,
-        amount_out_filled: u128,
-        origin_recipient: [u8; 32],
-        origin_chain_id: u32,
+        ctx: Context<'_, '_, '_, 'info, SendMerkleRoot<'info>>,
+        destination_chain_id: u32,
     ) -> Result<()> {
-        let message = Payload::FillReport(FillReportPayload {
-            order_id,
-            amount_in_to_release,
-            amount_out_filled,
-            origin_recipient,
-            token_in,
+        let message = Payload::EarnerMerkleRoot(EarnerMerkleRootPayload {
+            index: ctx.accounts.portal_global.m_index,
+            merkle_root: ctx.accounts.earn_global.earner_merkle_root,
             message_id: ctx.accounts.portal_global.generate_message_id(),
         });
 
@@ -57,7 +59,7 @@ impl SendFillReport<'_> {
             ctx.accounts.system_program.to_account_info(),
             ctx.remaining_accounts.to_vec(),
             message.encode(),
-            origin_chain_id,
+            destination_chain_id,
         )
     }
 }

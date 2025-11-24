@@ -66,6 +66,7 @@ action "initialize_portal" "svm::process_instructions" {
         admin {
             public_key = signer.caller.public_key
         }
+        instruction_args = [input.chain_id]
     }
     pre_condition {
         behavior = "skip"

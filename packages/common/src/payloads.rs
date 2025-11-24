@@ -57,7 +57,8 @@ impl Payload {
                 let (destination_token_bytes, data) = data.split_at(32);
                 let (sender_bytes, data) = data.split_at(32);
                 let (recipient_bytes, data) = data.split_at(32);
-                let (index_bytes, _) = data.split_at(8);
+                let (index_bytes, data) = data.split_at(8);
+                let (message_id_bytes, _) = data.split_at(32);
 
                 Payload::TokenTransfer(TokenTransferPayload {
                     amount: u128::from_le_bytes(amount_bytes.try_into().unwrap()),
@@ -65,6 +66,7 @@ impl Payload {
                     sender: sender_bytes.try_into().unwrap(),
                     recipient: recipient_bytes.try_into().unwrap(),
                     index: u64::from_le_bytes(index_bytes.try_into().unwrap()),
+                    message_id: message_id_bytes.try_into().unwrap(),
                 })
             }
             Self::INDEX_DISCRIMINANT => {
@@ -81,7 +83,8 @@ impl Payload {
                 let (amount_in_to_release_bytes, data) = data.split_at(16);
                 let (amount_out_filled_bytes, data) = data.split_at(16);
                 let (origin_recipient_bytes, _) = data.split_at(32);
-                let (token_in_bytes, _) = data.split_at(32);
+                let (token_in_bytes, data) = data.split_at(32);
+                let (message_id_bytes, _) = data.split_at(32);
 
                 Payload::FillReport(FillReportPayload {
                     order_id: order_id_bytes.try_into().unwrap(),
@@ -93,15 +96,18 @@ impl Payload {
                     ),
                     origin_recipient: origin_recipient_bytes.try_into().unwrap(),
                     token_in: token_in_bytes.try_into().unwrap(),
+                    message_id: message_id_bytes.try_into().unwrap(),
                 })
             }
             Self::EARNER_MERKLE_ROOT_DISCRIMINANT => {
                 let (index_bytes, merkle_root_bytes) = data.split_at(8);
-                let (merkle_root_bytes, _) = merkle_root_bytes.split_at(32);
+                let (merkle_root_bytes, data) = merkle_root_bytes.split_at(32);
+                let (message_id_bytes, _) = data.split_at(32);
 
                 Payload::EarnerMerkleRoot(EarnerMerkleRootPayload {
                     index: u64::from_le_bytes(index_bytes.try_into().unwrap()),
                     merkle_root: merkle_root_bytes.try_into().unwrap(),
+                    message_id: message_id_bytes.try_into().unwrap(),
                 })
             }
             _ => panic!("Invalid payload type"),
@@ -116,6 +122,7 @@ pub struct TokenTransferPayload {
     pub sender: [u8; 32],
     pub recipient: [u8; 32],
     pub index: u64,
+    pub message_id: [u8; 32],
 }
 
 impl Into<EarnerMerkleRootPayload> for TokenTransferPayload {
@@ -123,6 +130,7 @@ impl Into<EarnerMerkleRootPayload> for TokenTransferPayload {
         EarnerMerkleRootPayload {
             index: self.index,
             merkle_root: [0; 32],
+            message_id: self.message_id,
         }
     }
 }
@@ -134,6 +142,7 @@ pub struct FillReportPayload {
     pub amount_out_filled: u128,
     pub origin_recipient: [u8; 32],
     pub token_in: [u8; 32],
+    pub message_id: [u8; 32],
 }
 
 #[derive(Debug)]
@@ -146,6 +155,7 @@ pub struct IndexPayload {
 pub struct EarnerMerkleRootPayload {
     pub index: u64,
     pub merkle_root: [u8; 32],
+    pub message_id: [u8; 32],
 }
 
 impl Into<EarnerMerkleRootPayload> for IndexPayload {
@@ -153,6 +163,7 @@ impl Into<EarnerMerkleRootPayload> for IndexPayload {
         EarnerMerkleRootPayload {
             index: self.index,
             merkle_root: [0; 32],
+            message_id: self.message_id,
         }
     }
 }

@@ -20,11 +20,14 @@ pub struct Initialize<'info> {
 }
 
 impl Initialize<'_> {
-    pub fn handler(ctx: Context<Self>) -> Result<()> {
+    pub fn handler(ctx: Context<Self>, chain_id: u32) -> Result<()> {
         ctx.accounts.portal_global.set_inner(PortalGlobal {
             admin: ctx.accounts.admin.key(),
             bump: ctx.bumps.portal_global,
+            m_index: 0,
             paused: false,
+            chain_id,
+            message_nonce: 0,
         });
 
         Ok(())

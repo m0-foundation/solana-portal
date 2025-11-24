@@ -1,6 +1,5 @@
 #![allow(unexpected_cfgs)]
 
-pub mod errors;
 pub mod instructions;
 pub mod state;
 
@@ -15,11 +14,25 @@ pub mod portal {
 
     /// Admin Instructions
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        Initialize::handler(ctx)
+    pub fn initialize(ctx: Context<Initialize>, chain_id: u32) -> Result<()> {
+        Initialize::handler(ctx, chain_id)
     }
 
     /// Outbound Instructions
+
+    pub fn send_index<'info>(
+        ctx: Context<'_, '_, '_, 'info, SendIndex<'info>>,
+        destination_chain_id: u32,
+    ) -> Result<()> {
+        SendIndex::handler(ctx, destination_chain_id)
+    }
+
+    pub fn send_merkle_root<'info>(
+        ctx: Context<'_, '_, '_, 'info, SendMerkleRoot<'info>>,
+        destination_chain_id: u32,
+    ) -> Result<()> {
+        SendMerkleRoot::handler(ctx, destination_chain_id)
+    }
 
     pub fn send_token<'info>(
         ctx: Context<'_, '_, '_, 'info, SendTokens<'info>>,

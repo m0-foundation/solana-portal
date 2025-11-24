@@ -5,6 +5,7 @@ use anchor_lang::{
 use common::{
     portal,
     wormhole_post_message_shim::{self, program::WormholePostMessageShim, types::Finality},
+    BridgeError,
 };
 
 use crate::{
@@ -18,14 +19,14 @@ pub struct SendMessage<'info> {
     payer: Signer<'info>,
 
     #[account(
-        constraint = !wormhole_global.paused,
+        constraint = !wormhole_global.paused @ BridgeError::Paused,
         seeds = [GLOBAL_SEED],
         bump,
     )]
     pub wormhole_global: Account<'info, WormholeGlobal>,
 
     #[account(
-        seeds = [b"authority"], 
+        seeds = [b"authority"],
         seeds::program = portal::ID,
         bump
     )]

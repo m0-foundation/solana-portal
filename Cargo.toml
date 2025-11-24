@@ -14,6 +14,7 @@ codegen-units = 1
 [workspace.dependencies]
 anchor-lang = "0.32.1"
 anchor-spl = "0.32.1"
+anchor-client = { version = "0.32.1 ", features = ["async"] }
 solana-security-txt = "1.1.1"
 cfg-if = "1.0"
 borsh = "0.10.3"

@@ -1,5 +1,5 @@
 use anchor_lang::prelude::{instruction::Instruction, program::invoke_signed, *};
-use common::{portal, AUTHORITY_SEED};
+use common::{portal, BridgeError, AUTHORITY_SEED};
 
 use crate::{
     instructions::{Mailbox, SplNoop},
@@ -16,7 +16,7 @@ pub struct SendMessage<'info> {
 
     #[account(
         mut,
-        constraint = !hyperlane_global.paused,
+        constraint = !hyperlane_global.paused @ BridgeError::Paused,
         seeds = [GLOBAL_SEED],
         bump,
     )]

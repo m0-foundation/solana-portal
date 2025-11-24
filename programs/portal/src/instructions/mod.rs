@@ -1,16 +1,20 @@
 pub mod initialize;
 pub mod receive_message;
 pub mod send_fill_report;
+pub mod send_index;
+pub mod send_merkle_root;
 pub mod send_token;
 
 use anchor_lang::prelude::*;
-use common::{hyperlane_adapter, wormhole_adapter};
+use common::{hyperlane_adapter, wormhole_adapter, BridgeError};
 pub use initialize::*;
 pub use receive_message::*;
 pub use send_fill_report::*;
+pub use send_index::*;
+pub use send_merkle_root::*;
 pub use send_token::*;
 
-use crate::{errors::PortalError, state::AUTHORITY_SEED};
+use crate::state::AUTHORITY_SEED;
 
 pub fn send_message<'info>(
     bridge_adapter: AccountInfo<'info>,
@@ -38,7 +42,7 @@ pub fn send_message<'info>(
                 wormhole_post_message_shim
             ]: [AccountInfo; 10] = remaining_accounts
                 .try_into()
-                .map_err(|_| PortalError::InvalidRemainingAccounts)?;
+                .map_err(|_| BridgeError::InvalidRemainingAccounts)?;
 
         wormhole_adapter::cpi::send_message(
             CpiContext::new_with_signer(
@@ -74,7 +78,7 @@ pub fn send_message<'info>(
                 spl_noop_program,
             ]: [AccountInfo; 7] = remaining_accounts
                 .try_into()
-                .map_err(|_| PortalError::InvalidRemainingAccounts)?;
+                .map_err(|_| BridgeError::InvalidRemainingAccounts)?;
 
         hyperlane_adapter::cpi::send_message(
             CpiContext::new_with_signer(
@@ -97,6 +101,6 @@ pub fn send_message<'info>(
             destination_chain_id,
         )
     } else {
-        err!(PortalError::InvalidBridgeAdapter)
+        err!(BridgeError::InvalidBridgeAdapter)
     }
 }

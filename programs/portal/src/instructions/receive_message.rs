@@ -4,15 +4,23 @@ use common::{
     earn::{self, cpi::accounts::PropagateIndex},
     ext_swap,
     order_book::{self, types::FillReport},
-    BridgeAdapter, EarnerMerkleRootPayload, FillReportPayload, Payload, TokenTransferPayload,
+    BridgeAdapter, BridgeError, EarnerMerkleRootPayload, FillReportPayload, Payload,
+    TokenTransferPayload,
 };
 
-use crate::{errors::PortalError, state::AUTHORITY_SEED};
+use crate::state::{PortalGlobal, AUTHORITY_SEED, GLOBAL_SEED};
 
 #[derive(Accounts)]
 pub struct ReceiveMessage<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [GLOBAL_SEED],
+        bump = portal_global.bump,
+    )]
+    pub portal_global: Account<'info, PortalGlobal>,
 
     pub adapter_authority: Signer<'info>,
 
@@ -30,7 +38,7 @@ impl ReceiveMessage<'_> {
     fn validate(&self) -> Result<()> {
         // Check that one of the supported adapters signed the message
         if !BridgeAdapter::is_authority(&self.adapter_authority.key()) {
-            return err!(PortalError::InvalidAdapterAuthority);
+            return err!(BridgeError::InvalidAdapterAuthority);
         }
 
         Ok(())
@@ -44,16 +52,19 @@ impl ReceiveMessage<'_> {
         let message = Payload::decode(&payload);
 
         match message {
-            Payload::TokenTransfer(token_transfer) => {
+            Payload::TokenTransfer(payload) => {
                 msg!("Received Token Transfer Payload");
-                return Self::handle_token_transfer_payload(ctx, token_transfer);
+                ctx.accounts.portal_global.update_index(payload.index);
+                return Self::handle_token_transfer_payload(ctx, payload);
             }
-            Payload::Index(index_payload) => {
-                msg!("Received Index Payload: {}", index_payload.index);
-                return Self::handle_index_payload(&ctx, index_payload.into());
+            Payload::Index(payload) => {
+                msg!("Received Index Payload: {}", payload.index);
+                ctx.accounts.portal_global.update_index(payload.index);
+                return Self::handle_index_payload(&ctx, payload.into());
             }
             Payload::EarnerMerkleRoot(payload) => {
                 msg!("Received EarnerMerkleRoot Payload");
+                ctx.accounts.portal_global.update_index(payload.index);
                 return Self::handle_index_payload(&ctx, payload);
             }
             Payload::FillReport(fill_report) => {

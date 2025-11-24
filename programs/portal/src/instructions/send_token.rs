@@ -2,11 +2,10 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use common::{
     ext_swap::{self, accounts::SwapGlobal, program::ExtSwap},
-    BridgeAdapter, Payload, TokenTransferPayload,
+    BridgeAdapter, BridgeError, Payload, TokenTransferPayload,
 };
 
 use crate::{
-    errors::PortalError,
     instructions::send_message,
     state::{PortalGlobal, AUTHORITY_SEED, GLOBAL_SEED},
 };
@@ -14,6 +13,14 @@ use crate::{
 #[derive(Accounts)]
 pub struct SendTokens<'info> {
     pub sender: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [GLOBAL_SEED],
+        bump = portal_global.bump,
+        constraint = !portal_global.paused @ BridgeError::Paused,
+    )]
+    pub portal_global: Account<'info, PortalGlobal>,
 
     #[account(
         seeds = [GLOBAL_SEED],
@@ -105,7 +112,7 @@ pub struct SendTokens<'info> {
 impl SendTokens<'_> {
     fn validate(&self, amount: u64) -> Result<()> {
         if self.messenger_global.paused {
-            return err!(PortalError::Paused);
+            return err!(BridgeError::Paused);
         }
 
         if self
@@ -118,11 +125,11 @@ impl SendTokens<'_> {
             })
             .is_none()
         {
-            return err!(PortalError::InvalidExtension);
+            return err!(BridgeError::InvalidExtension);
         }
 
         if amount == 0 {
-            return err!(PortalError::InvalidAmount);
+            return err!(BridgeError::InvalidAmount);
         }
 
         Ok(())
@@ -173,7 +180,8 @@ impl SendTokens<'_> {
             destination_token,
             sender: ctx.accounts.sender.key().to_bytes(),
             recipient,
-            index: 0,
+            index: ctx.accounts.portal_global.m_index,
+            message_id: ctx.accounts.portal_global.generate_message_id(),
         });
 
         // Send message to bridge adapter
