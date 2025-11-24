@@ -12,11 +12,11 @@ variable "hyperlane_adapter_program" {
 }
 
 variable "evm_peer_address" {
-    value = [11, 134, 236, 24, 28, 212, 197, 201, 132, 233, 6, 43, 19, 242, 178, 222, 123, 159, 91, 94, 104, 232, 67, 73, 35, 29, 102, 20, 205, 243, 249, 159]
+    description = "Peer address on EVM chains: 0xD925C84b55E4e44a53749fF5F2a5A13F63D128fd"
+    value = [217,  37, 200, 75, 85, 228, 228, 74, 83, 116, 159, 245, 242, 165, 161, 63, 99, 209, 40, 253]
 }
 
 action "set_wormhole_peer_etherum" "svm::process_instructions" {
-    description = "Set peer on Wormhole Adapter"
     signers = [signer.caller]
     instruction {
         program_idl = variable.wormhole_adapter_program.idl
@@ -34,7 +34,6 @@ action "set_wormhole_peer_etherum" "svm::process_instructions" {
 }
 
 action "set_wormhole_peer_arbitrum" "svm::process_instructions" {
-    description = "Set peer on Wormhole Adapter"
     signers = [signer.caller]
     instruction {
         program_idl = variable.wormhole_adapter_program.idl
@@ -45,17 +44,16 @@ action "set_wormhole_peer_arbitrum" "svm::process_instructions" {
         instruction_args = [
             {
                 address = variable.evm_peer_address
-                chain_id = 2
+                chain_id = 42161
             }
         ]
     }
 }
 
-action "set_hyperlane_peer_ethereum" "svm::process_instructions" {
-    description = "Set peer on Hyperlane Adapter"
+action "set_wormhole_peer_optimism" "svm::process_instructions" {
     signers = [signer.caller]
     instruction {
-        program_idl = variable.hyperlane_adapter_program.idl
+        program_idl = variable.wormhole_adapter_program.idl
         instruction_name = "set_peer"
         admin {
             public_key = signer.caller.public_key
@@ -63,7 +61,24 @@ action "set_hyperlane_peer_ethereum" "svm::process_instructions" {
         instruction_args = [
             {
                 address = variable.evm_peer_address
-                chain_id = 1
+                chain_id = 10
+            }
+        ]
+    }
+}
+
+action "set_wormhole_peer_base" "svm::process_instructions" {
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.wormhole_adapter_program.idl
+        instruction_name = "set_peer"
+        admin {
+            public_key = signer.caller.public_key
+        }
+        instruction_args = [
+            {
+                address = variable.evm_peer_address
+                chain_id = 8453
             }
         ]
     }
