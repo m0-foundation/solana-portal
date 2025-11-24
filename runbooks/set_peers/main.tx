@@ -1,0 +1,34 @@
+addon "svm" {
+    rpc_api_url = input.rpc_api_url
+    network_id = input.network_id
+}
+
+variable "wormhole_adapter_program" {
+    value = svm::get_program_from_anchor_project("wormhole_adapter")
+}
+
+variable "hyperlane_adapter_program" {
+    value = svm::get_program_from_anchor_project("hyperlane_adapter")
+}
+
+variable "wornhole_peers" {
+    value = [
+        {
+            address = [11, 134, 236, 24, 28, 212, 197, 201, 132, 233, 6, 43, 19, 242, 178, 222, 123, 159, 91, 94, 104, 232, 67, 73, 35, 29, 102, 20, 205, 243, 249, 159]
+            chain_id = 1
+        }
+    ]
+}
+
+action "initialize_wormhole_adapter" "svm::process_instructions" {
+    description = "Set Peers on Wormhole Adapter"
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.wormhole_adapter_program.idl
+        instruction_name = "set_peers"
+        admin {
+            public_key = signer.caller.public_key
+        }
+        instruction_args = [variable.wornhole_peers]
+    }
+}

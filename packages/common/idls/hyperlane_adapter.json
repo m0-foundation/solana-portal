@@ -916,6 +916,64 @@
       ]
     },
     {
+      "name": "set_peers",
+      "discriminator": [
+        207,
+        4,
+        105,
+        106,
+        180,
+        196,
+        39,
+        47
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "hyperlane_global"
+          ]
+        },
+        {
+          "name": "hyperlane_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "peers",
+          "type": {
+            "vec": {
+              "defined": {
+                "name": "Peer"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "sync_extensions",
       "discriminator": [
         247,

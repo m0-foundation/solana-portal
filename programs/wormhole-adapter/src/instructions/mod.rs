@@ -2,6 +2,7 @@ pub mod initialize;
 pub mod receive_message;
 pub mod resolve_execute;
 pub mod send_message;
+pub mod set_peers;
 
 use anchor_lang::prelude::*;
 use common::{BridgeError, Payload, TokenTransferPayload};
@@ -9,6 +10,7 @@ pub use initialize::*;
 pub use receive_message::*;
 pub use resolve_execute::*;
 pub use send_message::*;
+pub use set_peers::*;
 
 #[derive(Debug)]
 pub struct VaaBody {

@@ -69,7 +69,7 @@ pub struct ReceiveMessage<'info> {
 
 impl ReceiveMessage<'_> {
     fn validate(&self, origin: u32, sender: &[u8; 32]) -> Result<()> {
-        let peer = self.hyperlane_global.get_peer_by_chain_id(origin)?;
+        let peer = self.hyperlane_global.get_peer(origin)?;
 
         if &peer.address != sender {
             return err!(BridgeError::InvalidPeer);

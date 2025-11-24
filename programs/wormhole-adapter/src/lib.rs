@@ -4,6 +4,7 @@ mod consts;
 mod instructions;
 mod state;
 
+use crate::state::Peer;
 use anchor_lang::prelude::*;
 use executor_account_resolver_svm::{InstructionGroups, Resolver, RESOLVER_EXECUTE_VAA_V1};
 use instructions::*;
@@ -16,6 +17,10 @@ pub mod wormhole_adapter {
 
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
         Initialize::handler(ctx)
+    }
+
+    pub fn set_peers(ctx: Context<SetPeers>, peers: Vec<Peer>) -> Result<()> {
+        SetPeers::handler(ctx, peers)
     }
 
     pub fn send_message(ctx: Context<SendMessage>, message: Vec<u8>) -> Result<()> {

@@ -54,12 +54,23 @@ impl HyperlaneGlobal {
         peers * 34 // each peer
     }
 
-    pub fn get_peer_by_chain_id(&self, chain_id: u32) -> Result<Peer> {
+    pub fn get_peer(&self, chain_id: u32) -> Result<Peer> {
         self.peers
             .iter()
             .find(|peer| peer.chain_id == chain_id)
             .cloned()
             .ok_or_else(|| BridgeError::UnsupportedDestinationChain.into())
+    }
+
+    pub fn extended_peers(&self, peers: Vec<Peer>) -> Vec<Peer> {
+        let mut result = self.peers.clone();
+        for peer in peers {
+            match result.iter_mut().find(|p| p.chain_id == peer.chain_id) {
+                Some(existing_peer) => *existing_peer = peer, // Overwrite existing peer
+                None => result.push(peer),
+            }
+        }
+        result
     }
 }
 

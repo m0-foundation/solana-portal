@@ -79,7 +79,7 @@ impl SendMessage<'_> {
         let peer = ctx
             .accounts
             .hyperlane_global
-            .get_peer_by_chain_id(destination_chain_id)?;
+            .get_peer(destination_chain_id)?;
 
         // OutboxDispatch discriminant
         let mut instruction_data = vec![4u8];

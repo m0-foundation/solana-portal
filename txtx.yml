@@ -8,6 +8,9 @@ runbooks:
   - name: initialize
     description: Initialize programs
     location: runbooks/initialize
+  - name: set_peers
+    description: Set peers
+    location: runbooks/set_peers
 environments:
   localnet:
     network_id: localnet

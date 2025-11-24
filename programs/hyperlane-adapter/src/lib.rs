@@ -4,6 +4,7 @@ mod consts;
 mod instructions;
 mod state;
 
+use crate::state::Peer;
 use anchor_lang::prelude::*;
 use consts::{HANDLE_ACCOUNT_METAS_DISCRIMINATOR, HANDLE_DISCRIMINATOR};
 use instructions::*;
@@ -12,11 +13,14 @@ declare_id!("mZhPGteS36G7FhMTcRofLQU8ocBNAsGq7u8SKSHfL2X");
 
 #[program]
 pub mod hyperlane_adapter {
-
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
         Initialize::handler(ctx)
+    }
+
+    pub fn set_peers(ctx: Context<SetPeers>, peers: Vec<Peer>) -> Result<()> {
+        SetPeers::handler(ctx, peers)
     }
 
     pub fn sync_extensions(ctx: Context<SyncExtensions>) -> Result<()> {
