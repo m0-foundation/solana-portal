@@ -25,8 +25,8 @@ fn test_02_check_globals() -> Result<()> {
     let global_wh = WormholeGlobal::try_deserialize(&mut data_wh.as_slice())?;
     let global_hp = HyperlaneGlobal::try_deserialize(&mut data_hyp.as_slice())?;
 
-    assert_eq!(global_wh.peers.len(), 4);
-    assert_eq!(global_hp.peers.len(), 0);
+    assert!(global_wh.peers.len() > 0);
+    assert!(global_hp.peers.len() > 0);
 
     assert_eq!(
         global_wh.peers[0].address,

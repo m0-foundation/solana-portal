@@ -848,6 +848,7 @@
         },
         {
           "name": "dispatched_message",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -1450,7 +1451,7 @@
       "value": "[45]"
     },
     {
-      "name": "DISPATCHED_MESSGAGE_SEED",
+      "name": "DISPATCHED_MESSAGE_SEED",
       "type": "bytes",
       "value": "[100, 105, 115, 112, 97, 116, 99, 104, 101, 100, 95, 109, 101, 115, 115, 97, 103, 101]"
     },
@@ -1473,6 +1474,11 @@
       "name": "HYPERLANE_SEED",
       "type": "bytes",
       "value": "[104, 121, 112, 101, 114, 108, 97, 110, 101]"
+    },
+    {
+      "name": "MAILBOX_PROGRAM_ID",
+      "type": "pubkey",
+      "value": "E588QtVUvresuXq2KoNEwAmoifCzYGpRBdHByN9KQMbi"
     },
     {
       "name": "METADATA_SEED_1",
@@ -1505,7 +1511,12 @@
       "value": "[112, 114, 111, 99, 101, 115, 115, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121]"
     },
     {
-      "name": "UNIQUE_MESSGAGE_SEED",
+      "name": "SPL_NOOP",
+      "type": "pubkey",
+      "value": "noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV"
+    },
+    {
+      "name": "UNIQUE_MESSAGE_SEED",
       "type": "bytes",
       "value": "[117, 110, 105, 113, 117, 101, 95, 109, 101, 115, 115, 97, 103, 101]"
     }

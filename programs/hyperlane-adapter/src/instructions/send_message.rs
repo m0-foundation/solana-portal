@@ -4,8 +4,8 @@ use common::{portal, BridgeError, AUTHORITY_SEED};
 use crate::{
     instructions::{Mailbox, SplNoop},
     state::{
-        HyperlaneGlobal, DASH_SEED, DISPATCHED_MESSGAGE_SEED, DISPATCH_SEED_1, DISPATCH_SEED_2,
-        GLOBAL_SEED, HYPERLANE_SEED, OUTBOX_SEED, UNIQUE_MESSGAGE_SEED,
+        HyperlaneGlobal, DASH_SEED, DISPATCHED_MESSAGE_SEED, DISPATCH_SEED_1, DISPATCH_SEED_2,
+        GLOBAL_SEED, HYPERLANE_SEED, OUTBOX_SEED, UNIQUE_MESSAGE_SEED,
     },
 };
 
@@ -47,17 +47,18 @@ pub struct SendMessage<'info> {
     pub dispatch_authority: AccountInfo<'info>,
 
     #[account(
-        seeds = [UNIQUE_MESSGAGE_SEED, &hyperlane_global.nonce.to_le_bytes()],
+        seeds = [UNIQUE_MESSAGE_SEED, &hyperlane_global.nonce.to_le_bytes()],
         bump
     )]
     /// CHECK: only used to create unique message accounts
     pub unique_message: AccountInfo<'info>,
 
     #[account(
+        mut,
         seeds = [
             HYPERLANE_SEED,
             DASH_SEED,
-            DISPATCHED_MESSGAGE_SEED,
+            DISPATCHED_MESSAGE_SEED,
             DASH_SEED,
             unique_message.key().as_ref(),
         ],
@@ -85,8 +86,8 @@ impl SendMessage<'_> {
         let mut instruction_data = vec![4u8];
 
         // Serialize OutboxDispatch struct fields
-        instruction_data.extend_from_slice(&ctx.accounts.payer.key().to_bytes());
-        instruction_data.extend_from_slice(&destination_chain_id.to_le_bytes()); // TODO: convert our internal chain ID to Hyperlane chain ID
+        instruction_data.extend_from_slice(&crate::ID.to_bytes());
+        instruction_data.extend_from_slice(&destination_chain_id.to_le_bytes());
         instruction_data.extend_from_slice(&peer.address);
         instruction_data.extend_from_slice(&(message.len() as u32).to_le_bytes());
         instruction_data.extend_from_slice(&message);
@@ -116,12 +117,19 @@ impl SendMessage<'_> {
                 ctx.accounts.unique_message.to_account_info(),
                 ctx.accounts.dispatched_message.clone(),
             ],
-            &[&[
-                DISPATCH_SEED_1,
-                DASH_SEED,
-                DISPATCH_SEED_2,
-                &[ctx.bumps.dispatch_authority],
-            ]],
+            &[
+                &[
+                    DISPATCH_SEED_1,
+                    DASH_SEED,
+                    DISPATCH_SEED_2,
+                    &[ctx.bumps.dispatch_authority],
+                ],
+                &[
+                    UNIQUE_MESSAGE_SEED,
+                    &ctx.accounts.hyperlane_global.nonce.to_le_bytes(),
+                    &[ctx.bumps.unique_message],
+                ],
+            ],
         )?;
 
         // Bump the nonce used to generate unique message accounts

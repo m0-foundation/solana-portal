@@ -20,9 +20,9 @@ pub const PROCESS_AUTHORITY: &[u8] = b"process_authority";
 #[constant]
 pub const OUTBOX_SEED: &[u8] = b"outbox";
 #[constant]
-pub const DISPATCHED_MESSGAGE_SEED: &[u8] = b"dispatched_message";
+pub const DISPATCHED_MESSAGE_SEED: &[u8] = b"dispatched_message";
 #[constant]
-pub const UNIQUE_MESSGAGE_SEED: &[u8] = b"unique_message";
+pub const UNIQUE_MESSAGE_SEED: &[u8] = b"unique_message";
 #[constant]
 pub const PAYER_SEED: &[u8] = b"payer";
 #[constant]

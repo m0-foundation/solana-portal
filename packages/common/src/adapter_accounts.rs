@@ -1,12 +1,19 @@
 use anchor_lang::prelude::{sysvar::SysvarId, AccountMeta, Clock, Pubkey};
 
 use crate::{
+    hyperlane_adapter::{
+        self,
+        constants::{
+            DASH_SEED, DISPATCHED_MESSAGE_SEED, DISPATCH_SEED_1, DISPATCH_SEED_2, HYPERLANE_SEED,
+            MAILBOX_PROGRAM_ID, OUTBOX_SEED, SPL_NOOP, UNIQUE_MESSAGE_SEED,
+        },
+    },
     pda,
     wormhole_adapter::{
         self,
         constants::{
             CORE_BRIDGE_CONFIG, CORE_BRIDGE_FEE_COLLECTOR, CORE_BRIDGE_PROGRAM_ID, EMITTER_SEED,
-            GLOBAL_SEED, SEQUENCE_SEED,
+            EVENT_AUTHORITY_SEED, GLOBAL_SEED, SEQUENCE_SEED,
         },
     },
     wormhole_post_message_shim,
@@ -22,11 +29,11 @@ pub struct WormholeRemainingAccounts {
     pub clock: Pubkey,
     pub wormhole_program: Pubkey,
     pub wormhole_post_message_shim_ea: Pubkey,
-    pub wormhole_post_message_shi: Pubkey,
+    pub wormhole_post_message_shim: Pubkey,
 }
 
-impl Default for WormholeRemainingAccounts {
-    fn default() -> Self {
+impl WormholeRemainingAccounts {
+    fn new() -> Self {
         let emitter = pda!(&[EMITTER_SEED], &wormhole_adapter::ID);
 
         Self {
@@ -42,17 +49,15 @@ impl Default for WormholeRemainingAccounts {
             clock: Clock::id(),
             wormhole_program: CORE_BRIDGE_PROGRAM_ID,
             wormhole_post_message_shim_ea: pda!(
-                &[b"__event_authority"],
+                &[EVENT_AUTHORITY_SEED],
                 &wormhole_post_message_shim::ID
             ),
-            wormhole_post_message_shi: wormhole_post_message_shim::ID,
+            wormhole_post_message_shim: wormhole_post_message_shim::ID,
         }
     }
-}
 
-impl WormholeRemainingAccounts {
     pub fn account_metas() -> Vec<AccountMeta> {
-        Self::default().to_account_metas()
+        Self::new().to_account_metas()
     }
 
     pub fn to_account_metas(&self) -> Vec<AccountMeta> {
@@ -66,7 +71,67 @@ impl WormholeRemainingAccounts {
             AccountMeta::new_readonly(self.clock, false),
             AccountMeta::new_readonly(self.wormhole_program, false),
             AccountMeta::new_readonly(self.wormhole_post_message_shim_ea, false),
-            AccountMeta::new_readonly(self.wormhole_post_message_shi, false),
+            AccountMeta::new_readonly(self.wormhole_post_message_shim, false),
+        ]
+    }
+}
+
+pub struct HyperlaneRemainingAccounts {
+    pub hyperlane_global: Pubkey,
+    pub mailbox_outbox: Pubkey,
+    pub dispatch_authority: Pubkey,
+    pub unique_message: Pubkey,
+    pub dispatched_message: Pubkey,
+    pub mailbox_program: Pubkey,
+    pub spl_noop_program: Pubkey,
+}
+
+impl HyperlaneRemainingAccounts {
+    fn new() -> Self {
+        let unique_message = pda!(
+            &[UNIQUE_MESSAGE_SEED, 0u64.to_le_bytes().as_ref()],
+            &hyperlane_adapter::ID
+        );
+
+        Self {
+            hyperlane_global: pda!(&[GLOBAL_SEED], &hyperlane_adapter::ID),
+            mailbox_outbox: pda!(
+                &[HYPERLANE_SEED, DASH_SEED, OUTBOX_SEED],
+                &MAILBOX_PROGRAM_ID
+            ),
+            dispatch_authority: pda!(
+                &[DISPATCH_SEED_1, DASH_SEED, DISPATCH_SEED_2],
+                &hyperlane_adapter::ID
+            ),
+            unique_message,
+            dispatched_message: pda!(
+                &[
+                    HYPERLANE_SEED,
+                    DASH_SEED,
+                    DISPATCHED_MESSAGE_SEED,
+                    DASH_SEED,
+                    unique_message.as_ref(),
+                ],
+                &MAILBOX_PROGRAM_ID
+            ),
+            mailbox_program: MAILBOX_PROGRAM_ID,
+            spl_noop_program: SPL_NOOP,
+        }
+    }
+
+    pub fn account_metas() -> Vec<AccountMeta> {
+        Self::new().to_account_metas()
+    }
+
+    pub fn to_account_metas(&self) -> Vec<AccountMeta> {
+        vec![
+            AccountMeta::new(self.hyperlane_global, false),
+            AccountMeta::new(self.mailbox_outbox, false),
+            AccountMeta::new_readonly(self.dispatch_authority, false),
+            AccountMeta::new_readonly(self.unique_message, false),
+            AccountMeta::new(self.dispatched_message, false),
+            AccountMeta::new_readonly(self.mailbox_program, false),
+            AccountMeta::new_readonly(self.spl_noop_program, false),
         ]
     }
 }

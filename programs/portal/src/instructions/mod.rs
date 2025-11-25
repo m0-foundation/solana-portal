@@ -65,6 +65,7 @@ pub fn send_message<'info>(
                 &[&[AUTHORITY_SEED, &[messenger_authority_bump]]],
             ),
             message,
+            destination_chain_id,
         )
     } else if bridge_adapter.key() == common::hyperlane_adapter::ID {
         // Delegate account validation to hyperlane adapter

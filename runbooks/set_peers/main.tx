@@ -16,7 +16,7 @@ variable "evm_peer_address" {
     value = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 217,  37, 200, 75, 85, 228, 228, 74, 83, 116, 159, 245, 242, 165, 161, 63, 99, 209, 40, 253]
 }
 
-action "set_wormhole_peer_etherum" "svm::process_instructions" {
+action "set_wormhole_peer_ethereum" "svm::process_instructions" {
     signers = [signer.caller]
     instruction {
         program_idl = variable.wormhole_adapter_program.idl
@@ -79,6 +79,23 @@ action "set_wormhole_peer_base" "svm::process_instructions" {
             {
                 address = variable.evm_peer_address
                 chain_id = 30
+            }
+        ]
+    }
+}
+
+action "set_hyperlane_peer_ethereum" "svm::process_instructions" {
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.hyperlane_adapter_program.idl
+        instruction_name = "set_peer"
+        admin {
+            public_key = signer.caller.public_key
+        }
+        instruction_args = [
+            {
+                address = variable.evm_peer_address
+                chain_id = 1
             }
         ]
     }

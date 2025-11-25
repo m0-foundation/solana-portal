@@ -23,8 +23,12 @@ pub mod wormhole_adapter {
         SetPeer::handler(ctx, peer)
     }
 
-    pub fn send_message(ctx: Context<SendMessage>, message: Vec<u8>) -> Result<()> {
-        SendMessage::handler(ctx, message)
+    pub fn send_message(
+        ctx: Context<SendMessage>,
+        message: Vec<u8>,
+        destination_chain_id: u32,
+    ) -> Result<()> {
+        SendMessage::handler(ctx, message, destination_chain_id)
     }
 
     pub fn receive_message<'info>(

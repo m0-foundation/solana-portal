@@ -636,6 +636,10 @@
         {
           "name": "message",
           "type": "bytes"
+        },
+        {
+          "name": "destination_chain_id",
+          "type": "u32"
         }
       ]
     },
@@ -975,6 +979,11 @@
       "name": "EMITTER_SEED",
       "type": "bytes",
       "value": "[101, 109, 105, 116, 116, 101, 114]"
+    },
+    {
+      "name": "EVENT_AUTHORITY_SEED",
+      "type": "bytes",
+      "value": "[95, 95, 101, 118, 101, 110, 116, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121]"
     },
     {
       "name": "GLOBAL_SEED",
