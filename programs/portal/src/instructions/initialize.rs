@@ -28,6 +28,7 @@ impl Initialize<'_> {
             paused: false,
             chain_id,
             message_nonce: 0,
+            pending_admin: None,
         });
 
         Ok(())

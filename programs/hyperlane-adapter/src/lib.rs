@@ -19,6 +19,26 @@ pub mod hyperlane_adapter {
         Initialize::handler(ctx)
     }
 
+    pub fn pause(ctx: Context<Pause>) -> Result<()> {
+        Pause::handler(ctx)
+    }
+
+    pub fn unpause(ctx: Context<Unpause>) -> Result<()> {
+        Unpause::handler(ctx)
+    }
+
+    pub fn propose_admin(ctx: Context<ProposeAdmin>, new_admin: Pubkey) -> Result<()> {
+        ProposeAdmin::handler(ctx, new_admin)
+    }
+
+    pub fn accept_admin(ctx: Context<AcceptAdmin>) -> Result<()> {
+        AcceptAdmin::handler(ctx)
+    }
+
+    pub fn cancel_admin_transfer(ctx: Context<CancelAdminTransfer>) -> Result<()> {
+        CancelAdminTransfer::handler(ctx)
+    }
+
     pub fn set_peer(ctx: Context<SetPeer>, peer: Peer) -> Result<()> {
         SetPeer::handler(ctx, peer)
     }

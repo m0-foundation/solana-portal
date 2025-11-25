@@ -24,12 +24,6 @@ pub struct SendTokens<'info> {
 
     #[account(
         seeds = [GLOBAL_SEED],
-        bump = messenger_global.bump,
-    )]
-    pub messenger_global: Account<'info, PortalGlobal>,
-
-    #[account(
-        seeds = [GLOBAL_SEED],
         seeds::program = ext_swap::ID,
         bump = swap_global.bump,
     )]
@@ -111,7 +105,7 @@ pub struct SendTokens<'info> {
 
 impl SendTokens<'_> {
     fn validate(&self, amount: u64) -> Result<()> {
-        if self.messenger_global.paused {
+        if self.portal_global.paused {
             return err!(BridgeError::Paused);
         }
 

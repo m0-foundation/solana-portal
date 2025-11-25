@@ -18,6 +18,26 @@ pub mod portal {
         Initialize::handler(ctx, chain_id)
     }
 
+    pub fn pause(ctx: Context<Pause>) -> Result<()> {
+        Pause::handler(ctx)
+    }
+
+    pub fn unpause(ctx: Context<Unpause>) -> Result<()> {
+        Unpause::handler(ctx)
+    }
+
+    pub fn propose_admin(ctx: Context<ProposeAdmin>, new_admin: Pubkey) -> Result<()> {
+        ProposeAdmin::handler(ctx, new_admin)
+    }
+
+    pub fn accept_admin(ctx: Context<AcceptAdmin>) -> Result<()> {
+        AcceptAdmin::handler(ctx)
+    }
+
+    pub fn cancel_admin_transfer(ctx: Context<CancelAdminTransfer>) -> Result<()> {
+        CancelAdminTransfer::handler(ctx)
+    }
+
     /// Outbound Instructions
 
     pub fn send_index<'info>(

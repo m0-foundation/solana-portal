@@ -34,6 +34,7 @@ pub struct HyperlaneGlobal {
     pub nonce: u64,
     pub admin: Pubkey,
     pub paused: bool,
+    pub pending_admin: Option<Pubkey>,
     pub peers: Vec<Peer>,
 }
 
@@ -50,6 +51,8 @@ impl HyperlaneGlobal {
         8 + // nonce
         32 + // admin
         1 + // paused
+        1 + // pending_admin option
+        32 + // pending_admin pubkey
         4 + // length of peers
         peers * 36 // each peer
     }

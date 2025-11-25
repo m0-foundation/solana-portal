@@ -26,6 +26,7 @@ impl Initialize<'_> {
             admin: ctx.accounts.admin.key(),
             paused: false,
             peers: Vec::new(),
+            pending_admin: None,
         });
 
         Ok(())
