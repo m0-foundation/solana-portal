@@ -2,6 +2,28 @@
 
 SVM portal with bridge adapters for sending crosschain messages
 
+## Structure
+
+```
+programs
+├── portal
+├── hyperlane-adapter
+└── wormhole-adapter
+packages
+├── common
+└── common-macros
+runbooks
+├── deployment
+├── initialize
+└── set_peers
+tests
+```
+
+- `programs` consists of the Portal program and any necessary adapters for sending and receiving messages
+- `packages` contains common code between bridge programs and adapters
+- `runbooks` contains all surfpool runbooks for program management (see `txtx.yml`)
+- `tests` contains a set of sequential tests run agaist a local surfpool validator
+
 ## Development
 
 Program are deployed and tested using [Surfpool](https://github.com/txtx/surfpool)
@@ -16,8 +38,7 @@ brew install surfpool
 ### Build and run locally
 
 ```
-anchor build
-surfpool start
+make localnet
 ```
 
 ### Runbooks
@@ -27,7 +48,7 @@ See `txtx.yml` for runbooks and enviroments
 Example:
 
 ```
-surfpool run deployment --env devnet
+surfpool run set_peers --env devnet
 ```
 
 ### Tests

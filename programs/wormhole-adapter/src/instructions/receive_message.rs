@@ -51,10 +51,10 @@ pub struct ReceiveMessage<'info> {
         seeds::program = CORE_BRIDGE_PROGRAM_ID,
         bump
     )]
-    /// CHECK: Guardian set used for signature verification by shim (checked by the shim)
+    /// CHECK: Guardian set used for signature verification by shim
     pub guardian_set: UncheckedAccount<'info>,
 
-    /// CHECK: Stored guardian signatures to be verified by shim (ownership ownership and discriminator is checked by the shim)
+    /// CHECK: Stored guardian signatures to be verified by shim
     pub guardian_signatures: UncheckedAccount<'info>,
 
     pub wormhole_verify_vaa_shim: Program<'info, WormholeVerifyVaaShim>,

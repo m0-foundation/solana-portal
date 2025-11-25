@@ -40,7 +40,7 @@ pub struct SendMessage<'info> {
         mut,
         address = CORE_BRIDGE_CONFIG
     )]
-    /// CHECK: Wormhole bridge config. [`wormhole::post_message`] requires this account be mutable.
+    /// CHECK: Wormhole bridge config checked by shim
     pub bridge: UncheckedAccount<'info>,
 
     #[account(
@@ -49,7 +49,7 @@ pub struct SendMessage<'info> {
         seeds::program = wormhole_post_message_shim::ID,
         bump
     )]
-    /// CHECK: Wormhole Message. [`wormhole::post_message`] requires this account be signer and mutable.
+    /// CHECK: Wormhole Message checked by shim
     pub message: UncheckedAccount<'info>,
 
     #[account(
@@ -65,14 +65,14 @@ pub struct SendMessage<'info> {
         seeds::program = CORE_BRIDGE_PROGRAM_ID,
         bump
     )]
-    /// CHECK: Emitter's sequence account. [`wormhole::post_message`] requires this account be mutable.
+    /// CHECK: Emitter's sequence account checked by shim
     pub sequence: UncheckedAccount<'info>,
 
     #[account(
         mut,
         address = CORE_BRIDGE_FEE_COLLECTOR
     )]
-    /// CHECK: Wormhole fee collector. [`wormhole::post_message`] requires this account be mutable.
+    /// CHECK: Wormhole fee collector checked by shim
     pub fee_collector: UncheckedAccount<'info>,
 
     pub clock: Sysvar<'info, Clock>,
