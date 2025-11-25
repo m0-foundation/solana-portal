@@ -11,6 +11,12 @@ runbooks:
   - name: set_peers
     description: Set peers
     location: runbooks/set_peers
+  - name: pause
+    description: Pause Portal program
+    location: runbooks/pause
+  - name: unpause
+    description: Unpause Portal program
+    location: runbooks/unpause
 environments:
   localnet:
     network_id: localnet

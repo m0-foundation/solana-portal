@@ -147,3 +147,6 @@ mod tests_03_set_peers;
 
 #[cfg(test)]
 mod tests_04_index_update;
+
+#[cfg(test)]
+mod tests_05_pausing;

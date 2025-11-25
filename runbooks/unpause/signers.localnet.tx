@@ -1,0 +1,4 @@
+ signer "caller" "svm::secret_key" {
+    description = "Local key that owns programs deployed to localnet"
+    secret_key = input.local_signer
+}
