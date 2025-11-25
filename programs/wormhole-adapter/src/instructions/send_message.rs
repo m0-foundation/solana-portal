@@ -115,6 +115,8 @@ impl SendMessage<'_> {
                 ),
                 bridge_fee,
             )?;
+
+            msg!("Sent bridge fee {}", bridge_fee);
         }
 
         wormhole_post_message_shim::cpi::post_message(

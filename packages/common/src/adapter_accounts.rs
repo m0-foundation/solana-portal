@@ -33,7 +33,7 @@ pub struct WormholeRemainingAccounts {
 }
 
 impl WormholeRemainingAccounts {
-    fn new() -> Self {
+    pub fn new() -> Self {
         let emitter = pda!(&[EMITTER_SEED], &wormhole_adapter::ID);
 
         Self {
@@ -87,9 +87,9 @@ pub struct HyperlaneRemainingAccounts {
 }
 
 impl HyperlaneRemainingAccounts {
-    fn new() -> Self {
+    pub fn new(global_nonce: u64) -> Self {
         let unique_message = pda!(
-            &[UNIQUE_MESSAGE_SEED, 0u64.to_le_bytes().as_ref()],
+            &[UNIQUE_MESSAGE_SEED, global_nonce.to_le_bytes().as_ref()],
             &hyperlane_adapter::ID
         );
 
@@ -119,8 +119,8 @@ impl HyperlaneRemainingAccounts {
         }
     }
 
-    pub fn account_metas() -> Vec<AccountMeta> {
-        Self::new().to_account_metas()
+    pub fn account_metas(global_nonce: u64) -> Vec<AccountMeta> {
+        Self::new(global_nonce).to_account_metas()
     }
 
     pub fn to_account_metas(&self) -> Vec<AccountMeta> {
