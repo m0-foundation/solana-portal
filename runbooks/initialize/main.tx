@@ -6,13 +6,21 @@ addon "svm" {
 variable "portal_program" {
     value = svm::get_program_from_anchor_project("portal")
 }
-
 variable "wormhole_adapter_program" {
     value = svm::get_program_from_anchor_project("wormhole_adapter")
 }
-
 variable "hyperlane_adapter_program" {
     value = svm::get_program_from_anchor_project("hyperlane_adapter")
+}
+
+variable "portal_global" {
+    value = svm::find_pda("MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce", ["global"])
+}
+variable "wormhole_global" {
+    value = svm::find_pda("mzp1q2j5Hr1QuLC3KFBCAUz5aUckT6qyuZKZ3WJnMmY", ["global"])
+}
+variable "hyperlane_global" {
+    value = svm::find_pda("mZhPGteS36G7FhMTcRofLQU8ocBNAsGq7u8SKSHfL2X", ["global"])
 }
 
 action "portal_global_account" "std::send_http_request" {
@@ -23,7 +31,7 @@ action "portal_global_account" "std::send_http_request" {
     "id": 1,
     "method": "getAccountInfo",
     "params": [
-        "54dGjbVChJseSS7zo1AWWazMtz4NXi89pQPF2HH2hM6W",
+        variable.portal_global.pda,
         { "encoding": "base64" }
     ]
   }
@@ -37,7 +45,7 @@ action "wormhole_global_account" "std::send_http_request" {
     "id": 1,
     "method": "getAccountInfo",
     "params": [
-        "3bhczvnEexwTjdwR8b1LFDh5beYb8CLYAXUukZR8ZNdy",
+        variable.wormhole_global.pda,
         { "encoding": "base64" }
     ]
   }
@@ -51,7 +59,7 @@ action "hyperlane_global_account" "std::send_http_request" {
     "id": 1,
     "method": "getAccountInfo",
     "params": [
-        "5ePctQxFYbWVUAwpiG2imQJQK3dLjU4BZqBkAtxbXuY4",
+        variable.hyperlane_global.pda,
         { "encoding": "base64" }
     ]
   }

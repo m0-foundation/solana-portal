@@ -9,7 +9,7 @@ use anchor_lang::prelude::*;
 use executor_account_resolver_svm::{InstructionGroups, Resolver, RESOLVER_EXECUTE_VAA_V1};
 use instructions::*;
 
-declare_id!("mzWh4w2CAHymGp89Z8VV2nKuCkdSFARS3fEaTBPq14b");
+declare_id!("mzp1q2j5Hr1QuLC3KFBCAUz5aUckT6qyuZKZ3WJnMmY");
 
 #[program]
 pub mod wormhole_adapter {

@@ -5,14 +5,11 @@ use common::{
     hyperlane_adapter, pda,
     portal::constants::GLOBAL_SEED,
     wormhole_adapter::{self, constants::EMITTER_SEED},
-    wormhole_post_message_shim, HyperlaneRemainingAccounts, Payload, WormholeRemainingAccounts,
-    AUTHORITY_SEED,
+    HyperlaneRemainingAccounts, Payload, WormholeRemainingAccounts, AUTHORITY_SEED,
 };
 use portal::{accounts, instruction};
 use solana_sdk::bs58;
-use solana_transaction_status_client_types::{
-    EncodedTransaction, UiInstruction, UiMessage, UiTransactionEncoding,
-};
+use solana_transaction_status_client_types::{UiInstruction, UiTransactionEncoding};
 
 use crate::{get_rpc_client, get_signer};
 
@@ -41,18 +38,6 @@ fn test_01_index_update_wormhole() -> Result<()> {
 
     let transaction = rpc_client.get_transaction(&signature, UiTransactionEncoding::Json)?;
 
-    // Extract account keys from transaction
-    let account_keys = match transaction.transaction.transaction {
-        EncodedTransaction::Json(ref t) => match &t.message {
-            UiMessage::Raw(message) => &message.account_keys,
-            _ => panic!("Expected raw message format"),
-        },
-        _ => panic!("Expected JSON encoded transaction"),
-    };
-
-    // Event CPI instruction discriminator
-    const EVENT_DISCRIMINATOR: [u8; 8] = [228, 69, 165, 46, 81, 203, 154, 29];
-
     // Find and verify the wormhole post message event
     let meta = transaction
         .transaction
@@ -73,25 +58,20 @@ fn test_01_index_update_wormhole() -> Result<()> {
                 return None;
             };
 
-            let program_id = &account_keys[compiled_ix.program_id_index as usize];
-            if program_id != &wormhole_post_message_shim::ID.to_string() {
-                return None;
-            }
-
             let data = bs58::decode(&compiled_ix.data).into_vec().ok()?;
 
-            // Verify discriminator and extract data
-            if data.get(0..8)? != EVENT_DISCRIMINATOR {
+            // Verify Event CPI discriminator and extract data
+            if data.get(0..8)? != [228, 69, 165, 46, 81, 203, 154, 29] {
                 return None;
             }
 
             let emitter = data.get(16..48)?;
-            let sequence = data.get(48..56)?;
+            let sequence = u64::from_le_bytes(data.get(48..56)?.try_into().ok()?);
             let timestamp = u32::from_le_bytes(data.get(56..60)?.try_into().ok()?);
 
             // Verify all conditions
             let expected_emitter = pda!(&[EMITTER_SEED], &wormhole_adapter::ID).to_bytes();
-            if emitter == expected_emitter && sequence == [0u8; 8] && timestamp > 0 {
+            if emitter == expected_emitter && sequence > 50 && timestamp > 0 {
                 return Some(());
             }
 

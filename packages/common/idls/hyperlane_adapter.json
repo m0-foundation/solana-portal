@@ -1607,6 +1607,12 @@
           {
             "name": "message_nonce",
             "type": "u64"
+          },
+          {
+            "name": "pending_admin",
+            "type": {
+              "option": "pubkey"
+            }
           }
         ]
       }

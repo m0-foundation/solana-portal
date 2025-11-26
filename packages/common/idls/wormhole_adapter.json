@@ -1,5 +1,5 @@
 {
-  "address": "mzWh4w2CAHymGp89Z8VV2nKuCkdSFARS3fEaTBPq14b",
+  "address": "mzp1q2j5Hr1QuLC3KFBCAUz5aUckT6qyuZKZ3WJnMmY",
   "metadata": {
     "name": "wormhole_adapter",
     "version": "0.1.0",
@@ -1051,6 +1051,12 @@
           {
             "name": "message_nonce",
             "type": "u64"
+          },
+          {
+            "name": "pending_admin",
+            "type": {
+              "option": "pubkey"
+            }
           }
         ]
       }
