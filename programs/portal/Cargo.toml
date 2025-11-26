@@ -9,7 +9,7 @@ crate-type = ["cdylib", "lib"]
 name = "portal"
 
 [features]
-default = []
+default = ["mainnet"]
 cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []
@@ -19,6 +19,8 @@ idl-build = [
     "anchor-spl/idl-build",
     "common/idl-build",
 ]
+mainnet = []
+devnet = []
 
 [dependencies]
 anchor-lang.workspace = true

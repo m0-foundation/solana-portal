@@ -10,5 +10,8 @@ build:
 	anchor build
 	cp -f target/idl/*.json packages/common/idls/
 
+build-devnet:
+	anchor build -- --features devnet --no-default-features
+
 localnet:
 	surfpool start -r deployment -r initialize -a test4MzZzYk2NAP1222FSuKqq83GuXY5tHakqREDHPo --rpc-url https://hatty-73mn84-fast-mainnet.helius-rpc.com

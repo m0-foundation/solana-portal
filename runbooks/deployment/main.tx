@@ -5,7 +5,7 @@ addon "svm" {
 
 action "deploy_portal" "svm::deploy_program" {
     description = "Deploy portal program"
-    program = svm::get_program_from_anchor_project("portal") 
+    program = svm::get_program_from_anchor_project("portal")
     authority = signer.authority
     payer = signer.payer
     instant_surfnet_deployment = true
@@ -13,7 +13,7 @@ action "deploy_portal" "svm::deploy_program" {
 
 action "deploy_wormhole_adapter" "svm::deploy_program" {
     description = "Deploy wormhole_adapter program"
-    program = svm::get_program_from_anchor_project("wormhole_adapter") 
+    program = svm::get_program_from_anchor_project("wormhole_adapter")
     authority = signer.authority
     payer = signer.payer
     instant_surfnet_deployment = true
@@ -25,7 +25,7 @@ action "deploy_wormhole_adapter" "svm::deploy_program" {
 
 action "deploy_hyperlane_adapter" "svm::deploy_program" {
     description = "Deploy hyperlane_adapter program"
-    program = svm::get_program_from_anchor_project("hyperlane_adapter") 
+    program = svm::get_program_from_anchor_project("hyperlane_adapter")
     authority = signer.authority
     payer = signer.payer
     instant_surfnet_deployment = true
