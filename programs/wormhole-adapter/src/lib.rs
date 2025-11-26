@@ -9,6 +9,17 @@ use anchor_lang::prelude::*;
 use executor_account_resolver_svm::{InstructionGroups, Resolver, RESOLVER_EXECUTE_VAA_V1};
 use instructions::*;
 
+#[cfg(not(feature = "no-entrypoint"))]
+solana_security_txt::security_txt! {
+    name: "Portal Wormhole Adapter Program",
+    project_url: "https://m0.org/",
+    contacts: "email:security@m0.xyz",
+    policy: "https://github.com/m0-foundation/solana-portal/blob/main/SECURITY.md",
+    preferred_languages: "en",
+    source_code: "https://github.com/m0-foundation/solana-portal/tree/main/programs/wormhole-adapter",
+    auditors: ""
+}
+
 declare_id!("mzp1q2j5Hr1QuLC3KFBCAUz5aUckT6qyuZKZ3WJnMmY");
 
 #[program]

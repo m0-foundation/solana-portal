@@ -6,6 +6,17 @@ pub mod state;
 use anchor_lang::prelude::*;
 use instructions::*;
 
+#[cfg(not(feature = "no-entrypoint"))]
+solana_security_txt::security_txt! {
+    name: "M Portal V2 Program",
+    project_url: "https://m0.org/",
+    contacts: "email:security@m0.xyz",
+    policy: "https://github.com/m0-foundation/solana-portal/blob/main/SECURITY.md",
+    preferred_languages: "en",
+    source_code: "https://github.com/m0-foundation/solana-portal/tree/main/programs/portal",
+    auditors: ""
+}
+
 declare_id!("MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce");
 
 #[program]

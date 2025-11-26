@@ -31,3 +31,4 @@ anchor-spl.workspace = true
 common = { path = "../../packages/common" }
 cfg-if.workspace = true
 borsh.workspace = true
+solana-security-txt.workspace = true

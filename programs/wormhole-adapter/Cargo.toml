@@ -31,6 +31,7 @@ executor-account-resolver-svm = { version = "0.0.1", git = "https://github.com/w
 wormhole-svm-definitions = { git = "https://github.com/wormhole-foundation/wormhole.git", rev = "0231deba271494519717c8b5e583ce89e428de4c", features = [
     "borsh",
 ] }
+solana-security-txt.workspace = true
 
 [dev-dependencies]
 base64 = "0.22.1"

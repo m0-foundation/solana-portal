@@ -9,6 +9,17 @@ use anchor_lang::prelude::*;
 use consts::{HANDLE_ACCOUNT_METAS_DISCRIMINATOR, HANDLE_DISCRIMINATOR};
 use instructions::*;
 
+#[cfg(not(feature = "no-entrypoint"))]
+solana_security_txt::security_txt! {
+    name: "Portal Hyperlane Adapter Program",
+    project_url: "https://m0.org/",
+    contacts: "email:security@m0.xyz",
+    policy: "https://github.com/m0-foundation/solana-portal/blob/main/SECURITY.md",
+    preferred_languages: "en",
+    source_code: "https://github.com/m0-foundation/solana-portal/tree/main/programs/hyperlane-adapter",
+    auditors: ""
+}
+
 declare_id!("mZhPGteS36G7FhMTcRofLQU8ocBNAsGq7u8SKSHfL2X");
 
 #[program]

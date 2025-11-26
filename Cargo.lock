@@ -1879,6 +1879,7 @@ dependencies = [
  "borsh 0.10.4",
  "cfg-if",
  "common",
+ "solana-security-txt",
 ]
 
 [[package]]
@@ -2651,6 +2652,7 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "common",
+ "solana-security-txt",
 ]
 
 [[package]]
@@ -6933,6 +6935,7 @@ dependencies = [
  "cfg-if",
  "common",
  "executor-account-resolver-svm",
+ "solana-security-txt",
  "wormhole-svm-definitions",
 ]
 
