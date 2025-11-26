@@ -25,15 +25,18 @@ environments:
     chain_id: 1399811149
     wormhole_adapter: true
     hyperlane_adapter: true
+    build_dir: target/deploy
   devnet:
     network_id: devnet
     rpc_api_url: https://lindsy-gxe51w-fast-devnet.helius-rpc.com
     chain_id: 1399811149
     wormhole_adapter: true
     hyperlane_adapter: false
+    build_dir: target/deploy
   mainnet:
     network_id: mainnet
     rpc_api_url: https://hatty-73mn84-fast-mainnet.helius-rpc.com
     chain_id: 1399811149
     wormhole_adapter: true
     hyperlane_adapter: false
+    build_dir: target/verifiable
