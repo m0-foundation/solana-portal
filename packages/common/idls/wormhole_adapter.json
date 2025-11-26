@@ -299,7 +299,7 @@
           }
         },
         {
-          "name": "messenger_authority",
+          "name": "portal_authority",
           "pda": {
             "seeds": [
               {
@@ -519,7 +519,7 @@
           }
         },
         {
-          "name": "messenger_authority",
+          "name": "portal_authority",
           "docs": [
             "Only relay messages coming from the Portal"
           ],

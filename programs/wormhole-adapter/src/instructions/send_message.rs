@@ -34,7 +34,7 @@ pub struct SendMessage<'info> {
         bump
     )]
     /// Only relay messages coming from the Portal
-    messenger_authority: Signer<'info>,
+    portal_authority: Signer<'info>,
 
     #[account(
         mut,

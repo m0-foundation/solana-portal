@@ -275,7 +275,7 @@
           "signer": true
         },
         {
-          "name": "messenger_authority",
+          "name": "portal_authority",
           "pda": {
             "seeds": [
               {
@@ -344,7 +344,7 @@
           }
         },
         {
-          "name": "messenger_authority",
+          "name": "portal_authority",
           "pda": {
             "seeds": [
               {
@@ -454,7 +454,7 @@
           }
         },
         {
-          "name": "messenger_authority",
+          "name": "portal_authority",
           "pda": {
             "seeds": [
               {
@@ -581,7 +581,7 @@
           }
         },
         {
-          "name": "messenger_authority",
+          "name": "portal_authority",
           "pda": {
             "seeds": [
               {
@@ -745,7 +745,7 @@
             "seeds": [
               {
                 "kind": "account",
-                "path": "messenger_authority"
+                "path": "portal_authority"
               },
               {
                 "kind": "account",
@@ -800,7 +800,7 @@
           "writable": true
         },
         {
-          "name": "messenger_authority",
+          "name": "portal_authority",
           "pda": {
             "seeds": [
               {

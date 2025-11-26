@@ -124,4 +124,8 @@ action "sync_ext_hyperlane_adapter" "svm::process_instructions" {
             public_key = signer.caller.public_key
         }
     }
+    pre_condition {
+        behavior = "skip"
+        assertion = input.hyperlane_adapter == "true"
+    }
 }

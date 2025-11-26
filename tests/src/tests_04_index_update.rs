@@ -27,7 +27,7 @@ fn test_01_index_update_wormhole() -> Result<()> {
             sender: program.payer(),
             system_program: system_program::ID,
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
-            messenger_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
+            portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
             bridge_adapter: wormhole_adapter::ID,
         })
         .args(instruction::SendIndex {
@@ -109,7 +109,7 @@ fn test_02_index_update_hyperlane() -> Result<()> {
             sender: program.payer(),
             system_program: system_program::ID,
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
-            messenger_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
+            portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
             bridge_adapter: hyperlane_adapter::ID,
         })
         .args(instruction::SendIndex {

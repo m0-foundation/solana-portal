@@ -16,17 +16,7 @@ use common::{
     Extension,
 };
 use executor_account_resolver_svm::{
-    find_account,
-    InstructionGroup,
-    InstructionGroups,
-    MissingAccounts,
-    Resolver,
-    SerializableInstruction,
-    RESOLVER_PUBKEY_GUARDIAN_SET,
-    RESOLVER_PUBKEY_PAYER,
-    RESOLVER_PUBKEY_SHIM_VAA_SIGS,
-    RESOLVER_RESULT_ACCOUNT,
-    RESOLVER_RESULT_ACCOUNT_SEED,
+    InstructionGroup, InstructionGroups, MissingAccounts, RESOLVER_PUBKEY_GUARDIAN_SET, RESOLVER_PUBKEY_PAYER, RESOLVER_PUBKEY_SHIM_VAA_SIGS, RESOLVER_RESULT_ACCOUNT, RESOLVER_RESULT_ACCOUNT_SEED, Resolver, SerializableInstruction, find_account, missing_account
 };
 use wormhole_svm_definitions::{zero_copy::GuardianSet, GUARDIAN_SET_SEED};
 
@@ -57,11 +47,7 @@ impl ResolveExecuteVaa {
 
         // Check for missing accounts
         {
-            let mut accounts_required = vec![
-                result_account,
-                RESOLVER_PUBKEY_SHIM_VAA_SIGS,
-                RESOLVER_PUBKEY_GUARDIAN_SET,
-            ];
+            let mut accounts_required = vec![System::id(), result_account];
 
             match vaa.payload {
                 common::Payload::TokenTransfer(_) => {
@@ -99,12 +85,15 @@ impl ResolveExecuteVaa {
                 _ => {}
             }
 
-            let missing: Vec<_> = accounts_required
+            let mut missing: Vec<_> = accounts_required
                 .into_iter()
                 .filter(|&account| find_account(ctx.remaining_accounts, account).is_none())
                 .collect();
 
             if !missing.is_empty() {
+                // Placeholder for payer we know is missing
+                missing.push(RESOLVER_PUBKEY_PAYER);
+
                 return Ok(Resolver::Missing(MissingAccounts {
                     accounts: missing,
                     address_lookup_tables: Vec::new(),
@@ -136,8 +125,10 @@ impl ResolveExecuteVaa {
             }
         }
 
-        let guardian_set = guardian_set_pubkey.ok_or(BridgeError::MissingGuardianAccount)?;
-        let guardian_index = guardian_set_index.ok_or(BridgeError::MissingGuardianAccount)?;
+        let (guardian_set, guardian_index) = match (guardian_set_pubkey, guardian_set_index) {
+            (Some(pubkey), Some(index)) => (pubkey, index),
+            _ => return Ok(missing_account(RESOLVER_PUBKEY_GUARDIAN_SET)),
+        };
 
         // Increase the size of the return account then parse it
         let mut ret = {
@@ -192,8 +183,9 @@ impl ResolveExecuteVaa {
             accounts: vec![
                 AccountMeta::new(RESOLVER_PUBKEY_PAYER, true).into(),
                 AccountMeta::new_readonly(pda!(&[GLOBAL_SEED], &crate::ID), false).into(),
+                AccountMeta::new_readonly(pda!(&[GLOBAL_SEED], &portal::ID), false).into(),
                 AccountMeta::new_readonly(pda!(&[AUTHORITY_SEED], &crate::ID), false).into(),
-                AccountMeta::new_readonly(pda!(&[AUTHORITY_SEED], &portal::ID), false).into(),
+                AccountMeta::new(pda!(&[AUTHORITY_SEED], &portal::ID), false).into(),
                 AccountMeta::new_readonly(guardian_set, false).into(),
                 AccountMeta::new_readonly(RESOLVER_PUBKEY_SHIM_VAA_SIGS, false).into(),
                 AccountMeta::new_readonly(wormhole_verify_vaa_shim::ID, false).into(),

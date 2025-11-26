@@ -5,6 +5,7 @@ use anchor_spl::{
 };
 
 use crate::{
+    earn,
     ext_swap::{self, constants::GLOBAL_SEED},
     order_book::{self, constants::ORDER_SEED_PREFIX},
     pda, portal, BridgeError, Extension, Payload, AUTHORITY_SEED,
@@ -55,6 +56,7 @@ pub fn require_metas(
             let extension_mint_auth = pda!(&[b"mint_authority"], &extension_pid);
             let extension_global = pda!(&[GLOBAL_SEED], &extension_pid);
             let swap_global = pda!(&[GLOBAL_SEED], &ext_swap::ID);
+            let m_global = pda!(&[GLOBAL_SEED], &earn::ID);
 
             // Token accounts
             let recipient_token_account = get_associated_token_address_with_program_id(
@@ -74,6 +76,10 @@ pub fn require_metas(
             );
 
             Ok(vec![
+                AccountMeta::new(m_global, false),
+                AccountMeta::new(m_mint, false),
+                AccountMeta::new_readonly(earn::ID, false),
+                AccountMeta::new_readonly(token_2022::ID, false),
                 AccountMeta::new(extension_mint, false),
                 AccountMeta::new(recipient_token_account, false),
                 AccountMeta::new_readonly(authority_m_token_account, false),
@@ -85,6 +91,17 @@ pub fn require_metas(
                 AccountMeta::new_readonly(extension_pid, false),
                 AccountMeta::new_readonly(swap_global, false),
                 AccountMeta::new_readonly(ext_swap::ID, false),
+            ])
+        }
+        Payload::Index(_) | Payload::EarnerMerkleRoot(_) => {
+            let m_global = pda!(&[GLOBAL_SEED], &earn::ID);
+            let m_mint = m_mint.ok_or(BridgeError::MissingOptionalAccount)?;
+
+            Ok(vec![
+                AccountMeta::new(m_global, false),
+                AccountMeta::new(m_mint, false),
+                AccountMeta::new_readonly(earn::ID, false),
+                AccountMeta::new_readonly(token_2022::ID, false),
             ])
         }
         Payload::FillReport(report) => {
@@ -143,6 +160,5 @@ pub fn require_metas(
 
             Ok(accounts)
         }
-        _ => Ok(vec![]),
     }
 }

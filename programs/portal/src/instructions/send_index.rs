@@ -23,7 +23,7 @@ pub struct SendIndex<'info> {
         seeds = [AUTHORITY_SEED],
         bump,
     )]
-    pub messenger_authority: UncheckedAccount<'info>,
+    pub portal_authority: UncheckedAccount<'info>,
 
     pub bridge_adapter: Interface<'info, BridgeAdapter>,
 
@@ -43,8 +43,8 @@ impl SendIndex<'_> {
         send_message(
             ctx.accounts.bridge_adapter.to_account_info(),
             ctx.accounts.sender.to_account_info(),
-            ctx.accounts.messenger_authority.to_account_info(),
-            ctx.bumps.messenger_authority,
+            ctx.accounts.portal_authority.to_account_info(),
+            ctx.bumps.portal_authority,
             ctx.accounts.system_program.to_account_info(),
             ctx.remaining_accounts.to_vec(),
             message.encode(),

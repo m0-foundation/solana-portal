@@ -50,7 +50,7 @@ pub struct SendTokens<'info> {
     #[account(
         mut,
         associated_token::mint = m_mint,
-        associated_token::authority = messenger_authority,
+        associated_token::authority = portal_authority,
         associated_token::token_program = m_token_program,
     )]
     pub m_token_account: InterfaceAccount<'info, TokenAccount>,
@@ -63,7 +63,7 @@ pub struct SendTokens<'info> {
         bump,
     )]
     /// CHECK: account does not hold data
-    pub messenger_authority: UncheckedAccount<'info>,
+    pub portal_authority: UncheckedAccount<'info>,
 
     #[account(
         mut,
@@ -145,7 +145,7 @@ impl SendTokens<'_> {
                 ctx.accounts.swap_program.to_account_info(),
                 ext_swap::cpi::accounts::Unwrap {
                     signer: ctx.accounts.sender.to_account_info(),
-                    unwrap_authority: Some(ctx.accounts.messenger_authority.to_account_info()),
+                    unwrap_authority: Some(ctx.accounts.portal_authority.to_account_info()),
                     swap_global: ctx.accounts.swap_global.to_account_info(),
                     from_global: ctx.accounts.extension_global.to_account_info(),
                     from_mint: ctx.accounts.extension_mint.to_account_info(),
@@ -160,7 +160,7 @@ impl SendTokens<'_> {
                     from_ext_program: ctx.accounts.extension_program.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info(),
                 },
-                &[&[AUTHORITY_SEED, &[ctx.bumps.messenger_authority]]],
+                &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
             ),
             amount,
         )?;
@@ -182,8 +182,8 @@ impl SendTokens<'_> {
         send_message(
             ctx.accounts.bridge_adapter.to_account_info(),
             ctx.accounts.sender.to_account_info(),
-            ctx.accounts.messenger_authority.to_account_info(),
-            ctx.bumps.messenger_authority,
+            ctx.accounts.portal_authority.to_account_info(),
+            ctx.bumps.portal_authority,
             ctx.accounts.system_program.to_account_info(),
             ctx.remaining_accounts.to_vec(),
             message.encode(),

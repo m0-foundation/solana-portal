@@ -29,7 +29,7 @@ pub struct ReceiveMessage<'info> {
         bump,
     )]
     /// CHECK: account does not hold data
-    pub messenger_authority: UncheckedAccount<'info>,
+    pub portal_authority: UncheckedAccount<'info>,
 
     pub system_program: Program<'info, System>,
 }
@@ -79,12 +79,12 @@ impl ReceiveMessage<'_> {
         payload: EarnerMerkleRootPayload,
     ) -> Result<()> {
         let accounts = payload.parse_and_validate_accounts(ctx.remaining_accounts.to_vec())?;
-        let authority_seed: &[&[&[u8]]] = &[&[AUTHORITY_SEED, &[ctx.bumps.messenger_authority]]];
+        let authority_seed: &[&[&[u8]]] = &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]];
 
         let propogate_ctx = CpiContext::new_with_signer(
             accounts.earn_program.to_account_info(),
             PropagateIndex {
-                signer: ctx.accounts.messenger_authority.to_account_info(),
+                signer: ctx.accounts.portal_authority.to_account_info(),
                 global_account: accounts.m_global,
                 m_mint: accounts.m_mint,
                 token_program: accounts.m_token_program,
@@ -122,9 +122,9 @@ impl ReceiveMessage<'_> {
                 token_interface::MintTo {
                     mint: accounts.m_mint.to_account_info(),
                     to: accounts.authority_m_token_account.clone(),
-                    authority: ctx.accounts.messenger_authority.to_account_info(),
+                    authority: ctx.accounts.portal_authority.to_account_info(),
                 },
-                &[&[AUTHORITY_SEED, &[ctx.bumps.messenger_authority]]],
+                &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
             ),
             principal.try_into().unwrap(),
         )?;
@@ -134,8 +134,8 @@ impl ReceiveMessage<'_> {
             CpiContext::new_with_signer(
                 accounts.swap_program,
                 ext_swap::cpi::accounts::Wrap {
-                    signer: ctx.accounts.messenger_authority.to_account_info(),
-                    wrap_authority: Some(ctx.accounts.messenger_authority.to_account_info()),
+                    signer: ctx.accounts.portal_authority.to_account_info(),
+                    wrap_authority: Some(ctx.accounts.portal_authority.to_account_info()),
                     swap_global: accounts.swap_global,
                     to_global: accounts.extension_global,
                     to_mint: accounts.extension_mint,
@@ -150,7 +150,7 @@ impl ReceiveMessage<'_> {
                     to_ext_program: accounts.extension_program,
                     system_program: ctx.accounts.system_program.to_account_info(),
                 },
-                &[&[AUTHORITY_SEED, &[ctx.bumps.messenger_authority]]],
+                &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
             ),
             principal.try_into().unwrap(),
         )?;
@@ -170,7 +170,7 @@ impl ReceiveMessage<'_> {
                 accounts.orderbook_program.clone(),
                 order_book::cpi::accounts::ReportOrderFill {
                     relayer: ctx.accounts.sender.to_account_info(),
-                    messenger_authority: ctx.accounts.messenger_authority.to_account_info(),
+                    messenger_authority: ctx.accounts.portal_authority.to_account_info(),
                     global_account: accounts.orderbook_global_account,
                     order: accounts.order,
                     token_in_mint: accounts.token_in_mint,
@@ -183,7 +183,7 @@ impl ReceiveMessage<'_> {
                     event_authority: accounts.event_authority,
                     program: accounts.orderbook_program,
                 },
-                &[&[AUTHORITY_SEED, &[ctx.bumps.messenger_authority]]],
+                &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
             ),
             FillReport {
                 order_id: payload.order_id,

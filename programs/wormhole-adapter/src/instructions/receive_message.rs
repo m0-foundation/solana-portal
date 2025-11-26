@@ -44,7 +44,7 @@ pub struct ReceiveMessage<'info> {
         bump
     )]
     /// CHECK: Account does not hold data
-    pub messenger_authority: AccountInfo<'info>,
+    pub portal_authority: AccountInfo<'info>,
 
     #[account(
         seeds = [GUARDIAN_SET_SEED, &guardian_set_index.to_be_bytes()],
@@ -101,9 +101,9 @@ impl ReceiveMessage<'_> {
                 ctx.accounts.portal_program.to_account_info(),
                 portal::cpi::accounts::ReceiveMessage {
                     sender: ctx.accounts.relayer.to_account_info(),
-                    adapter_authority: ctx.accounts.wormhole_adapter_authority.to_account_info(),
-                    messenger_authority: ctx.accounts.messenger_authority.to_account_info(),
                     portal_global: ctx.accounts.portal_global.to_account_info(),
+                    adapter_authority: ctx.accounts.wormhole_adapter_authority.to_account_info(),
+                    portal_authority: ctx.accounts.portal_authority.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info(),
                 },
                 &[&[AUTHORITY_SEED, &[ctx.bumps.wormhole_adapter_authority]]],

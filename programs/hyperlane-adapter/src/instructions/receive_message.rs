@@ -67,7 +67,7 @@ pub struct ReceiveMessage<'info> {
         bump
     )]
     /// CHECK: Account does not hold data
-    pub messenger_authority: AccountInfo<'info>,
+    pub portal_authority: AccountInfo<'info>,
 
     pub portal_program: Program<'info, Portal>,
 
@@ -98,7 +98,7 @@ impl ReceiveMessage<'_> {
                 portal::cpi::accounts::ReceiveMessage {
                     sender: ctx.accounts.receive_payer.to_account_info(),
                     adapter_authority: ctx.accounts.hyperlane_adapter_authority.to_account_info(),
-                    messenger_authority: ctx.accounts.messenger_authority.to_account_info(),
+                    portal_authority: ctx.accounts.portal_authority.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info(),
                     portal_global: ctx.accounts.portal_global.to_account_info(),
                 },
@@ -136,15 +136,17 @@ impl<'info> ReceiveMessageMetas<'info> {
 
         let hyperlane_adapter_authority = pda!(&[AUTHORITY_SEED], &crate::ID);
         let hyperlane_global = pda!(&[GLOBAL_SEED], &crate::ID);
+        let portal_global = pda!(&[GLOBAL_SEED], &portal::ID);
         let payer = pda!(&[PAYER_SEED], &crate::ID);
-        let messenger_authority = pda!(&[AUTHORITY_SEED], &portal::ID);
+        let portal_authority = pda!(&[AUTHORITY_SEED], &portal::ID);
 
         // Accounts needed by all payload types
         let mut account_metas: Vec<SerializableAccountMeta> = vec![
             AccountMeta::new(hyperlane_adapter_authority, false).into(),
             AccountMeta::new(payer, false).into(),
             AccountMeta::new_readonly(hyperlane_global, false).into(),
-            AccountMeta::new_readonly(messenger_authority, false).into(),
+            AccountMeta::new(portal_global, false).into(),
+            AccountMeta::new_readonly(portal_authority, false).into(),
             AccountMeta::new_readonly(portal::ID, false).into(),
             AccountMeta::new_readonly(system_program::ID, false).into(),
         ];
