@@ -1,0 +1,20 @@
+addon "svm" {
+    rpc_api_url = input.rpc_api_url
+    network_id = input.network_id
+}
+
+variable "wormhole_adapter_program" {
+    value = svm::get_program_from_anchor_project("wormhole_adapter")
+}
+
+action "set_lut" "svm::process_instructions" {
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.wormhole_adapter_program.idl
+        instruction_name = "set_lut"
+        admin {
+            public_key = signer.caller.public_key
+        }
+        instruction_args = [382878619]
+    }
+}

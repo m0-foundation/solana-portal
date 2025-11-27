@@ -126,11 +126,40 @@
           }
         },
         {
+          "name": "lut_address",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "wormhole_global"
+              },
+              {
+                "kind": "arg",
+                "path": "recent_slot"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "lut_program"
+            }
+          }
+        },
+        {
+          "name": "lut_program",
+          "address": "AddressLookupTab1e1111111111111111111111111"
+        },
+        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "recent_slot",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "pause",
@@ -1244,9 +1273,7 @@
           },
           {
             "name": "receive_lut",
-            "type": {
-              "option": "pubkey"
-            }
+            "type": "pubkey"
           },
           {
             "name": "pending_admin",

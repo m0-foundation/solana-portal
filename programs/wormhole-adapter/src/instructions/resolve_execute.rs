@@ -208,15 +208,13 @@ impl ResolveExecuteVaa {
             .accounts
             .extend(required_remaining.iter().cloned().map(|a| a.into()));
 
-        // Add lookup table if available
-        let mut lut = vec![];
+        // Get LUT from Wormhole global
         let wormhole_global: WormholeGlobal = deserialize_account(ctx.remaining_accounts, global)?;
-        lut.extend(wormhole_global.receive_lut);
 
         ret.set_inner(ExecutorAccountResolverResult(Resolver::Resolved(
             InstructionGroups(vec![InstructionGroup {
                 instructions: vec![receive_message_ix],
-                address_lookup_tables: lut,
+                address_lookup_tables: vec![wormhole_global.receive_lut],
             }]),
         )));
         ret.exit(ctx.program_id)?;
