@@ -27,6 +27,7 @@ impl Initialize<'_> {
             paused: false,
             peers: Vec::new(),
             pending_admin: None,
+            receive_lut: None,
         });
 
         Ok(())

@@ -24,7 +24,7 @@ use crate::{
     consts::{AUTHORITY_SEED, CORE_BRIDGE_PROGRAM_ID},
     instruction::ReceiveMessage,
     instructions::VaaBody,
-    state::GLOBAL_SEED,
+    state::{WormholeGlobal, GLOBAL_SEED},
 };
 
 #[derive(Accounts)]
@@ -41,13 +41,14 @@ impl ResolveExecuteVaa {
         let vaa = VaaBody::from_bytes(&vaa_body)?;
 
         let result_account = pda!(&[RESOLVER_RESULT_ACCOUNT_SEED], &crate::ID);
+        let global = pda!(&[GLOBAL_SEED], &crate::ID);
         let mut m_mint: Option<Pubkey> = None;
         let mut whitelisted_extensions: Option<Vec<Extension>> = None;
         let mut orderbook_token_in: Option<&AccountInfo> = None;
 
         // Check for missing accounts
         {
-            let mut accounts_required = vec![System::id(), result_account];
+            let mut accounts_required = vec![System::id(), result_account, global];
 
             match vaa.payload {
                 common::Payload::TokenTransfer(_) => {
@@ -207,10 +208,15 @@ impl ResolveExecuteVaa {
             .accounts
             .extend(required_remaining.iter().cloned().map(|a| a.into()));
 
+        // Add lookup table if available
+        let mut lut = vec![];
+        let wormhole_global: WormholeGlobal = deserialize_account(ctx.remaining_accounts, global)?;
+        lut.extend(wormhole_global.receive_lut);
+
         ret.set_inner(ExecutorAccountResolverResult(Resolver::Resolved(
             InstructionGroups(vec![InstructionGroup {
                 instructions: vec![receive_message_ix],
-                address_lookup_tables: vec![],
+                address_lookup_tables: lut,
             }]),
         )));
         ret.exit(ctx.program_id)?;

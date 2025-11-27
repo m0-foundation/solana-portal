@@ -815,6 +815,88 @@
       ]
     },
     {
+      "name": "set_lut",
+      "discriminator": [
+        94,
+        88,
+        132,
+        249,
+        103,
+        48,
+        167,
+        202
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "wormhole_global"
+          ]
+        },
+        {
+          "name": "wormhole_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "lut_address",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "wormhole_global"
+              },
+              {
+                "kind": "arg",
+                "path": "recent_slot"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "lut_program"
+            }
+          }
+        },
+        {
+          "name": "lut_program",
+          "address": "AddressLookupTab1e1111111111111111111111111"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "recent_slot",
+          "type": "u64"
+        },
+        {
+          "name": "additional_accounts",
+          "type": {
+            "vec": "pubkey"
+          }
+        }
+      ]
+    },
+    {
       "name": "set_peer",
       "discriminator": [
         32,
@@ -1159,6 +1241,12 @@
           {
             "name": "paused",
             "type": "bool"
+          },
+          {
+            "name": "receive_lut",
+            "type": {
+              "option": "pubkey"
+            }
           },
           {
             "name": "pending_admin",

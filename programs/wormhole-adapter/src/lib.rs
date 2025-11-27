@@ -30,6 +30,14 @@ pub mod wormhole_adapter {
         Initialize::handler(ctx)
     }
 
+    pub fn set_lut(
+        ctx: Context<SetLookupTable>,
+        recent_slot: u64,
+        additional_accounts: Vec<Pubkey>,
+    ) -> Result<()> {
+        SetLookupTable::handler(ctx, recent_slot, additional_accounts)
+    }
+
     pub fn pause(ctx: Context<Pause>) -> Result<()> {
         Pause::handler(ctx)
     }

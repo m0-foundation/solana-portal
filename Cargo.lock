@@ -6935,6 +6935,7 @@ dependencies = [
  "cfg-if",
  "common",
  "executor-account-resolver-svm",
+ "solana-address-lookup-table-interface",
  "solana-security-txt",
  "wormhole-svm-definitions",
 ]

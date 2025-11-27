@@ -17,6 +17,9 @@ runbooks:
   - name: unpause
     description: Unpause Portal program
     location: runbooks/unpause
+  - name: set_lut
+    description: Set the Wormhole Adapter LUT
+    location: runbooks/set_lut
 environments:
   localnet:
     network_id: localnet

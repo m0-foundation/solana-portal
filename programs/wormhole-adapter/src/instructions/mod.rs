@@ -3,6 +3,7 @@ pub mod pause;
 pub mod receive_message;
 pub mod resolve_execute;
 pub mod send_message;
+pub mod set_lut;
 pub mod set_peer;
 pub mod transfer_admin;
 
@@ -13,6 +14,7 @@ pub use pause::*;
 pub use receive_message::*;
 pub use resolve_execute::*;
 pub use send_message::*;
+pub use set_lut::*;
 pub use set_peer::*;
 pub use transfer_admin::*;
 
