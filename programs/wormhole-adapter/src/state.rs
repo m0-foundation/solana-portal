@@ -11,7 +11,7 @@ pub struct WormholeGlobal {
     pub bump: u8,
     pub admin: Pubkey,
     pub paused: bool,
-    pub receive_lut: Pubkey,
+    pub receive_lut: Option<Pubkey>,
     pub pending_admin: Option<Pubkey>,
     pub peers: Vec<Peer>,
 }
@@ -28,6 +28,7 @@ impl WormholeGlobal {
         1 + // bump
         32 + // admin
         1 + // paused
+        1 + // receive_lut option
         32 + // receive_lut
         1 + // pending_admin option
         32 + // pending_admin pubkey

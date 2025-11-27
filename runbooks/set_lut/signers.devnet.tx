@@ -1,9 +1,4 @@
-// connect a wallet that is on the multisig
-signer "initiator" "svm::web_wallet" {}
-
-signer "caller" "svm::squads" {
-    description = "Can upgrade programs and manage critical ops"
-    multisig_account_public_key = "ygejBD9qP5V22gKTg8pJVzFUNQwRYs2jgqyb7YS4XVy"
-    create_key = "H26UNMivrtwGhjv2vGwPfYLwgkWXactYhhwmbuq1M97Z"
-    initiator = signer.initiator
+signer "caller" "svm::secret_key" {
+    description = "Local key that pays for the lut"
+    secret_key = input.local_signer
 }

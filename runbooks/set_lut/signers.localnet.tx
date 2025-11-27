@@ -1,4 +1,4 @@
- signer "caller" "svm::secret_key" {
-    description = "Local key that owns programs deployed to localnet"
+signer "caller" "svm::secret_key" {
+    description = "Local key that pays for the lut"
     secret_key = input.local_signer
 }

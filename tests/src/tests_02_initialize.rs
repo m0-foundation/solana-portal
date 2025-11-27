@@ -43,6 +43,7 @@ fn test_03_check_globals() -> Result<()> {
     assert!(!global_portal.paused);
     assert!(!global_wh.paused);
     assert!(!global_hp.paused);
+    assert!(global_wh.receive_lut.is_none());
 
     Ok(())
 }

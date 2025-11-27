@@ -16,13 +16,12 @@ use crate::{
 #[instruction(recent_slot: u64)]
 pub struct SetLookupTable<'info> {
     #[account(mut)]
-    pub admin: Signer<'info>,
+    pub payer: Signer<'info>,
 
     #[account(
         mut,
         seeds = [GLOBAL_SEED],
         bump = wormhole_global.bump,
-        has_one = admin
     )]
     pub wormhole_global: Account<'info, WormholeGlobal>,
 
@@ -46,73 +45,53 @@ pub struct SetLookupTable<'info> {
 }
 
 impl SetLookupTable<'_> {
-    pub fn handler(
-        ctx: Context<Self>,
-        recent_slot: u64,
-        additional_accounts: Vec<Pubkey>,
-    ) -> Result<()> {
-        create_lut(
+    pub fn handler(ctx: Context<Self>, recent_slot: u64) -> Result<()> {
+        let (ix, _) = create_lookup_table(
+            ctx.accounts.wormhole_global.key(),
+            ctx.accounts.payer.key(),
             recent_slot,
-            additional_accounts,
-            ctx.accounts.lut_address.to_account_info(),
-            ctx.accounts.admin.to_account_info(),
-            ctx.accounts.system_program.to_account_info(),
-            ctx.accounts.wormhole_global.to_account_info(),
-            ctx.accounts.wormhole_global.bump,
+        );
+
+        invoke(
+            &ix,
+            &[
+                ctx.accounts.lut_address.to_account_info(),
+                ctx.accounts.wormhole_global.to_account_info(),
+                ctx.accounts.payer.to_account_info(),
+                ctx.accounts.system_program.to_account_info(),
+            ],
         )?;
 
-        ctx.accounts.wormhole_global.receive_lut = ctx.accounts.lut_address.key();
+        let ix = extend_lookup_table(
+            ctx.accounts.lut_address.key(),
+            ctx.accounts.wormhole_global.key(),
+            Some(ctx.accounts.payer.key()),
+            vec![
+                pda!(&[GLOBAL_SEED], &crate::ID),
+                pda!(&[GLOBAL_SEED], &portal::ID),
+                pda!(&[GLOBAL_SEED], &earn::ID),
+                pda!(&[GLOBAL_SEED], &ext_swap::ID),
+                pda!(&[AUTHORITY_SEED], &crate::ID),
+                pda!(&[AUTHORITY_SEED], &portal::ID),
+                portal::ID,
+                wormhole_verify_vaa_shim::ID,
+                system_program::ID,
+            ],
+        );
+
+        invoke_signed(
+            &ix,
+            &[
+                ctx.accounts.lut_address.to_account_info(),
+                ctx.accounts.wormhole_global.to_account_info(),
+                ctx.accounts.payer.to_account_info(),
+                ctx.accounts.system_program.to_account_info(),
+            ],
+            &[&[GLOBAL_SEED, &[ctx.accounts.wormhole_global.bump]]],
+        )?;
+
+        ctx.accounts.wormhole_global.receive_lut = Some(ctx.accounts.lut_address.key());
 
         Ok(())
     }
-}
-
-pub fn create_lut<'info>(
-    recent_slot: u64,
-    additional_accounts: Vec<Pubkey>,
-    lut_address: AccountInfo<'info>,
-    admin: AccountInfo<'info>,
-    system_program: AccountInfo<'info>,
-    wormhole_global: AccountInfo<'info>,
-    wormhole_global_bump: u8,
-) -> Result<()> {
-    let (ix, _) = create_lookup_table(wormhole_global.key(), admin.key(), recent_slot);
-
-    invoke(
-        &ix,
-        &[
-            lut_address.clone(),
-            wormhole_global.clone(),
-            admin.clone(),
-            system_program.clone(),
-        ],
-    )?;
-
-    let mut accounts = vec![
-        pda!(&[GLOBAL_SEED], &crate::ID),
-        pda!(&[GLOBAL_SEED], &portal::ID),
-        pda!(&[GLOBAL_SEED], &earn::ID),
-        pda!(&[GLOBAL_SEED], &ext_swap::ID),
-        pda!(&[AUTHORITY_SEED], &crate::ID),
-        pda!(&[AUTHORITY_SEED], &portal::ID),
-        portal::ID,
-        wormhole_verify_vaa_shim::ID,
-    ];
-
-    accounts.extend(additional_accounts);
-
-    let ix = extend_lookup_table(
-        lut_address.key(),
-        wormhole_global.key(),
-        Some(admin.key()),
-        accounts,
-    );
-
-    invoke_signed(
-        &ix,
-        &[lut_address, wormhole_global, admin, system_program],
-        &[&[GLOBAL_SEED, &[wormhole_global_bump]]],
-    )?;
-
-    Ok(())
 }

@@ -150,3 +150,6 @@ mod tests_04_index_update;
 
 #[cfg(test)]
 mod tests_05_pausing;
+
+#[cfg(test)]
+mod tests_06_set_lut;

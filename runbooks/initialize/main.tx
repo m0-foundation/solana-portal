@@ -65,22 +65,6 @@ action "hyperlane_global_account" "std::send_http_request" {
   }
 }
 
-action "recent_slot_data" "std::send_http_request" {
-  url = input.rpc_api_url
-  method = "POST"
-  body = {
-    "jsonrpc": "2.0",
-    "id": 1,
-    "method": "getSlot",
-    "params": [{"commitment": "finalized"}]
-  }
-}
-
-variable "recent_slot" {
-    value = jq(action.recent_slot_data.response_body,  ".result") - 10
-    editable = true
-}
-
 action "initialize_portal" "svm::process_instructions" {
     description = "Initializes the Portal program"
     signers = [signer.caller]
@@ -107,7 +91,6 @@ action "initialize_wormhole_adapter" "svm::process_instructions" {
         admin {
             public_key = signer.caller.public_key
         }
-        instruction_args = [variable.recent_slot]
     }
     pre_condition {
         behavior = "skip"

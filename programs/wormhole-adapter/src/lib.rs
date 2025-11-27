@@ -26,16 +26,12 @@ declare_id!("mzp1q2j5Hr1QuLC3KFBCAUz5aUckT6qyuZKZ3WJnMmY");
 pub mod wormhole_adapter {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>, recent_slot: u64) -> Result<()> {
-        Initialize::handler(ctx, recent_slot)
+    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+        Initialize::handler(ctx)
     }
 
-    pub fn set_lut(
-        ctx: Context<SetLookupTable>,
-        recent_slot: u64,
-        additional_accounts: Vec<Pubkey>,
-    ) -> Result<()> {
-        SetLookupTable::handler(ctx, recent_slot, additional_accounts)
+    pub fn set_lut(ctx: Context<SetLookupTable>, recent_slot: u64) -> Result<()> {
+        SetLookupTable::handler(ctx, recent_slot)
     }
 
     pub fn pause(ctx: Context<Pause>) -> Result<()> {
