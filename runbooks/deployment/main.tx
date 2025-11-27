@@ -19,33 +19,33 @@ variable "hyperlane_build_dir" {
 }
 
 action "deploy_portal" "svm::deploy_program" {
-    description = "Deploy portal program"
-    program = svm::get_program_from_anchor_project("portal", "./target/deploy/portal-keypair.json", "./target/idl/portal.json", variable.portal_build_dir)
-    authority = signer.authority
-    payer = signer.payer
-    instant_surfnet_deployment = true
+  description = "Deploy portal program"
+  program = svm::get_program_from_anchor_project("portal", "./target/deploy/portal-keypair.json", "./target/idl/portal.json", variable.portal_build_dir)
+  authority = signer.authority
+  payer = signer.payer
+  instant_surfnet_deployment = true
 }
 
 action "deploy_wormhole_adapter" "svm::deploy_program" {
-    description = "Deploy wormhole_adapter program"
-    program = svm::get_program_from_anchor_project("wormhole_adapter", "./target/deploy/wormhole_adapter-keypair.json", "./target/idl/wormhole_adapter.json", variable.wormhole_build_dir)
-    authority = signer.authority
-    payer = signer.payer
-    instant_surfnet_deployment = true
-    pre_condition {
-        behavior = "skip"
-        assertion = input.wormhole_adapter == "true"
-    }
+  description = "Deploy wormhole_adapter program"
+  program = svm::get_program_from_anchor_project("wormhole_adapter", "./target/deploy/wormhole_adapter-keypair.json", "./target/idl/wormhole_adapter.json", variable.wormhole_build_dir)
+  authority = signer.authority
+  payer = signer.payer
+  instant_surfnet_deployment = true
+  pre_condition {
+      behavior = "skip"
+      assertion = input.wormhole_adapter == "true"
+  }
 }
 
 action "deploy_hyperlane_adapter" "svm::deploy_program" {
-    description = "Deploy hyperlane_adapter program"
-    program = svm::get_program_from_anchor_project("hyperlane_adapter", "./target/deploy/hyperlane_adapter-keypair.json", "./target/idl/hyperlane_adapter.json", variable.hyperlane_build_dir)
-    authority = signer.authority
-    payer = signer.payer
-    instant_surfnet_deployment = true
-    pre_condition {
-        behavior = "skip"
-        assertion = input.hyperlane_adapter == "true"
-    }
+  description = "Deploy hyperlane_adapter program"
+  program = svm::get_program_from_anchor_project("hyperlane_adapter", "./target/deploy/hyperlane_adapter-keypair.json", "./target/idl/hyperlane_adapter.json", variable.hyperlane_build_dir)
+  authority = signer.authority
+  payer = signer.payer
+  instant_surfnet_deployment = true
+  pre_condition {
+      behavior = "skip"
+      assertion = input.hyperlane_adapter == "true"
+  }
 }

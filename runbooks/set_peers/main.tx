@@ -17,6 +17,7 @@ variable "evm_peer_address" {
 }
 
 action "set_wormhole_peer_ethereum" "svm::process_instructions" {
+    description = "Set Wormhole Adapter peer for Ethereum"
     signers = [signer.caller]
     instruction {
         program_idl = variable.wormhole_adapter_program.idl
@@ -27,13 +28,14 @@ action "set_wormhole_peer_ethereum" "svm::process_instructions" {
         instruction_args = [
             {
                 address = variable.evm_peer_address
-                chain_id = 2
+                chain_id = index([2, 10002], input.chain_id_idx)
             }
         ]
     }
 }
 
 action "set_wormhole_peer_arbitrum" "svm::process_instructions" {
+    description = "Set Wormhole Adapter peer for Arbitrum"
     signers = [signer.caller]
     instruction {
         program_idl = variable.wormhole_adapter_program.idl
@@ -44,13 +46,14 @@ action "set_wormhole_peer_arbitrum" "svm::process_instructions" {
         instruction_args = [
             {
                 address = variable.evm_peer_address
-                chain_id = 23
+                chain_id = index([23, 10003], input.chain_id_idx)
             }
         ]
     }
 }
 
 action "set_wormhole_peer_optimism" "svm::process_instructions" {
+    description = "Set Wormhole Adapter peer for Optimism"
     signers = [signer.caller]
     instruction {
         program_idl = variable.wormhole_adapter_program.idl
@@ -61,13 +64,14 @@ action "set_wormhole_peer_optimism" "svm::process_instructions" {
         instruction_args = [
             {
                 address = variable.evm_peer_address
-                chain_id = 24
+                chain_id = index([24, 10005], input.chain_id_idx)
             }
         ]
     }
 }
 
 action "set_wormhole_peer_base" "svm::process_instructions" {
+    description = "Set Wormhole Adapter peer for Basee"
     signers = [signer.caller]
     instruction {
         program_idl = variable.wormhole_adapter_program.idl
@@ -78,13 +82,14 @@ action "set_wormhole_peer_base" "svm::process_instructions" {
         instruction_args = [
             {
                 address = variable.evm_peer_address
-                chain_id = 30
+                chain_id = index([30, 10004], input.chain_id_idx)
             }
         ]
     }
 }
 
 action "set_hyperlane_peer_ethereum" "svm::process_instructions" {
+    description = "Set Hyperlane Adapter peer for Ethereum"
     signers = [signer.caller]
     instruction {
         program_idl = variable.hyperlane_adapter_program.idl
@@ -95,7 +100,7 @@ action "set_hyperlane_peer_ethereum" "svm::process_instructions" {
         instruction_args = [
             {
                 address = variable.evm_peer_address
-                chain_id = 1
+                chain_id = index([1, 11155111], input.chain_id_idx)
             }
         ]
     }
