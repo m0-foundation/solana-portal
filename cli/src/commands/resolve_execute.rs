@@ -5,6 +5,7 @@ use borsh::BorshDeserialize;
 use bs58;
 use common::{
     pda,
+    portal::{self, constants::GLOBAL_SEED},
     wormhole_adapter::{self, constants::GUARDIAN_SET_SEED},
 };
 use core::panic;
@@ -323,6 +324,12 @@ pub fn resolve_execute(tx_hash: String) -> Result<()> {
         }
         _ => panic!("Expected resolved result"),
     }
+
+    println!(
+        "\nWormhole Global {}",
+        pda!(&[GLOBAL_SEED], &wormhole_adapter::ID)
+    );
+    println!("Portal Global {}", pda!(&[GLOBAL_SEED], &portal::ID));
 
     Ok(())
 }

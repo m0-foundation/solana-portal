@@ -57,6 +57,7 @@ pub struct ReceiveMessage<'info> {
     #[account(
         mut,
         seeds = [GLOBAL_SEED],
+        seeds::program = portal::ID,
         bump = portal_global.bump,
     )]
     pub portal_global: Account<'info, PortalGlobal>,
