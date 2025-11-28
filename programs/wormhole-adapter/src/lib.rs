@@ -1,8 +1,8 @@
 #![allow(unexpected_cfgs)]
 
-mod consts;
-mod instructions;
-mod state;
+pub mod consts;
+pub mod instructions;
+pub mod state;
 
 use crate::state::Peer;
 use anchor_lang::prelude::*;

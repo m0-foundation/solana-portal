@@ -2876,10 +2876,12 @@ name = "portal-cli"
 version = "0.1.0"
 dependencies = [
  "anchor-client",
+ "anchor-lang",
  "anyhow",
  "base64 0.21.7",
  "bincode",
  "borsh 0.10.4",
+ "bs58",
  "clap",
  "common",
  "executor-account-resolver-svm",
@@ -2890,6 +2892,8 @@ dependencies = [
  "solana-rpc-client",
  "solana-rpc-client-types",
  "solana-sdk",
+ "solana-transaction-status-client-types",
+ "wormhole-adapter",
 ]
 
 [[package]]
