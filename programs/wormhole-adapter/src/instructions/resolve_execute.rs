@@ -195,9 +195,9 @@ impl ResolveExecuteVaa {
             accounts: vec![
                 AccountMeta::new(RESOLVER_PUBKEY_PAYER, true).into(),
                 AccountMeta::new_readonly(pda!(&[GLOBAL_SEED], &crate::ID), false).into(),
-                AccountMeta::new_readonly(pda!(&[GLOBAL_SEED], &portal::ID), false).into(),
+                AccountMeta::new(pda!(&[GLOBAL_SEED], &portal::ID), false).into(),
                 AccountMeta::new_readonly(pda!(&[AUTHORITY_SEED], &crate::ID), false).into(),
-                AccountMeta::new(pda!(&[AUTHORITY_SEED], &portal::ID), false).into(),
+                AccountMeta::new_readonly(pda!(&[AUTHORITY_SEED], &portal::ID), false).into(),
                 AccountMeta::new_readonly(guardian_set, false).into(),
                 AccountMeta::new_readonly(RESOLVER_PUBKEY_SHIM_VAA_SIGS, false).into(),
                 AccountMeta::new_readonly(wormhole_verify_vaa_shim::ID, false).into(),
