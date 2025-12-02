@@ -92,8 +92,10 @@ impl ResolveExecuteVaa {
                 .collect();
 
             if !missing.is_empty() {
-                // Placeholder for payer we know is missing
-                missing.push(RESOLVER_PUBKEY_PAYER);
+                // Placeholder for payer and vaa sigs we know are missing
+                missing.extend([RESOLVER_PUBKEY_PAYER, RESOLVER_PUBKEY_SHIM_VAA_SIGS]);
+
+                msg!("Missing {} accounts", missing.len());
 
                 return Ok(Resolver::Missing(MissingAccounts {
                     accounts: missing,
@@ -118,6 +120,12 @@ impl ResolveExecuteVaa {
 
                     // Verify the account matches the expected PDA
                     if *account_info.key == derived_guardian_set_pubkey {
+                        msg!(
+                            "Found guardian set account with index {}: {}",
+                            index,
+                            derived_guardian_set_pubkey
+                        );
+
                         guardian_set_index = Some(index);
                         guardian_set_pubkey = Some(derived_guardian_set_pubkey);
                         break;
@@ -128,7 +136,10 @@ impl ResolveExecuteVaa {
 
         let (guardian_set, guardian_index) = match (guardian_set_pubkey, guardian_set_index) {
             (Some(pubkey), Some(index)) => (pubkey, index),
-            _ => return Ok(missing_account(RESOLVER_PUBKEY_GUARDIAN_SET)),
+            _ => {
+                msg!("Missing guardian set account");
+                return Ok(missing_account(RESOLVER_PUBKEY_GUARDIAN_SET));
+            }
         };
 
         // Increase the size of the return account then parse it
@@ -184,9 +195,9 @@ impl ResolveExecuteVaa {
             accounts: vec![
                 AccountMeta::new(RESOLVER_PUBKEY_PAYER, true).into(),
                 AccountMeta::new_readonly(pda!(&[GLOBAL_SEED], &crate::ID), false).into(),
-                AccountMeta::new_readonly(pda!(&[GLOBAL_SEED], &portal::ID), false).into(),
+                AccountMeta::new(pda!(&[GLOBAL_SEED], &portal::ID), false).into(),
                 AccountMeta::new_readonly(pda!(&[AUTHORITY_SEED], &crate::ID), false).into(),
-                AccountMeta::new(pda!(&[AUTHORITY_SEED], &portal::ID), false).into(),
+                AccountMeta::new_readonly(pda!(&[AUTHORITY_SEED], &portal::ID), false).into(),
                 AccountMeta::new_readonly(guardian_set, false).into(),
                 AccountMeta::new_readonly(RESOLVER_PUBKEY_SHIM_VAA_SIGS, false).into(),
                 AccountMeta::new_readonly(wormhole_verify_vaa_shim::ID, false).into(),

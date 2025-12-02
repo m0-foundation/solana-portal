@@ -64,7 +64,7 @@ fn test_04_check_hyperlane_metas_pda() -> Result<()> {
     ))?;
 
     let account_metas = AccountMetasData::try_deserialize(&mut data_account_metas.as_slice())?;
-    assert_eq!(account_metas.extensions.len(), 3);
+    assert_eq!(account_metas.extensions.len(), 4);
 
     Ok(())
 }

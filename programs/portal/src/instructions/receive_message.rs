@@ -53,7 +53,7 @@ impl ReceiveMessage<'_> {
 
         match message {
             Payload::TokenTransfer(payload) => {
-                msg!("Received Token Transfer Payload");
+                msg!("Received Token Transfer Payload: {}", payload.amount);
                 ctx.accounts.portal_global.update_index(payload.index);
                 return Self::handle_token_transfer_payload(ctx, payload);
             }
@@ -100,16 +100,15 @@ impl ReceiveMessage<'_> {
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
         payload: TokenTransferPayload,
     ) -> Result<()> {
-        let accounts = payload.parse_and_validate_accounts(ctx.remaining_accounts.to_vec())?;
-        let amount = payload.amount;
-
         if payload.index > 0 {
-            Self::handle_index_payload(&ctx, payload.into())?;
+            Self::handle_index_payload(&ctx, payload.clone().into())?;
         }
+
+        let accounts = payload.parse_and_validate_accounts(ctx.remaining_accounts.to_vec())?;
 
         // Get the principal amount of $M tokens to transfer using the multiplier
         let principal = common::amount_to_principal_down(
-            amount,
+            payload.amount,
             common::get_scaled_ui_config(&accounts.m_mint)?
                 .new_multiplier
                 .into(),
