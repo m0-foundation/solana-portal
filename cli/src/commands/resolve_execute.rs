@@ -1,3 +1,4 @@
+use crate::types::*;
 use anchor_client::solana_account_decoder::{UiAccountData, UiAccountEncoding};
 use anchor_lang::pubkey;
 use anyhow::{Context, Result};
@@ -26,8 +27,6 @@ use solana_transaction_status_client_types::{
 };
 use std::{collections::HashSet, thread::sleep, time::Duration};
 
-use crate::types::*;
-
 const GUARDIAN_SET_INDEX_SEED: u32 = 0;
 const CORE_BRIDGE_PROGRAM_ID: Pubkey = pubkey!("3u8hJUVTA4jH1wYAyUur7FFZVQ8H635K3tSHHF4ssjQ5");
 const TARGET_PROGRAM_ID: Pubkey = pubkey!("EFaNWErqAtVWufdNb7yofSHHfWFos843DFpu4JBw24at");
@@ -42,21 +41,18 @@ pub fn resolve_execute(tx_hash: String) -> Result<()> {
     let rpc_client = RpcClient::new(RPC_URL);
     let payer = load_keypair()?;
 
-    // Fetch VAA from Wormhole API
+    // Fetch VAA and the post instruction using the Wormhole API
     let vaa_body = fetch_vaa_body(&tx_hash)?;
-
-    // Fetch and extract post VAA instruction
-    let (extracted_instruction, guardian_set) =
+    let (instruction, guardian_set) =
         extract_target_instruction(&rpc_client, &fetch_executor_transactions(&tx_hash)?)?;
 
-    // Resolve missing accounts through simulation
+    // Simulate until all accounts are resolved and result PDA is populated
     let result_pda = pda!(
         &[b"executor-account-resolver:result"],
         &wormhole_adapter::ID
     );
     let requested_accounts = resolve_accounts(&rpc_client, &vaa_body, &payer, &result_pda)?;
 
-    // Get final resolver result
     let resolver_result = get_resolver_result(
         &rpc_client,
         &vaa_body,
@@ -65,120 +61,105 @@ pub fn resolve_execute(tx_hash: String) -> Result<()> {
         requested_accounts,
     )?;
 
-    // Build and output versioned transactions
     build_and_output_transactions(
         &rpc_client,
         &payer,
         resolver_result,
-        extracted_instruction,
+        instruction,
         guardian_set,
-    )?;
-
-    Ok(())
+    )
 }
 
 fn load_keypair() -> Result<Keypair> {
     let key_path = format!("{}/.config/solana/id.json", std::env::var("HOME")?);
-    Keypair::read_from_file(&key_path)
-        .map_err(|e| anyhow::anyhow!("Failed to read keypair from {}: {}", key_path, e))
+    Keypair::read_from_file(&key_path).map_err(|e| anyhow::anyhow!("Failed to read keypair: {}", e))
 }
 
 fn fetch_vaa_body(tx_hash: &str) -> Result<Vec<u8>> {
-    let api_client = reqwest::blocking::Client::new();
-    let url = format!("{}?txHash={}", WORMHOLE_API_URL, tx_hash);
-
-    let response: WormholeResponse = api_client
-        .get(&url)
+    let response: WormholeResponse = reqwest::blocking::Client::new()
+        .get(format!("{}?txHash={}", WORMHOLE_API_URL, tx_hash))
         .send()
-        .context("Failed to fetch VAA from Wormhole API")?
+        .context("Failed to fetch VAA")?
         .json()
-        .context("Failed to parse Wormhole API response")?;
+        .context("Failed to parse VAA response")?;
 
-    let vaa_operation = response
-        .operations
-        .first()
-        .context("No executor operations returned")?;
-
-    let vaa_bytes = BASE64_STANDARD
-        .decode(&vaa_operation.vaa.raw)
-        .context("Failed to decode VAA bytes")?;
-
-    // Extract VAA body by skipping the header (6 + num_signatures * 66 bytes)
+    let vaa_bytes = BASE64_STANDARD.decode(
+        &response
+            .operations
+            .first()
+            .context("No operations")?
+            .vaa
+            .raw,
+    )?;
     let header_len = 6 + vaa_bytes[5] as usize * 66;
     Ok(vaa_bytes[header_len..].to_vec())
 }
 
 fn fetch_executor_transactions(tx_hash: &str) -> Result<ExecutorTransactions> {
-    let api_client = reqwest::blocking::Client::new();
-    let body = serde_json::json!({ "txHash": tx_hash });
-
-    api_client
+    reqwest::blocking::Client::new()
         .post(EXECUTOR_API_URL)
-        .json(&body)
+        .json(&serde_json::json!({ "txHash": tx_hash }))
         .send()
-        .context("Failed to fetch executor transactions")?
+        .context("Failed to fetch executor txs")?
         .json()
-        .context("Failed to parse executor transactions")
+        .context("Failed to parse executor txs")
 }
 
 fn extract_target_instruction(
     rpc_client: &RpcClient,
     executor_txs: &ExecutorTransactions,
 ) -> Result<(SolanaInstruction, Pubkey)> {
-    let executor_tx = executor_txs.first().context("No executor transactions")?;
-    let tx = executor_tx
+    let tx_hash_sig = executor_txs
+        .first()
+        .context("No executor txs")?
         .txs
         .first()
-        .context("No transactions in executor")?;
-    let tx_hash_sig = tx.tx_hash.parse().context("Failed to parse tx hash")?;
+        .context("No txs")?
+        .tx_hash
+        .parse()?;
 
-    let transaction = rpc_client
-        .get_transaction_with_config(
-            &tx_hash_sig,
-            solana_rpc_client_types::config::RpcTransactionConfig {
-                encoding: Some(UiTransactionEncoding::Json),
-                commitment: None,
-                max_supported_transaction_version: Some(0),
-            },
-        )
-        .context("Failed to fetch transaction")?;
+    let transaction = rpc_client.get_transaction_with_config(
+        &tx_hash_sig,
+        solana_rpc_client_types::config::RpcTransactionConfig {
+            encoding: Some(UiTransactionEncoding::Json),
+            commitment: None,
+            max_supported_transaction_version: Some(0),
+        },
+    )?;
 
     let EncodedTransaction::Json(ui_tx) = transaction.transaction.transaction else {
         anyhow::bail!("Expected JSON encoded transaction");
     };
-
     let UiMessage::Raw(raw_msg) = ui_tx.message else {
         anyhow::bail!("Expected raw message");
     };
 
-    // Find the target program instruction
     for ix in raw_msg.instructions {
-        let program_id_index: usize = ix.program_id_index.into();
-        let program_id_str = raw_msg
+        let program_id: Pubkey = raw_msg
             .account_keys
-            .get(program_id_index)
-            .context("Invalid program ID index")?;
-        let program_id = program_id_str.parse::<Pubkey>()?;
+            .get(ix.program_id_index as usize)
+            .context("Invalid program ID")?
+            .parse()?;
 
         if program_id == TARGET_PROGRAM_ID {
-            let num_required_signatures: usize = raw_msg.header.num_required_signatures.into();
-            let num_readonly_signed: usize = raw_msg.header.num_readonly_signed_accounts.into();
-            let num_readonly_unsigned: usize = raw_msg.header.num_readonly_unsigned_accounts.into();
+            let (num_sigs, num_ro_signed, num_ro_unsigned) = (
+                raw_msg.header.num_required_signatures as usize,
+                raw_msg.header.num_readonly_signed_accounts as usize,
+                raw_msg.header.num_readonly_unsigned_accounts as usize,
+            );
 
             let accounts: Vec<AccountMeta> = ix
                 .accounts
                 .iter()
                 .map(|&idx| {
-                    let idx_usize: usize = idx.into();
-                    let pubkey = raw_msg.account_keys[idx_usize].parse::<Pubkey>().unwrap();
-
-                    let is_signer = idx_usize < num_required_signatures;
+                    let idx = idx as usize;
+                    let pubkey = raw_msg.account_keys[idx].parse::<Pubkey>().unwrap();
+                    let is_signer = idx < num_sigs;
                     let is_writable = if is_signer {
-                        idx_usize < num_required_signatures - num_readonly_signed
+                        idx < num_sigs - num_ro_signed
                     } else {
-                        idx_usize < raw_msg.account_keys.len() - num_readonly_unsigned
+                        idx < raw_msg.account_keys.len() - num_ro_unsigned
                     };
-
                     AccountMeta {
                         pubkey,
                         is_signer,
@@ -187,25 +168,17 @@ fn extract_target_instruction(
                 })
                 .collect();
 
-            let guardian_set = accounts
-                .get(1)
-                .context("Missing guardian set account")?
-                .pubkey;
-
-            // Post VAA instruction
-            let instruction = SolanaInstruction {
-                program_id,
-                accounts,
-                data: bs58::decode(&ix.data)
-                    .into_vec()
-                    .context("Failed to decode instruction data")?,
-            };
-
-            return Ok((instruction, guardian_set));
+            return Ok((
+                SolanaInstruction {
+                    program_id,
+                    accounts: accounts.clone(),
+                    data: bs58::decode(&ix.data).into_vec()?,
+                },
+                accounts.get(1).context("Missing guardian set")?.pubkey,
+            ));
         }
     }
-
-    anyhow::bail!("Target program instruction not found")
+    anyhow::bail!("Target program not found")
 }
 
 fn resolve_accounts(
@@ -217,49 +190,39 @@ fn resolve_accounts(
     let mut requested_accounts = vec![];
 
     loop {
-        let transaction = create_transaction(
+        let tx = create_transaction(
             vaa_body.to_vec(),
             rpc_client,
             requested_accounts.clone(),
             payer.pubkey(),
         )?;
+        let sim = rpc_client.simulate_transaction_with_config(
+            &tx,
+            RpcSimulateTransactionConfig {
+                sig_verify: false,
+                replace_recent_blockhash: true,
+                accounts: Some(RpcSimulateTransactionAccountsConfig {
+                    encoding: Some(UiAccountEncoding::Base64),
+                    addresses: vec![result_pda.to_string()],
+                }),
+                ..Default::default()
+            },
+        )?;
 
-        let simulation_result = rpc_client
-            .simulate_transaction_with_config(
-                &transaction,
-                RpcSimulateTransactionConfig {
-                    sig_verify: false,
-                    replace_recent_blockhash: true,
-                    accounts: Some(RpcSimulateTransactionAccountsConfig {
-                        encoding: Some(UiAccountEncoding::Base64),
-                        addresses: vec![result_pda.to_string()],
-                    }),
-                    ..RpcSimulateTransactionConfig::default()
-                },
-            )
-            .context("Failed to simulate transaction")?;
-
-        let return_data = simulation_result
-            .value
-            .return_data
-            .context("No return data from simulation")?;
-
-        let data_bytes = BASE64_STANDARD
-            .decode(&return_data.data.0)
-            .context("Failed to decode return data")?;
-
-        // Check if we have all accounts (first byte == 1 means missing accounts)
+        let data = sim.value.return_data.context("No return data")?.data;
+        let data_bytes = BASE64_STANDARD.decode(&data.0)?;
         if data_bytes[0] != 1 {
             break;
         }
 
-        let missing_accounts = parse_missing_accounts(&data_bytes)?;
+        let missing = parse_missing_accounts(&data_bytes)?;
         println!("=== Missing Accounts ===");
-        for (i, pubkey) in missing_accounts.iter().enumerate() {
-            println!("Account {}: {}", i, pubkey);
-        }
+        missing
+            .iter()
+            .enumerate()
+            .for_each(|(i, pk)| println!("Account {}: {}", i, pk));
 
-        requested_accounts.extend(missing_accounts.into_iter().map(|pubkey| AccountMeta {
+        requested_accounts.extend(missing.into_iter().map(|pubkey| AccountMeta {
             pubkey,
             is_signer: false,
             is_writable: pubkey == *result_pda,
@@ -269,27 +232,16 @@ fn resolve_accounts(
     Ok(requested_accounts)
 }
 
-fn parse_missing_accounts(data_bytes: &[u8]) -> Result<Vec<Pubkey>> {
-    let accounts_len = u32::from_le_bytes(
-        data_bytes[1..5]
-            .try_into()
-            .context("Invalid account length bytes")?,
-    ) as usize;
-
-    let mut missing_accounts = Vec::new();
-    let mut offset = 5;
-
-    for _ in 0..accounts_len {
-        if offset + 32 > data_bytes.len() {
-            break;
-        }
-        let pubkey_bytes = &data_bytes[offset..offset + 32];
-        let pubkey = Pubkey::try_from(pubkey_bytes).context("Invalid pubkey bytes")?;
-        missing_accounts.push(pubkey);
-        offset += 32;
-    }
-
-    Ok(missing_accounts)
+fn parse_missing_accounts(data: &[u8]) -> Result<Vec<Pubkey>> {
+    let len = u32::from_le_bytes(data[1..5].try_into()?) as usize;
+    Ok((0..len)
+        .filter_map(|i| {
+            let offset = 5 + i * 32;
+            (offset + 32 <= data.len())
+                .then(|| Pubkey::try_from(&data[offset..offset + 32]).ok())
+                .flatten()
+        })
+        .collect())
 }
 
 fn get_resolver_result(
@@ -299,44 +251,38 @@ fn get_resolver_result(
     result_pda: &Pubkey,
     requested_accounts: Vec<AccountMeta>,
 ) -> Result<Resolver<InstructionGroups>> {
-    let transaction = create_transaction(
+    let tx = create_transaction(
         vaa_body.to_vec(),
         rpc_client,
         requested_accounts,
         payer.pubkey(),
     )?;
 
-    let simulation_result = rpc_client
-        .simulate_transaction_with_config(
-            &transaction,
-            RpcSimulateTransactionConfig {
-                sig_verify: false,
-                replace_recent_blockhash: true,
-                accounts: Some(RpcSimulateTransactionAccountsConfig {
-                    encoding: Some(UiAccountEncoding::Base64),
-                    addresses: vec![result_pda.to_string()],
-                }),
-                ..RpcSimulateTransactionConfig::default()
-            },
-        )
-        .context("Failed to get final simulation result")?;
+    let sim = rpc_client.simulate_transaction_with_config(
+        &tx,
+        RpcSimulateTransactionConfig {
+            sig_verify: false,
+            replace_recent_blockhash: true,
+            accounts: Some(RpcSimulateTransactionAccountsConfig {
+                encoding: Some(UiAccountEncoding::Base64),
+                addresses: vec![result_pda.to_string()],
+            }),
+            ..Default::default()
+        },
+    )?;
 
-    let result_data = simulation_result
+    let result_data = sim
         .value
         .accounts
-        .and_then(|accounts| accounts.into_iter().next().flatten())
-        .context("Expected final result data")?;
+        .and_then(|a| a.into_iter().next().flatten())
+        .context("No result data")?;
 
-    let decoded_data = match result_data.data {
-        UiAccountData::Binary(encoded, _) => BASE64_STANDARD
-            .decode(encoded)
-            .context("Failed to decode result data")?,
-        _ => anyhow::bail!("Unexpected account data encoding"),
+    let decoded = match result_data.data {
+        UiAccountData::Binary(e, _) => BASE64_STANDARD.decode(e)?,
+        _ => anyhow::bail!("Unexpected encoding"),
     };
 
-    // Skip the 8-byte discriminator and deserialize
-    Resolver::<InstructionGroups>::deserialize(&mut &decoded_data[8..])
-        .context("Failed to deserialize resolver result")
+    Resolver::<InstructionGroups>::deserialize(&mut &decoded[8..]).context("Failed to deserialize")
 }
 
 fn build_and_output_transactions(
@@ -351,50 +297,36 @@ fn build_and_output_transactions(
     };
 
     println!("\n=== Resolver Result ===");
-
     for group in instruction_groups.0.iter() {
         let mut instructions = vec![extracted_instruction.clone()];
+        instructions.extend(group.instructions.iter().map(|ix| {
+            SolanaInstruction {
+                program_id: ix.program_id,
+                accounts: ix
+                    .accounts
+                    .iter()
+                    .map(|acc| AccountMeta {
+                        pubkey: if acc.pubkey == RESOLVER_PUBKEY_SHIM_VAA_SIGS {
+                            guardian_set
+                        } else {
+                            acc.pubkey
+                        },
+                        is_signer: acc.is_signer,
+                        is_writable: acc.is_writable,
+                    })
+                    .collect(),
+                data: ix.data.clone(),
+            }
+        }));
 
-        // Build instructions from the resolver output
-        for serializable_ix in group.instructions.iter() {
-            let accounts: Vec<AccountMeta> = serializable_ix
-                .accounts
-                .iter()
-                .map(|acc| AccountMeta {
-                    pubkey: if acc.pubkey == RESOLVER_PUBKEY_SHIM_VAA_SIGS {
-                        guardian_set
-                    } else {
-                        acc.pubkey
-                    },
-                    is_signer: acc.is_signer,
-                    is_writable: acc.is_writable,
-                })
-                .collect();
-
-            instructions.push(SolanaInstruction {
-                program_id: serializable_ix.program_id,
-                accounts,
-                data: serializable_ix.data.clone(),
-            });
-        }
-
-        // Fetch address lookup tables
         let mut lut_pubkeys = group.address_lookup_tables.clone();
-
-        // Get or create custom LUT and add it to the list
-        let custom_lut = get_or_create_lut(rpc_client, payer, &instructions)?;
-        lut_pubkeys.push(custom_lut);
-
-        let address_lookup_tables = fetch_lookup_tables(rpc_client, &lut_pubkeys)?;
-
-        // Build and output versioned transaction
-        let versioned_tx =
-            build_versioned_transaction(rpc_client, payer, &instructions, &address_lookup_tables)?;
+        lut_pubkeys.push(get_or_create_lut(rpc_client, payer, &instructions)?);
+        let luts = fetch_lookup_tables(rpc_client, &lut_pubkeys)?;
+        let vtx = build_versioned_transaction(rpc_client, payer, &instructions, &luts)?;
 
         let mut encoded = Vec::new();
-        versioned_tx.encode(&mut encoded)?;
-        let base64_tx = BASE64_STANDARD.encode(&encoded);
-        println!("{}", base64_tx);
+        vtx.encode(&mut encoded)?;
+        println!("{}", BASE64_STANDARD.encode(&encoded));
     }
 
     Ok(())
@@ -404,23 +336,17 @@ fn fetch_lookup_tables(
     rpc_client: &RpcClient,
     lut_pubkeys: &[Pubkey],
 ) -> Result<Vec<AddressLookupTableAccount>> {
-    let mut lookup_tables = Vec::new();
-
-    for lut_pubkey in lut_pubkeys {
-        let lut_account = rpc_client
-            .get_account(lut_pubkey)
-            .with_context(|| format!("Failed to fetch lookup table {}", lut_pubkey))?;
-
-        let lut = AddressLookupTable::deserialize(&lut_account.data)
-            .with_context(|| format!("Failed to deserialize lookup table {}", lut_pubkey))?;
-
-        lookup_tables.push(AddressLookupTableAccount {
-            key: *lut_pubkey,
-            addresses: lut.addresses.to_vec(),
-        });
-    }
-
-    Ok(lookup_tables)
+    lut_pubkeys
+        .iter()
+        .map(|key| {
+            let acc = rpc_client.get_account(key)?;
+            let lut = AddressLookupTable::deserialize(&acc.data)?;
+            Ok(AddressLookupTableAccount {
+                key: *key,
+                addresses: lut.addresses.to_vec(),
+            })
+        })
+        .collect()
 }
 
 fn get_or_create_lut(
@@ -432,55 +358,45 @@ fn get_or_create_lut(
         return Ok(lut);
     }
 
-    // Collect all unique accounts from instructions
-    let all_accounts: HashSet<Pubkey> = instructions
+    let addresses: Vec<Pubkey> = instructions
         .iter()
         .flat_map(|ix| ix.accounts.iter().map(|acc| acc.pubkey))
+        .collect::<HashSet<_>>()
+        .into_iter()
         .collect();
 
-    let lut_addresses: Vec<Pubkey> = all_accounts.into_iter().collect();
-    let recent_slot = rpc_client
-        .get_slot_with_commitment(CommitmentConfig {
-            commitment: CommitmentLevel::Finalized,
-        })
-        .context("Failed to get recent slot")?;
-
-    let (create_lut_ix, lut_address) =
-        solana_sdk::address_lookup_table::instruction::create_lookup_table(
-            payer.pubkey(),
-            payer.pubkey(),
-            recent_slot - 50,
-        );
-
+    let slot = rpc_client.get_slot_with_commitment(CommitmentConfig {
+        commitment: CommitmentLevel::Finalized,
+    })?;
+    let (create_ix, lut_addr) = solana_sdk::address_lookup_table::instruction::create_lookup_table(
+        payer.pubkey(),
+        payer.pubkey(),
+        slot - 50,
+    );
     let extend_ix = solana_sdk::address_lookup_table::instruction::extend_lookup_table(
-        lut_address,
+        lut_addr,
         payer.pubkey(),
         Some(payer.pubkey()),
-        lut_addresses.clone(),
+        addresses.clone(),
     );
 
-    let lut_tx = Transaction::new_signed_with_payer(
-        &[create_lut_ix, extend_ix],
+    rpc_client.send_and_confirm_transaction(&Transaction::new_signed_with_payer(
+        &[create_ix, extend_ix],
         Some(&payer.pubkey()),
         &[payer],
-        rpc_client
-            .get_latest_blockhash()
-            .context("Failed to get latest blockhash")?,
-    );
+        rpc_client.get_latest_blockhash()?,
+    ))?;
 
-    rpc_client
-        .send_and_confirm_transaction(&lut_tx)
-        .context("Failed to send LUT transaction")?;
-
+    // Wait for LUT to be picked up
     sleep(Duration::from_secs(2));
 
     println!(
         "LUT {} created with {} addresses",
-        lut_address,
-        lut_addresses.len()
+        lut_addr,
+        addresses.len()
     );
 
-    Ok(lut_address)
+    Ok(lut_addr)
 }
 
 fn build_versioned_transaction(
@@ -489,26 +405,19 @@ fn build_versioned_transaction(
     instructions: &[SolanaInstruction],
     address_lookup_tables: &[AddressLookupTableAccount],
 ) -> Result<VersionedTransaction> {
-    let recent_blockhash = rpc_client
-        .get_latest_blockhash()
-        .context("Failed to get latest blockhash")?;
-
-    let versioned_message = VersionedMessage::V0(
-        v0::Message::try_compile(
-            &payer.pubkey(),
-            instructions,
-            address_lookup_tables,
-            recent_blockhash,
-        )
-        .context("Failed to compile versioned message")?,
-    );
+    let msg = VersionedMessage::V0(v0::Message::try_compile(
+        &payer.pubkey(),
+        instructions,
+        address_lookup_tables,
+        rpc_client.get_latest_blockhash()?,
+    )?);
 
     Ok(VersionedTransaction {
         signatures: vec![
             solana_sdk::signature::Signature::default();
-            versioned_message.header().num_required_signatures as usize
+            msg.header().num_required_signatures as usize
         ],
-        message: versioned_message,
+        message: msg,
     })
 }
 
@@ -518,40 +427,37 @@ fn create_transaction(
     requested_accounts: Vec<AccountMeta>,
     payer: Pubkey,
 ) -> Result<Transaction> {
-    // Build instruction data: discriminator + VAA length + VAA body
-    let mut instruction_data = Vec::new();
-    instruction_data.extend_from_slice(&[148, 184, 169, 222, 207, 8, 154, 127]);
-    instruction_data.extend_from_slice(&(vaa_body.len() as u32).to_le_bytes());
-    instruction_data.extend_from_slice(&vaa_body);
+    let mut data = vec![148, 184, 169, 222, 207, 8, 154, 127];
+    data.extend_from_slice(&(vaa_body.len() as u32).to_le_bytes());
+    data.extend_from_slice(&vaa_body);
 
-    // Build accounts list
     let mut accounts = vec![AccountMeta::new(payer, true)];
     accounts.extend(requested_accounts);
+    accounts.push(AccountMeta::new_readonly(
+        Pubkey::find_program_address(
+            &[GUARDIAN_SET_SEED, &GUARDIAN_SET_INDEX_SEED.to_be_bytes()],
+            &CORE_BRIDGE_PROGRAM_ID,
+        )
+        .0,
+        false,
+    ));
 
-    let (derived_guardian_set, _) = Pubkey::find_program_address(
-        &[GUARDIAN_SET_SEED, &GUARDIAN_SET_INDEX_SEED.to_be_bytes()],
-        &CORE_BRIDGE_PROGRAM_ID,
-    );
-    accounts.push(AccountMeta::new_readonly(derived_guardian_set, false));
+    let tx = Transaction::new_unsigned(Message::new_with_blockhash(
+        &[SolanaInstruction {
+            program_id: wormhole_adapter::ID,
+            accounts,
+            data,
+        }],
+        None,
+        &rpc_client.get_latest_blockhash()?,
+    ));
 
-    let instruction = SolanaInstruction {
-        program_id: wormhole_adapter::ID,
-        accounts,
-        data: instruction_data,
-    };
-
-    let recent_blockhash = rpc_client
-        .get_latest_blockhash()
-        .context("Failed to get latest blockhash")?;
-
-    let message = Message::new_with_blockhash(&[instruction], None, &recent_blockhash);
-    let tx = Transaction::new_unsigned(message);
-
-    // Debug output
     let mut encoded = Vec::new();
     tx.encode(&mut encoded)?;
-    let base64_tx = BASE64_STANDARD.encode(&encoded);
-    println!("\n=== Base64 Transaction ===\n{}", base64_tx);
+    println!(
+        "\n=== Base64 Transaction ===\n{}",
+        BASE64_STANDARD.encode(&encoded)
+    );
 
     Ok(tx)
 }
