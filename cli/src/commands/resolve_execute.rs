@@ -5,7 +5,6 @@ use borsh::BorshDeserialize;
 use bs58;
 use common::{
     pda,
-    portal::{self, constants::GLOBAL_SEED},
     wormhole_adapter::{self, constants::GUARDIAN_SET_SEED},
 };
 use core::panic;
@@ -14,28 +13,37 @@ use solana_client::{rpc_client::RpcClient, rpc_config::RpcSimulateTransactionAcc
 use solana_rpc_client_types::config::RpcSimulateTransactionConfig;
 use solana_sdk::{
     address_lookup_table::{state::AddressLookupTable, AddressLookupTableAccount},
+    commitment_config::{CommitmentConfig, CommitmentLevel},
     instruction::{AccountMeta, Instruction as SolanaInstruction},
     message::{v0, Message, VersionedMessage},
     packet::Encode,
     pubkey::Pubkey,
+    signature::Keypair,
+    signer::{EncodableKey, Signer},
     transaction::{Transaction, VersionedTransaction},
 };
 use solana_transaction_status_client_types::{
     EncodedTransaction, UiMessage, UiTransactionEncoding,
 };
-use std::result::Result as StdResult;
+use std::{collections::HashSet, result::Result as StdResult, thread::sleep, time::Duration};
 
 use crate::types::*;
 
 const GUARDIAN_SET_INDEX_SEED: u32 = 0;
-const PAYER: Pubkey = Pubkey::from_str_const("D76ySoHPwD8U2nnTTDqXeUJQg5UkD9UD1PUE1rnvPAGm");
 pub const CORE_BRIDGE_PROGRAM_ID: Pubkey =
     Pubkey::from_str_const("3u8hJUVTA4jH1wYAyUur7FFZVQ8H635K3tSHHF4ssjQ5");
 const TARGET_PROGRAM_ID: Pubkey =
     Pubkey::from_str_const("EFaNWErqAtVWufdNb7yofSHHfWFos843DFpu4JBw24at");
+pub const RESOLVER_PUBKEY_SHIM_VAA_SIGS: Pubkey =
+    Pubkey::new_from_array(*b"shim_vaa_sigs_000000000000000000");
+const CUSTOM_LUT: Option<Pubkey> = Some(Pubkey::from_str_const(
+    "49zK4hBSgwoNCukBTtGVLkQEr7NUkCfebTb7dqM7uhmG",
+));
 
 pub fn resolve_execute(tx_hash: String) -> Result<()> {
     let rpc_client = RpcClient::new("https://lindsy-gxe51w-fast-devnet.helius-rpc.com");
+    let key_path = format!("{}/.config/solana/id.json", std::env::var("HOME")?);
+    let payer = Keypair::read_from_file(key_path).expect("failed to read keypair");
 
     // Make request to wormhole to get VAA
     let api_client = reqwest::blocking::Client::new();
@@ -172,12 +180,16 @@ pub fn resolve_execute(tx_hash: String) -> Result<()> {
     };
 
     let mut requested_accounts = vec![];
-    let mut result_data: Option<UiAccount> = None;
+    let mut result_data: Option<UiAccount>;
 
     // Simulate until we get final result
     loop {
-        let transaction =
-            create_transaction(vaa_body.clone(), &rpc_client, requested_accounts.clone())?;
+        let transaction = create_transaction(
+            vaa_body.clone(),
+            &rpc_client,
+            requested_accounts.clone(),
+            payer.pubkey(),
+        )?;
 
         // Simulate transaction
         let simulation_result = rpc_client.simulate_transaction_with_config(
@@ -240,15 +252,14 @@ pub fn resolve_execute(tx_hash: String) -> Result<()> {
     // Skip the 8-byte discriminator and deserialize the Resolver directly
     let result = Resolver::<InstructionGroups>::deserialize(&mut &decoded_data[8..])?;
 
-    println!("\n=== Resolver Result (versioned transaction) ===");
+    println!("\n=== Resolver Result ===");
 
     match &result {
         Resolver::Resolved(instruction_groups) => {
             for group in instruction_groups.0.iter() {
-                // let mut instructions = vec![extracted_instruction
-                //     .clone()
-                //     .expect("missing post vaa instruction")];
-                let mut instructions = Vec::new();
+                let mut instructions = vec![extracted_instruction
+                    .clone()
+                    .expect("missing post vaa instruction")];
 
                 for serializable_ix in group.instructions.iter() {
                     // Parse instruction
@@ -256,7 +267,11 @@ pub fn resolve_execute(tx_hash: String) -> Result<()> {
                         .accounts
                         .iter()
                         .map(|acc| AccountMeta {
-                            pubkey: acc.pubkey,
+                            pubkey: if acc.pubkey == RESOLVER_PUBKEY_SHIM_VAA_SIGS {
+                                guardian_set.expect("missing gaurdian set signatures account")
+                            } else {
+                                acc.pubkey
+                            },
                             is_signer: acc.is_signer,
                             is_writable: acc.is_writable,
                         })
@@ -298,10 +313,70 @@ pub fn resolve_execute(tx_hash: String) -> Result<()> {
                     }
                 }
 
+                // Create new LUT with accounts from the transaction
+                let custom_lut = if let Some(lut) = CUSTOM_LUT {
+                    lut
+                } else {
+                    let mut all_accounts = HashSet::new();
+                    for instruction in instructions.iter() {
+                        for account in instruction.accounts.iter() {
+                            all_accounts.insert(account.pubkey);
+                        }
+                    }
+
+                    let lut_addresses: Vec<Pubkey> = all_accounts.into_iter().collect();
+                    let recent_slot = rpc_client.get_slot_with_commitment(CommitmentConfig {
+                        commitment: CommitmentLevel::Finalized,
+                    })?;
+
+                    let (create_lut_ix, lut_address) =
+                        solana_sdk::address_lookup_table::instruction::create_lookup_table(
+                            payer.pubkey(),
+                            payer.pubkey(),
+                            recent_slot - 50,
+                        );
+
+                    let extend_ix =
+                        solana_sdk::address_lookup_table::instruction::extend_lookup_table(
+                            lut_address,
+                            payer.pubkey(),
+                            Some(payer.pubkey()),
+                            lut_addresses.clone(),
+                        );
+
+                    let lut_tx = Transaction::new_signed_with_payer(
+                        &[create_lut_ix, extend_ix],
+                        Some(&payer.pubkey()),
+                        &[&payer],
+                        rpc_client.get_latest_blockhash()?,
+                    );
+
+                    rpc_client.send_and_confirm_transaction(&lut_tx)?;
+                    sleep(Duration::from_secs(2));
+
+                    println!(
+                        "LUT {} created with {} addresses",
+                        lut_address,
+                        lut_addresses.len()
+                    );
+
+                    lut_address
+                };
+
+                // Fetch the custom lookup table
+                let lut_account = rpc_client.get_account(&custom_lut)?;
+                let lut = AddressLookupTable::deserialize(&lut_account.data)?;
+                let new_lut = AddressLookupTableAccount {
+                    key: custom_lut,
+                    addresses: lut.addresses.to_vec(),
+                };
+
+                address_lookup_tables.push(new_lut);
+
                 let recent_blockhash = rpc_client.get_latest_blockhash()?;
 
                 let versioned_message = VersionedMessage::V0(v0::Message::try_compile(
-                    &PAYER,
+                    &payer.pubkey(),
                     &instructions,
                     &address_lookup_tables,
                     recent_blockhash,
@@ -325,12 +400,6 @@ pub fn resolve_execute(tx_hash: String) -> Result<()> {
         _ => panic!("Expected resolved result"),
     }
 
-    println!(
-        "\nWormhole Global {}",
-        pda!(&[GLOBAL_SEED], &wormhole_adapter::ID)
-    );
-    println!("Portal Global {}", pda!(&[GLOBAL_SEED], &portal::ID));
-
     Ok(())
 }
 
@@ -338,13 +407,14 @@ fn create_transaction(
     vaa_body: Vec<u8>,
     rpc_client: &RpcClient,
     requested_accounts: Vec<AccountMeta>,
+    payer: Pubkey,
 ) -> Result<Transaction, anyhow::Error> {
     let mut instruction_data = Vec::new();
     instruction_data.extend_from_slice(&[148, 184, 169, 222, 207, 8, 154, 127]);
     instruction_data.extend_from_slice(&(vaa_body.len() as u32).to_le_bytes());
     instruction_data.extend_from_slice(&vaa_body);
 
-    let mut accounts = vec![AccountMeta::new(PAYER, true)];
+    let mut accounts = vec![AccountMeta::new(payer, true)];
     accounts.extend(requested_accounts);
 
     let (derived_guardian_set, _) = Pubkey::find_program_address(

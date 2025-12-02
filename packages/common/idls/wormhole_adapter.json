@@ -126,6 +126,99 @@
           }
         },
         {
+          "name": "m_mint",
+          "writable": true
+        },
+        {
+          "name": "old_token_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "new_token_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                96,
+                71,
+                38,
+                195,
+                17,
+                0,
+                131,
+                79,
+                49,
+                225,
+                51,
+                140,
+                91,
+                229,
+                193,
+                101,
+                155,
+                214,
+                243,
+                111,
+                176,
+                88,
+                151,
+                248,
+                178,
+                69,
+                151,
+                27,
+                53,
+                202,
+                23
+              ]
+            }
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
