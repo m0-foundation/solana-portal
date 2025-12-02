@@ -118,7 +118,7 @@ impl Payload {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TokenTransferPayload {
     pub amount: u128,
     pub destination_token: [u8; 32],
@@ -138,7 +138,7 @@ impl Into<EarnerMerkleRootPayload> for TokenTransferPayload {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FillReportPayload {
     pub order_id: [u8; 32],
     pub amount_in_to_release: u128,
@@ -148,13 +148,13 @@ pub struct FillReportPayload {
     pub message_id: [u8; 32],
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct IndexPayload {
     pub index: u64,
     pub message_id: [u8; 32],
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EarnerMerkleRootPayload {
     pub index: u64,
     pub merkle_root: [u8; 32],

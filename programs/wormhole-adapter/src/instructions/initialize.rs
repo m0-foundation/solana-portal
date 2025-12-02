@@ -1,4 +1,9 @@
 use anchor_lang::prelude::*;
+use anchor_spl::{
+    token_2022::{spl_token_2022::instruction::AuthorityType, Token2022},
+    token_interface::{self, Mint},
+};
+use common::{portal, AUTHORITY_SEED};
 
 use crate::state::{WormholeGlobal, GLOBAL_SEED};
 
@@ -16,6 +21,29 @@ pub struct Initialize<'info> {
     )]
     pub wormhole_global: Account<'info, WormholeGlobal>,
 
+    #[account(
+        mut,
+        mint::token_program = token_program,
+    )]
+    pub m_mint: InterfaceAccount<'info, Mint>,
+
+    #[account(
+        seeds = [b"token_authority"],
+        bump,
+    )]
+    /// CHECK: authority validated by seeds
+    pub old_token_authority: UncheckedAccount<'info>,
+
+    #[account(
+        seeds = [AUTHORITY_SEED],
+        seeds::program = portal::ID,
+        bump,
+    )]
+    /// CHECK: authority validated by seeds
+    pub new_token_authority: UncheckedAccount<'info>,
+
+    pub token_program: Program<'info, Token2022>,
+
     pub system_program: Program<'info, System>,
 }
 
@@ -29,6 +57,23 @@ impl Initialize<'_> {
             pending_admin: None,
             receive_lut: None,
         });
+
+        // Relinquish mint authority
+        // Previously, Wormhole was the only bridge and minted tokens
+        if ctx.accounts.m_mint.mint_authority.unwrap() == ctx.accounts.old_token_authority.key() {
+            token_interface::set_authority(
+                CpiContext::new_with_signer(
+                    ctx.accounts.token_program.to_account_info(),
+                    token_interface::SetAuthority {
+                        account_or_mint: ctx.accounts.m_mint.to_account_info(),
+                        current_authority: ctx.accounts.old_token_authority.to_account_info(),
+                    },
+                    &[&[b"token_authority", &[ctx.bumps.old_token_authority]]],
+                ),
+                AuthorityType::MintTokens,
+                Some(ctx.accounts.new_token_authority.key()),
+            )?;
+        }
 
         Ok(())
     }
