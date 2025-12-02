@@ -137,7 +137,7 @@ fn test_02_index_update_hyperlane() -> Result<()> {
     let recipient = &account_data[len - 73..len - 41];
     assert_eq!(
         hex::encode(recipient),
-        "000000000000000000000000d925c84b55e4e44a53749ff5f2a5a13f63d128fd"
+        "0000000000000000000000000763196a091575adf99e2306e5e90e0be5154841"
     );
 
     Ok(())
