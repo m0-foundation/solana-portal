@@ -1,0 +1,21 @@
+addon "svm" {
+    rpc_api_url = input.rpc_api_url
+    network_id = input.network_id
+}
+
+variable "hyperlane_payer" {
+    value = svm::find_pda("mZhPGteS36G7FhMTcRofLQU8ocBNAsGq7u8SKSHfL2X", ["payer"])
+}
+
+variable "amount_sol" {
+    value = 0.5
+    editable = true
+    description = "Amount of SOL to send to Hyperlane receive payer"
+}
+
+action "send_sol" "svm::send_sol" {
+    description = "Send SOL to Hyperlane receive payer"
+    amount = svm::sol_to_lamports(variable.amount_sol)
+    signer = signer.caller
+    recipient = variable.hyperlane_payer.pda
+}

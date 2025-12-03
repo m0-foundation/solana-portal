@@ -34,9 +34,17 @@ pub struct HyperlaneGlobal {
     pub nonce: u64,
     pub admin: Pubkey,
     pub paused: bool,
+    pub igp: Pubkey,
+    pub igp_type: IgpType,
     pub ism: Option<Pubkey>,
     pub pending_admin: Option<Pubkey>,
     pub peers: Vec<Peer>,
+}
+
+#[derive(AnchorDeserialize, AnchorSerialize, Copy, Clone)]
+pub enum IgpType {
+    Igp(Pubkey),
+    OverheadIgp(Pubkey),
 }
 
 #[account]
@@ -52,6 +60,8 @@ impl HyperlaneGlobal {
         8 + // nonce
         32 + // admin
         1 + // paused
+        32 + // igp
+        1 + 32 + // igp type
         1 + 32 + // ism option + ism pubkey
         1 + 32 + // pending admin
         4 + // length of peers

@@ -1,9 +1,9 @@
 use anchor_lang::prelude::*;
 
-use crate::state::{HyperlaneGlobal, GLOBAL_SEED};
+use crate::state::{HyperlaneGlobal, IgpType, GLOBAL_SEED};
 
 #[derive(Accounts)]
-pub struct SetIsm<'info> {
+pub struct SetIgp<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
 
@@ -16,10 +16,10 @@ pub struct SetIsm<'info> {
     pub hyperlane_global: Account<'info, HyperlaneGlobal>,
 }
 
-impl SetIsm<'_> {
-    pub fn handler(ctx: Context<Self>, ism: Option<Pubkey>) -> Result<()> {
-        // Set to None to use the default ISM
-        ctx.accounts.hyperlane_global.ism = ism;
+impl SetIgp<'_> {
+    pub fn handler(ctx: Context<Self>, igp: Pubkey, igp_type: IgpType) -> Result<()> {
+        ctx.accounts.hyperlane_global.igp = igp;
+        ctx.accounts.hyperlane_global.igp_type = igp_type;
         Ok(())
     }
 }

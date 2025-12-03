@@ -13,6 +13,7 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     ResolveExecute { tx_hash: String },
+    SendIndex { destination_chain_id: u32 },
 }
 
 fn main() -> Result<()> {
@@ -21,6 +22,9 @@ fn main() -> Result<()> {
     match cli.command {
         Commands::ResolveExecute { tx_hash } => {
             commands::resolve_execute(tx_hash)?;
+        }
+        Commands::SendIndex { destination_chain_id } => {
+            commands::send_index(destination_chain_id)?;
         }
     }
 

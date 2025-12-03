@@ -1,9 +1,12 @@
 use anchor_lang::prelude::*;
 use common::earn::{self, accounts::EarnGlobal};
 
-use crate::state::{
-    AccountMetasData, HyperlaneGlobal, DASH_SEED, GLOBAL_SEED, METADATA_SEED_1, METADATA_SEED_2,
-    METADATA_SEED_3,
+use crate::{
+    consts::{DEFAULT_IGP, DEFAULT_OVERHEAD_IGP},
+    state::{
+        AccountMetasData, HyperlaneGlobal, IgpType, DASH_SEED, GLOBAL_SEED, METADATA_SEED_1,
+        METADATA_SEED_2, METADATA_SEED_3,
+    },
 };
 
 #[derive(Accounts)]
@@ -55,6 +58,8 @@ impl Initialize<'_> {
             paused: false,
             peers: Vec::new(),
             pending_admin: None,
+            igp: DEFAULT_IGP,
+            igp_type: IgpType::Igp(DEFAULT_OVERHEAD_IGP),
         });
 
         ctx.accounts.account_metas_data.set_inner(AccountMetasData {

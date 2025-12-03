@@ -4,7 +4,7 @@ mod consts;
 mod instructions;
 mod state;
 
-use crate::state::Peer;
+use crate::state::{IgpType, Peer};
 use anchor_lang::prelude::*;
 use consts::{
     HANDLE_ACCOUNT_METAS_DISCRIMINATOR, HANDLE_DISCRIMINATOR, ISM_DISCRIMINATOR,
@@ -61,8 +61,12 @@ pub mod hyperlane_adapter {
         SyncExtensions::handler(ctx)
     }
 
-    pub fn set_ism(ctx: Context<SetIsm>, ism: Pubkey) -> Result<()> {
+    pub fn set_ism(ctx: Context<SetIsm>, ism: Option<Pubkey>) -> Result<()> {
         SetIsm::handler(ctx, ism)
+    }
+
+    pub fn set_igp(ctx: Context<SetIgp>, igp: Pubkey, igp_type: IgpType) -> Result<()> {
+        SetIgp::handler(ctx, igp, igp_type)
     }
 
     pub fn send_message(

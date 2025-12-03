@@ -17,6 +17,8 @@ pub struct GetIsm<'info> {
 
 impl GetIsm<'_> {
     pub fn handler(ctx: Context<Self>) -> Result<()> {
+        // Uses default ISM if there is no return data or Option::None was returned
+        // https://github.com/hyperlane-xyz/hyperlane-monorepo/blob/18b43e96d14f9023f25047cb9820079731eeff14/rust/sealevel/programs/mailbox/src/processor.rs#L488
         program::set_return_data(&ctx.accounts.hyperlane_global.ism.try_to_vec()?[..]);
 
         Ok(())

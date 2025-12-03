@@ -7,9 +7,17 @@ cfg_if::cfg_if! {
     if #[cfg(feature = "mainnet")] {
         #[constant]
         pub const MAILBOX_PROGRAM_ID: Pubkey = pubkey!("E588QtVUvresuXq2KoNEwAmoifCzYGpRBdHByN9KQMbi");
+        #[constant]
+        pub const DEFAULT_IGP: Pubkey = pubkey!("BhNcatUDC2D5JTyeaqrdSukiVFsEHK7e3hVmKMztwefv");
+        #[constant]
+        pub const DEFAULT_OVERHEAD_IGP: Pubkey = pubkey!("AkeHBbE5JkwVppujCQQ6WuxsVsJtruBAjUo6fDCFp6fF");
     } else if #[cfg(feature = "testnet")] {
         #[constant]
         pub const MAILBOX_PROGRAM_ID: Pubkey = pubkey!("75HBBLae3ddeneJVrZeyrDfv6vb7SMC3aCpBucSXS5aR");
+        #[constant]
+        pub const DEFAULT_IGP: Pubkey = pubkey!("5p7Hii6CJL4xGBYYTGEQmH9LnUSZteFJUu9AVLDExZX2");
+        #[constant]
+        pub const DEFAULT_IGP_TYPE: Pubkey = pubkey!("hBHAApi5ZoeCYHqDdCKkCzVKmBdwywdT3hMqe327eZB");
     }
 }
 

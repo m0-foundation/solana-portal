@@ -20,6 +20,9 @@ runbooks:
   - name: set_lut
     description: Set the Wormhole Adapter LUT
     location: runbooks/set_lut
+  - name: fund_receive_payer
+    description: Fund the Hyperlane receive payer account
+    location: runbooks/fund_receive_payer
 environments:
   localnet:
     network_id: localnet
@@ -36,6 +39,14 @@ environments:
     chain_id: 1399811150
     wormhole_adapter: true
     hyperlane_adapter: false
+    build_dir: target/deploy
+    chain_id_idx: 1
+  testnet:
+    network_id: testnet
+    rpc_api_url: https://api.testnet.solana.com
+    chain_id: 1399811150
+    wormhole_adapter: false
+    hyperlane_adapter: true
     build_dir: target/deploy
     chain_id_idx: 1
   mainnet:
