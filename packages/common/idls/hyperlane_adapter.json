@@ -89,6 +89,75 @@
       "args": []
     },
     {
+      "name": "get_ism",
+      "discriminator": [
+        45,
+        18,
+        245,
+        87,
+        234,
+        46,
+        246,
+        15
+      ],
+      "accounts": [
+        {
+          "name": "hyperlane_global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "get_ism_metas",
+      "discriminator": [
+        190,
+        214,
+        218,
+        129,
+        67,
+        97,
+        4,
+        76
+      ],
+      "accounts": [
+        {
+          "name": "hyperlane_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "initialize",
       "discriminator": [
         175,
@@ -1144,6 +1213,54 @@
       ]
     },
     {
+      "name": "set_ism",
+      "discriminator": [
+        161,
+        188,
+        34,
+        243,
+        73,
+        82,
+        162,
+        163
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "hyperlane_global"
+          ]
+        },
+        {
+          "name": "hyperlane_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "ism",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
       "name": "set_peer",
       "discriminator": [
         32,
@@ -1575,6 +1692,12 @@
           {
             "name": "paused",
             "type": "bool"
+          },
+          {
+            "name": "ism",
+            "type": {
+              "option": "pubkey"
+            }
           },
           {
             "name": "pending_admin",

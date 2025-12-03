@@ -11,7 +11,12 @@ build:
 	cp -f target/idl/*.json packages/common/idls/
 
 build-devnet:
-	anchor build -- --features devnet --no-default-features
+	anchor build -p wormhole_adapter -- --features devnet --no-default-features
+	anchor build -p portal
+
+build-testnet:
+	anchor build -p hyperlane_adapter -- --features testnet --no-default-features
+	anchor build -p portal
 
 build-mainnet:
 	anchor build --verifiable  -- --features mainnet --no-default-features

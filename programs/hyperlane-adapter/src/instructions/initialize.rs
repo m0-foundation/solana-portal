@@ -51,6 +51,7 @@ impl Initialize<'_> {
             bump: ctx.bumps.hyperlane_global,
             nonce: 0,
             admin: ctx.accounts.admin.key(),
+            ism: None,
             paused: false,
             peers: Vec::new(),
             pending_admin: None,

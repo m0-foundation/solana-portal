@@ -23,7 +23,7 @@ anchor-debug = []
 custom-heap = []
 custom-panic = []
 mainnet = []
-devnet = []
+testnet = []
 
 [dependencies]
 anchor-lang.workspace = true

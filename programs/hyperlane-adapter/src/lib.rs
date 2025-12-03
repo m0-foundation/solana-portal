@@ -6,7 +6,10 @@ mod state;
 
 use crate::state::Peer;
 use anchor_lang::prelude::*;
-use consts::{HANDLE_ACCOUNT_METAS_DISCRIMINATOR, HANDLE_DISCRIMINATOR};
+use consts::{
+    HANDLE_ACCOUNT_METAS_DISCRIMINATOR, HANDLE_DISCRIMINATOR, ISM_DISCRIMINATOR,
+    ISM_METAS_DISCRIMINATOR,
+};
 use instructions::*;
 
 #[cfg(not(feature = "no-entrypoint"))]
@@ -58,6 +61,10 @@ pub mod hyperlane_adapter {
         SyncExtensions::handler(ctx)
     }
 
+    pub fn set_ism(ctx: Context<SetIsm>, ism: Pubkey) -> Result<()> {
+        SetIsm::handler(ctx, ism)
+    }
+
     pub fn send_message(
         ctx: Context<SendMessage>,
         message: Vec<u8>,
@@ -84,5 +91,15 @@ pub mod hyperlane_adapter {
         message: Vec<u8>,
     ) -> Result<()> {
         ReceiveMessageMetas::handler(ctx, origin, sender, message)
+    }
+
+    #[instruction(discriminator = &ISM_DISCRIMINATOR)]
+    pub fn get_ism(ctx: Context<GetIsm>) -> Result<()> {
+        GetIsm::handler(ctx)
+    }
+
+    #[instruction(discriminator = &ISM_METAS_DISCRIMINATOR)]
+    pub fn get_ism_metas(ctx: Context<GetIsmMetas>) -> Result<()> {
+        GetIsmMetas::handler(ctx)
     }
 }

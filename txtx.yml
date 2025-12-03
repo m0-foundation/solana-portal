@@ -33,7 +33,7 @@ environments:
   devnet:
     network_id: devnet
     rpc_api_url: https://lindsy-gxe51w-fast-devnet.helius-rpc.com
-    chain_id: 1399811149
+    chain_id: 1399811150
     wormhole_adapter: true
     hyperlane_adapter: false
     build_dir: target/deploy

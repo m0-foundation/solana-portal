@@ -20,7 +20,6 @@ idl-build = [
     "common/idl-build",
 ]
 mainnet = []
-devnet = []
 
 [dependencies]
 anchor-lang.workspace = true
