@@ -13,7 +13,7 @@ use crate::state::{PortalGlobal, AUTHORITY_SEED, GLOBAL_SEED};
 #[derive(Accounts)]
 pub struct ReceiveMessage<'info> {
     #[account(mut)]
-    pub sender: Signer<'info>,
+    pub payer: Signer<'info>,
 
     #[account(
         mut,
@@ -133,7 +133,7 @@ impl ReceiveMessage<'_> {
             CpiContext::new_with_signer(
                 accounts.swap_program,
                 ext_swap::cpi::accounts::Wrap {
-                    signer: ctx.accounts.portal_authority.to_account_info(),
+                    signer: ctx.accounts.portal_authority.to_account_info(), // Signer owns the $M tokens
                     wrap_authority: Some(ctx.accounts.portal_authority.to_account_info()),
                     swap_global: accounts.swap_global,
                     to_global: accounts.extension_global,
@@ -168,7 +168,7 @@ impl ReceiveMessage<'_> {
             CpiContext::new_with_signer(
                 accounts.orderbook_program.clone(),
                 order_book::cpi::accounts::ReportOrderFill {
-                    relayer: ctx.accounts.sender.to_account_info(),
+                    relayer: ctx.accounts.payer.to_account_info(), // Relayer pays for ATA initialization
                     messenger_authority: ctx.accounts.portal_authority.to_account_info(),
                     global_account: accounts.orderbook_global_account,
                     order: accounts.order,

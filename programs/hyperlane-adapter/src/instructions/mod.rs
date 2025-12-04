@@ -4,6 +4,7 @@ pub mod pause;
 pub mod receive_message;
 pub mod send_message;
 pub mod set_igp;
+pub mod set_igp_gas_amount;
 pub mod set_ism;
 pub mod set_peer;
 pub mod sync_extensions;
@@ -11,12 +12,15 @@ pub mod transfer_admin;
 
 use anchor_lang::prelude::*;
 use borsh::{BorshDeserialize, BorshSerialize};
+use fixed_hash::construct_fixed_hash;
+
 pub use get_ism::*;
 pub use initialize::*;
 pub use pause::*;
 pub use receive_message::*;
 pub use send_message::*;
 pub use set_igp::*;
+pub use set_igp_gas_amount::*;
 pub use set_ism::*;
 pub use set_peer::*;
 pub use sync_extensions::*;
@@ -74,4 +78,10 @@ where
             trailing_byte: u8::MAX,
         }
     }
+}
+
+construct_fixed_hash! {
+    /// 256-bit hash type.
+    #[derive(AnchorSerialize, AnchorDeserialize)]
+    pub struct H256(32);
 }

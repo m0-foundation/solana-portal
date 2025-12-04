@@ -6,6 +6,8 @@ pub const GLOBAL_SEED: &[u8] = b"global";
 #[constant]
 pub const HYPERLANE_SEED: &[u8] = b"hyperlane";
 #[constant]
+pub const HYPERLANE_IGP_SEED: &[u8] = b"hyperlane_igp";
+#[constant]
 pub const METADATA_SEED_1: &[u8] = b"hyperlane_message_recipient";
 #[constant]
 pub const METADATA_SEED_2: &[u8] = b"handle";
@@ -24,6 +26,10 @@ pub const DISPATCHED_MESSAGE_SEED: &[u8] = b"dispatched_message";
 #[constant]
 pub const UNIQUE_MESSAGE_SEED: &[u8] = b"unique_message";
 #[constant]
+pub const PROGRAM_DATA_SEED: &[u8] = b"program_data";
+#[constant]
+pub const GAS_PAYMENT_SEED: &[u8] = b"gas_payment";
+#[constant]
 pub const PAYER_SEED: &[u8] = b"payer";
 #[constant]
 pub const DASH_SEED: &[u8] = b"-";
@@ -34,17 +40,13 @@ pub struct HyperlaneGlobal {
     pub nonce: u64,
     pub admin: Pubkey,
     pub paused: bool,
-    pub igp: Pubkey,
-    pub igp_type: IgpType,
+    pub igp_program_id: Pubkey,
+    pub igp_gas_amount: u64,
+    pub igp_account: Pubkey,
+    pub igp_overhead_account: Option<Pubkey>,
     pub ism: Option<Pubkey>,
     pub pending_admin: Option<Pubkey>,
     pub peers: Vec<Peer>,
-}
-
-#[derive(AnchorDeserialize, AnchorSerialize, Copy, Clone)]
-pub enum IgpType {
-    Igp(Pubkey),
-    OverheadIgp(Pubkey),
 }
 
 #[account]
@@ -60,8 +62,10 @@ impl HyperlaneGlobal {
         8 + // nonce
         32 + // admin
         1 + // paused
-        32 + // igp
-        1 + 32 + // igp type
+        32 + // igp program id
+        8 + // igp gas amount
+        32 + // igp account
+        1 + 32 + // igp overhead account option + pubkey
         1 + 32 + // ism option + ism pubkey
         1 + 32 + // pending admin
         4 + // length of peers

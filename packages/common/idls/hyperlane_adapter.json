@@ -1189,6 +1189,139 @@
           }
         },
         {
+          "name": "igp_program_id",
+          "relations": [
+            "hyperlane_global"
+          ]
+        },
+        {
+          "name": "igp_program_data",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  104,
+                  121,
+                  112,
+                  101,
+                  114,
+                  108,
+                  97,
+                  110,
+                  101,
+                  95,
+                  105,
+                  103,
+                  112
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  45
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  103,
+                  114,
+                  97,
+                  109,
+                  95,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "igp_program_id"
+            }
+          }
+        },
+        {
+          "name": "igp_gas_payment",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  104,
+                  121,
+                  112,
+                  101,
+                  114,
+                  108,
+                  97,
+                  110,
+                  101,
+                  95,
+                  105,
+                  103,
+                  112
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  45
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  97,
+                  115,
+                  95,
+                  112,
+                  97,
+                  121,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  45
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "unique_message"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "igp_program_id"
+            }
+          }
+        },
+        {
+          "name": "igp_account",
+          "writable": true,
+          "relations": [
+            "hyperlane_global"
+          ]
+        },
+        {
+          "name": "igp_overhead_account",
+          "writable": true,
+          "optional": true
+        },
+        {
           "name": "mailbox_program",
           "address": "E588QtVUvresuXq2KoNEwAmoifCzYGpRBdHByN9KQMbi"
         },
@@ -1209,6 +1342,107 @@
         {
           "name": "destination_chain_id",
           "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "set_igp",
+      "discriminator": [
+        45,
+        213,
+        22,
+        17,
+        249,
+        114,
+        125,
+        114
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "hyperlane_global"
+          ]
+        },
+        {
+          "name": "hyperlane_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "igp_program_id"
+        },
+        {
+          "name": "igp_account"
+        },
+        {
+          "name": "igp_overhead_account",
+          "optional": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "set_igp_gas_amount",
+      "discriminator": [
+        85,
+        231,
+        115,
+        4,
+        40,
+        127,
+        224,
+        123
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "hyperlane_global"
+          ]
+        },
+        {
+          "name": "hyperlane_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "igp_gas_amount",
+          "type": "u64"
         }
       ]
     },
@@ -1256,7 +1490,9 @@
       "args": [
         {
           "name": "ism",
-          "type": "pubkey"
+          "type": {
+            "option": "pubkey"
+          }
         }
       ]
     },
@@ -1694,6 +1930,24 @@
             "type": "bool"
           },
           {
+            "name": "igp_program_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "igp_gas_amount",
+            "type": "u64"
+          },
+          {
+            "name": "igp_account",
+            "type": "pubkey"
+          },
+          {
+            "name": "igp_overhead_account",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
             "name": "ism",
             "type": {
               "option": "pubkey"
@@ -1837,6 +2091,21 @@
       "value": "[45]"
     },
     {
+      "name": "DEFAULT_IGP_ACCOUNT",
+      "type": "pubkey",
+      "value": "JAvHW21tYXE9dtdG83DReqU2b4LUexFuCbtJT5tF8X6M"
+    },
+    {
+      "name": "DEFAULT_IGP_PROGRAM_ID",
+      "type": "pubkey",
+      "value": "BhNcatUDC2D5JTyeaqrdSukiVFsEHK7e3hVmKMztwefv"
+    },
+    {
+      "name": "DEFAULT_OVERHEAD_IGP_ACCOUNT",
+      "type": "pubkey",
+      "value": "AkeHBbE5JkwVppujCQQ6WuxsVsJtruBAjUo6fDCFp6fF"
+    },
+    {
       "name": "DISPATCHED_MESSAGE_SEED",
       "type": "bytes",
       "value": "[100, 105, 115, 112, 97, 116, 99, 104, 101, 100, 95, 109, 101, 115, 115, 97, 103, 101]"
@@ -1852,9 +2121,19 @@
       "value": "[100, 105, 115, 112, 97, 116, 99, 104, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121]"
     },
     {
+      "name": "GAS_PAYMENT_SEED",
+      "type": "bytes",
+      "value": "[103, 97, 115, 95, 112, 97, 121, 109, 101, 110, 116]"
+    },
+    {
       "name": "GLOBAL_SEED",
       "type": "bytes",
       "value": "[103, 108, 111, 98, 97, 108]"
+    },
+    {
+      "name": "HYPERLANE_IGP_SEED",
+      "type": "bytes",
+      "value": "[104, 121, 112, 101, 114, 108, 97, 110, 101, 95, 105, 103, 112]"
     },
     {
       "name": "HYPERLANE_SEED",
@@ -1895,6 +2174,11 @@
       "name": "PROCESS_AUTHORITY",
       "type": "bytes",
       "value": "[112, 114, 111, 99, 101, 115, 115, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121]"
+    },
+    {
+      "name": "PROGRAM_DATA_SEED",
+      "type": "bytes",
+      "value": "[112, 114, 111, 103, 114, 97, 109, 95, 100, 97, 116, 97]"
     },
     {
       "name": "SPL_NOOP",

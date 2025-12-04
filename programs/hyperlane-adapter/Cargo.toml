@@ -32,3 +32,4 @@ common = { path = "../../packages/common" }
 cfg-if.workspace = true
 borsh.workspace = true
 solana-security-txt.workspace = true
+fixed-hash = "0.8.0"

@@ -4,7 +4,7 @@ mod consts;
 mod instructions;
 mod state;
 
-use crate::state::{IgpType, Peer};
+use crate::state::Peer;
 use anchor_lang::prelude::*;
 use consts::{
     HANDLE_ACCOUNT_METAS_DISCRIMINATOR, HANDLE_DISCRIMINATOR, ISM_DISCRIMINATOR,
@@ -65,8 +65,12 @@ pub mod hyperlane_adapter {
         SetIsm::handler(ctx, ism)
     }
 
-    pub fn set_igp(ctx: Context<SetIgp>, igp: Pubkey, igp_type: IgpType) -> Result<()> {
-        SetIgp::handler(ctx, igp, igp_type)
+    pub fn set_igp(ctx: Context<SetIgp>) -> Result<()> {
+        SetIgp::handler(ctx)
+    }
+
+    pub fn set_igp_gas_amount(ctx: Context<SetIgpGasAmount>, igp_gas_amount: u64) -> Result<()> {
+        SetIgpGasAmount::handler(ctx, igp_gas_amount)
     }
 
     pub fn send_message(

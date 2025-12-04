@@ -247,7 +247,7 @@
       ],
       "accounts": [
         {
-          "name": "sender",
+          "name": "payer",
           "writable": true,
           "signer": true
         },

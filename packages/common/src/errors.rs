@@ -32,4 +32,6 @@ pub enum BridgeError {
     InvalidRecipientTokenAccount,
     #[msg("Expected authority from a supported adapter")]
     InvalidAdapterAuthority,
+    #[msg("Invalid Hyperlane IGP account")]
+    InvalidIgpAccount,
 }
