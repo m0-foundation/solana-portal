@@ -26,16 +26,9 @@ impl GetIsm<'_> {
 }
 
 #[derive(Accounts)]
-pub struct GetIsmMetas<'info> {
-    #[account(
-        mut,
-        seeds = [GLOBAL_SEED],
-        bump = hyperlane_global.bump,
-    )]
-    pub hyperlane_global: Account<'info, HyperlaneGlobal>,
-}
+pub struct GetIsmMetas {}
 
-impl GetIsmMetas<'_> {
+impl GetIsmMetas {
     pub fn handler(_: Context<Self>) -> Result<()> {
         let account_metas: Vec<SerializableAccountMeta> =
             vec![AccountMeta::new_readonly(pda!(&[GLOBAL_SEED], &crate::ID), false).into()];

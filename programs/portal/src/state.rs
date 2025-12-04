@@ -5,7 +5,10 @@ use anchor_spl::associated_token::spl_associated_token_account::solana_program::
 
 #[constant]
 pub const GLOBAL_SEED: &[u8] = b"global";
-
+#[constant]
+pub const M_VAULT_SEED: &[u8] = b"m_vault";
+#[constant]
+pub const MINT_AUTHORITY_SEED: &[u8] = b"mint_authority";
 #[constant]
 pub use common::interfaces::AUTHORITY_SEED;
 

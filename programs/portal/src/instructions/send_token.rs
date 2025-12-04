@@ -7,7 +7,7 @@ use common::{
 
 use crate::{
     instructions::send_message,
-    state::{PortalGlobal, AUTHORITY_SEED, GLOBAL_SEED},
+    state::{PortalGlobal, AUTHORITY_SEED, GLOBAL_SEED, MINT_AUTHORITY_SEED, M_VAULT_SEED},
 };
 
 #[derive(Accounts)]
@@ -74,7 +74,7 @@ pub struct SendTokens<'info> {
     pub ext_m_vault: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
-        seeds = [b"m_vault"],
+        seeds = [M_VAULT_SEED],
         seeds::program = extension_program.key(),
         bump,
     )]
@@ -82,7 +82,7 @@ pub struct SendTokens<'info> {
     pub ext_m_vault_auth: AccountInfo<'info>,
 
     #[account(
-        seeds = [b"mint_authority"],
+        seeds = [MINT_AUTHORITY_SEED],
         seeds::program = extension_program.key(),
         bump,
     )]

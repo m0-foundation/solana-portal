@@ -8,7 +8,13 @@ use crate::{
     earn,
     ext_swap::{self, constants::GLOBAL_SEED},
     order_book::{self, constants::ORDER_SEED_PREFIX},
-    pda, portal, BridgeError, Extension, Payload, AUTHORITY_SEED,
+    pda,
+    portal::{
+        self,
+        constants::{MINT_AUTHORITY_SEED, M_VAULT_SEED},
+    },
+    wormhole_adapter::constants::EVENT_AUTHORITY_SEED,
+    BridgeError, Extension, Payload, AUTHORITY_SEED,
 };
 
 /// Returns account metas required to process the given payload.
@@ -52,8 +58,8 @@ pub fn require_metas(
             } = ext_program;
 
             // PDAs
-            let extension_m_vault_auth = pda!(&[b"m_vault"], &extension_pid);
-            let extension_mint_auth = pda!(&[b"mint_authority"], &extension_pid);
+            let extension_m_vault_auth = pda!(&[M_VAULT_SEED], &extension_pid);
+            let extension_mint_auth = pda!(&[MINT_AUTHORITY_SEED], &extension_pid);
             let extension_global = pda!(&[GLOBAL_SEED], &extension_pid);
             let swap_global = pda!(&[GLOBAL_SEED], &ext_swap::ID);
             let m_global = pda!(&[GLOBAL_SEED], &earn::ID);
@@ -107,15 +113,22 @@ pub fn require_metas(
         Payload::FillReport(report) => {
             let token_in = Pubkey::from(report.token_in);
 
-            // Get token program from token account if provided
-            // Default to SPL Token program otherwise
             let token_in_program = orderbook_token_in
-                .map(|info| *info.owner)
+                .map(|account| *account.owner)
+                .or_else(|| {
+                    // Check if token is an extension and get its token program
+                    extensions.and_then(|exts| {
+                        exts.iter()
+                            .find(|ext| ext.mint == report.token_in.into())
+                            .map(|ext| ext.token_program)
+                    })
+                })
+                // Default to SPL Token program if no other info is available
                 .unwrap_or(token::ID);
 
             // PDAs
             let order = pda!(&[ORDER_SEED_PREFIX, &report.order_id], &order_book::ID);
-            let event_auth = pda!(&[b"__event_authority"], &order_book::ID);
+            let event_auth = pda!(&[EVENT_AUTHORITY_SEED], &order_book::ID);
 
             // Token accounts
             let recipient_token_account = get_associated_token_address_with_program_id(

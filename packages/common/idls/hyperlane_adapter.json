@@ -352,7 +352,6 @@
       "accounts": [
         {
           "name": "admin",
-          "writable": true,
           "signer": true,
           "relations": [
             "hyperlane_global"
@@ -573,7 +572,6 @@
         },
         {
           "name": "hyperlane_adapter_authority",
-          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -1359,7 +1357,6 @@
       "accounts": [
         {
           "name": "admin",
-          "writable": true,
           "signer": true,
           "relations": [
             "hyperlane_global"
@@ -1412,7 +1409,6 @@
       "accounts": [
         {
           "name": "admin",
-          "writable": true,
           "signer": true,
           "relations": [
             "hyperlane_global"
@@ -1460,7 +1456,6 @@
       "accounts": [
         {
           "name": "admin",
-          "writable": true,
           "signer": true,
           "relations": [
             "hyperlane_global"
@@ -1727,7 +1722,6 @@
       "accounts": [
         {
           "name": "admin",
-          "writable": true,
           "signer": true,
           "relations": [
             "hyperlane_global"

@@ -31,7 +31,6 @@ pub struct ReceiveMessage<'info> {
     pub hyperlane_process_authority: Signer<'info>,
 
     #[account(
-        mut,
         seeds = [AUTHORITY_SEED],
         bump
     )]

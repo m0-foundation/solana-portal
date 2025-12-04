@@ -4,7 +4,6 @@ use crate::state::{PortalGlobal, GLOBAL_SEED};
 
 #[derive(Accounts)]
 pub struct Pause<'info> {
-    #[account(mut)]
     pub admin: Signer<'info>,
 
     #[account(
@@ -25,7 +24,6 @@ impl Pause<'_> {
 
 #[derive(Accounts)]
 pub struct Unpause<'info> {
-    #[account(mut)]
     pub admin: Signer<'info>,
 
     #[account(

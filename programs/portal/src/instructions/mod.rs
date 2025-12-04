@@ -88,6 +88,8 @@ pub fn send_message<'info>(
         let igp_account = remaining_accounts[8].clone();
         let mailbox_program = remaining_accounts[9].clone();
         let spl_noop_program = remaining_accounts[10].clone();
+
+        // Account is optional
         let igp_overhead_account = remaining_accounts.get(11).cloned();
 
         hyperlane_adapter::cpi::send_message(

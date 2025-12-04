@@ -155,7 +155,6 @@
       "accounts": [
         {
           "name": "admin",
-          "writable": true,
           "signer": true,
           "relations": [
             "portal_global"
@@ -995,7 +994,6 @@
       "accounts": [
         {
           "name": "admin",
-          "writable": true,
           "signer": true,
           "relations": [
             "portal_global"
@@ -1199,6 +1197,16 @@
       "name": "GLOBAL_SEED",
       "type": "bytes",
       "value": "[103, 108, 111, 98, 97, 108]"
+    },
+    {
+      "name": "MINT_AUTHORITY_SEED",
+      "type": "bytes",
+      "value": "[109, 105, 110, 116, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121]"
+    },
+    {
+      "name": "M_VAULT_SEED",
+      "type": "bytes",
+      "value": "[109, 95, 118, 97, 117, 108, 116]"
     }
   ]
 }

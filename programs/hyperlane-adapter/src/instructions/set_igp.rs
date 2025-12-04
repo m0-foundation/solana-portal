@@ -4,7 +4,6 @@ use crate::state::{HyperlaneGlobal, GLOBAL_SEED};
 
 #[derive(Accounts)]
 pub struct SetIgp<'info> {
-    #[account(mut)]
     pub admin: Signer<'info>,
 
     #[account(
