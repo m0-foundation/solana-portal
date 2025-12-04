@@ -887,7 +887,6 @@
         },
         {
           "name": "hyperlane_global",
-          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -1071,7 +1070,39 @@
           }
         },
         {
+          "name": "hyperlane_user_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  45
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "payer"
+              }
+            ]
+          }
+        },
+        {
           "name": "unique_message",
+          "docs": [
+            "Using a PDA here instead of a Keypair for better UX"
+          ],
           "pda": {
             "seeds": [
               {
@@ -1095,8 +1126,12 @@
               },
               {
                 "kind": "account",
-                "path": "hyperlane_global.nonce",
-                "account": "HyperlaneGlobal"
+                "path": "hyperlane_user_global"
+              },
+              {
+                "kind": "account",
+                "path": "hyperlane_user_global.nonce",
+                "account": "HyperlaneUserGlobal"
               }
             ]
           }
@@ -1771,6 +1806,19 @@
       ]
     },
     {
+      "name": "HyperlaneUserGlobal",
+      "discriminator": [
+        211,
+        189,
+        146,
+        9,
+        36,
+        107,
+        241,
+        171
+      ]
+    },
+    {
       "name": "PortalGlobal",
       "discriminator": [
         83,
@@ -1891,10 +1939,6 @@
             "type": "u8"
           },
           {
-            "name": "nonce",
-            "type": "u64"
-          },
-          {
             "name": "admin",
             "type": "pubkey"
           },
@@ -1941,6 +1985,26 @@
                 }
               }
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "HyperlaneUserGlobal",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "nonce",
+            "type": "u64"
           }
         ]
       }

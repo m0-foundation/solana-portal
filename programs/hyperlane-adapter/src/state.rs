@@ -37,7 +37,6 @@ pub const DASH_SEED: &[u8] = b"-";
 #[account]
 pub struct HyperlaneGlobal {
     pub bump: u8,
-    pub nonce: u64,
     pub admin: Pubkey,
     pub paused: bool,
     pub igp_program_id: Pubkey,
@@ -106,5 +105,21 @@ impl AccountMetasData {
         32 + // m_mint
         4 + // length of extensions vector
         extensions * Extension::SIZE
+    }
+}
+
+#[account]
+pub struct HyperlaneUserGlobal {
+    pub bump: u8,
+    pub user: Pubkey,
+    pub nonce: u64,
+}
+
+impl HyperlaneUserGlobal {
+    pub fn size() -> usize {
+        8 + // discriminator
+        1 + // bump
+        32 + // user
+        8 // nonce
     }
 }

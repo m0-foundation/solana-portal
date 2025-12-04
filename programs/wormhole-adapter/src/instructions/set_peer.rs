@@ -11,7 +11,7 @@ pub struct SetPeer<'info> {
     #[account(
         mut,
         seeds = [GLOBAL_SEED],
-        bump,
+        bump = wormhole_global.bump,
         has_one = admin,
         realloc = WormholeGlobal::size(
             wormhole_global.peers.len() +

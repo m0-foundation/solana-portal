@@ -11,7 +11,7 @@ pub struct SetPeer<'info> {
     #[account(
         mut,
         seeds = [GLOBAL_SEED],
-        bump,
+        bump = hyperlane_global.bump,
         has_one = admin,
         realloc = HyperlaneGlobal::size(
             hyperlane_global.peers.len() +

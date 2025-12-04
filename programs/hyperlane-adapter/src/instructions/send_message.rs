@@ -9,9 +9,9 @@ use std::vec;
 use crate::{
     instructions::{Mailbox, SplNoop, H256},
     state::{
-        HyperlaneGlobal, DASH_SEED, DISPATCHED_MESSAGE_SEED, DISPATCH_SEED_1, DISPATCH_SEED_2,
-        GAS_PAYMENT_SEED, GLOBAL_SEED, HYPERLANE_IGP_SEED, HYPERLANE_SEED, OUTBOX_SEED,
-        PROGRAM_DATA_SEED, UNIQUE_MESSAGE_SEED,
+        HyperlaneGlobal, HyperlaneUserGlobal, DASH_SEED, DISPATCHED_MESSAGE_SEED, DISPATCH_SEED_1,
+        DISPATCH_SEED_2, GAS_PAYMENT_SEED, GLOBAL_SEED, HYPERLANE_IGP_SEED, HYPERLANE_SEED,
+        OUTBOX_SEED, PROGRAM_DATA_SEED, UNIQUE_MESSAGE_SEED,
     },
 };
 
@@ -21,12 +21,11 @@ pub struct SendMessage<'info> {
     payer: Signer<'info>,
 
     #[account(
-        mut,
         constraint = !hyperlane_global.paused @ BridgeError::Paused,
         has_one = igp_program_id @ BridgeError::InvalidIgpAccount,
         has_one = igp_account @ BridgeError::InvalidIgpAccount,
         seeds = [GLOBAL_SEED],
-        bump,
+        bump = hyperlane_global.bump,
     )]
     pub hyperlane_global: Account<'info, HyperlaneGlobal>,
 
@@ -55,10 +54,24 @@ pub struct SendMessage<'info> {
     pub dispatch_authority: AccountInfo<'info>,
 
     #[account(
-        seeds = [UNIQUE_MESSAGE_SEED, &hyperlane_global.nonce.to_le_bytes()],
+        init_if_needed,
+        payer = payer,
+        space = HyperlaneUserGlobal::size(),
+        seeds = [GLOBAL_SEED, DASH_SEED, payer.key().as_ref()],
+        bump,
+    )]
+    pub hyperlane_user_global: Account<'info, HyperlaneUserGlobal>,
+
+    #[account(
+        seeds = [
+            UNIQUE_MESSAGE_SEED,
+            hyperlane_user_global.key().as_ref(),
+            &hyperlane_user_global.nonce.to_le_bytes(),
+        ],
         bump
     )]
     /// CHECK: only used to create unique message accounts
+    /// Using a PDA here instead of a Keypair for better UX
     pub unique_message: AccountInfo<'info>,
 
     #[account(
@@ -178,7 +191,8 @@ impl SendMessage<'_> {
                     ],
                     &[
                         UNIQUE_MESSAGE_SEED,
-                        &ctx.accounts.hyperlane_global.nonce.to_le_bytes(),
+                        ctx.accounts.hyperlane_user_global.key().as_ref(),
+                        &ctx.accounts.hyperlane_user_global.nonce.to_le_bytes(),
                         &[ctx.bumps.unique_message],
                     ],
                 ],
@@ -237,14 +251,15 @@ impl SendMessage<'_> {
                 &account_infos,
                 &[&[
                     UNIQUE_MESSAGE_SEED,
-                    &ctx.accounts.hyperlane_global.nonce.to_le_bytes(),
+                    ctx.accounts.hyperlane_user_global.key().as_ref(),
+                    &ctx.accounts.hyperlane_user_global.nonce.to_le_bytes(),
                     &[ctx.bumps.unique_message],
                 ]],
             )?;
         }
 
         // Bump the nonce used to generate unique message accounts
-        ctx.accounts.hyperlane_global.nonce += 1;
+        ctx.accounts.hyperlane_user_global.nonce += 1;
 
         Ok(())
     }

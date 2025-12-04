@@ -24,7 +24,7 @@ pub struct SendMessage<'info> {
     #[account(
         constraint = !wormhole_global.paused @ BridgeError::Paused,
         seeds = [GLOBAL_SEED],
-        bump,
+        bump = wormhole_global.bump,
     )]
     pub wormhole_global: Account<'info, WormholeGlobal>,
 

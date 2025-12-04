@@ -26,7 +26,7 @@ mainnet = []
 testnet = []
 
 [dependencies]
-anchor-lang.workspace = true
+anchor-lang = { workspace = true, features = ["init-if-needed"] }
 anchor-spl.workspace = true
 common = { path = "../../packages/common" }
 cfg-if.workspace = true

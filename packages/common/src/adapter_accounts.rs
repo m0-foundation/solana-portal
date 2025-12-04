@@ -3,7 +3,7 @@ use anchor_lang::prelude::{sysvar::SysvarId, AccountMeta, Clock, Pubkey};
 use crate::{
     hyperlane_adapter::{
         self,
-        accounts::HyperlaneGlobal,
+        accounts::{HyperlaneGlobal, HyperlaneUserGlobal},
         constants::{
             DASH_SEED, DISPATCHED_MESSAGE_SEED, DISPATCH_SEED_1, DISPATCH_SEED_2, GAS_PAYMENT_SEED,
             HYPERLANE_IGP_SEED, HYPERLANE_SEED, MAILBOX_PROGRAM_ID, OUTBOX_SEED, PROGRAM_DATA_SEED,
@@ -94,9 +94,12 @@ pub struct HyperlaneRemainingAccounts {
 }
 
 impl HyperlaneRemainingAccounts {
-    pub fn new(global: &HyperlaneGlobal) -> Self {
+    pub fn new(global: &HyperlaneGlobal, user_global: &HyperlaneUserGlobal) -> Self {
         let unique_message = pda!(
-            &[UNIQUE_MESSAGE_SEED, global.nonce.to_le_bytes().as_ref()],
+            &[
+                UNIQUE_MESSAGE_SEED,
+                user_global.nonce.to_le_bytes().as_ref()
+            ],
             &hyperlane_adapter::ID
         );
 
@@ -143,8 +146,11 @@ impl HyperlaneRemainingAccounts {
         }
     }
 
-    pub fn account_metas(global: &HyperlaneGlobal) -> Vec<AccountMeta> {
-        Self::new(global).to_account_metas()
+    pub fn account_metas(
+        global: &HyperlaneGlobal,
+        user_global: &HyperlaneUserGlobal,
+    ) -> Vec<AccountMeta> {
+        Self::new(global, user_global).to_account_metas()
     }
 
     pub fn to_account_metas(&self) -> Vec<AccountMeta> {

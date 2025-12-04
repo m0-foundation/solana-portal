@@ -72,7 +72,7 @@ pub fn send_message<'info>(
             destination_chain_id,
         )
     } else if bridge_adapter.key() == common::hyperlane_adapter::ID {
-        if remaining_accounts.len() < 10 {
+        if remaining_accounts.len() < 11 {
             return err!(BridgeError::InvalidRemainingAccounts);
         }
 
@@ -80,17 +80,18 @@ pub fn send_message<'info>(
         let hyperlane_global = remaining_accounts[0].clone();
         let mailbox_outbox = remaining_accounts[1].clone();
         let dispatch_authority = remaining_accounts[2].clone();
-        let unique_message = remaining_accounts[3].clone();
-        let dispatched_message = remaining_accounts[4].clone();
-        let igp_program_id = remaining_accounts[5].clone();
-        let igp_program_data = remaining_accounts[6].clone();
-        let igp_gas_payment = remaining_accounts[7].clone();
-        let igp_account = remaining_accounts[8].clone();
-        let mailbox_program = remaining_accounts[9].clone();
-        let spl_noop_program = remaining_accounts[10].clone();
+        let hyperlane_user_global = remaining_accounts[3].clone();
+        let unique_message = remaining_accounts[4].clone();
+        let dispatched_message = remaining_accounts[5].clone();
+        let igp_program_id = remaining_accounts[6].clone();
+        let igp_program_data = remaining_accounts[7].clone();
+        let igp_gas_payment = remaining_accounts[8].clone();
+        let igp_account = remaining_accounts[9].clone();
+        let mailbox_program = remaining_accounts[10].clone();
+        let spl_noop_program = remaining_accounts[11].clone();
 
         // Account is optional
-        let igp_overhead_account = remaining_accounts.get(11).cloned();
+        let igp_overhead_account = remaining_accounts.get(12).cloned();
 
         hyperlane_adapter::cpi::send_message(
             CpiContext::new_with_signer(
@@ -101,6 +102,7 @@ pub fn send_message<'info>(
                     portal_authority,
                     mailbox_outbox,
                     dispatch_authority,
+                    hyperlane_user_global,
                     unique_message,
                     dispatched_message,
                     mailbox_program,

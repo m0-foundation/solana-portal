@@ -2,7 +2,10 @@ use anchor_client::{Client, Cluster};
 use anchor_lang::{system_program, AccountDeserialize};
 use anyhow::Result;
 use common::{
-    hyperlane_adapter::{self, accounts::HyperlaneGlobal},
+    hyperlane_adapter::{
+        self,
+        accounts::{HyperlaneGlobal, HyperlaneUserGlobal},
+    },
     pda,
     portal::constants::GLOBAL_SEED,
     wormhole_adapter::{self, constants::EMITTER_SEED},
@@ -103,9 +106,15 @@ fn test_02_index_update_hyperlane() -> Result<()> {
     let rpc_client = get_rpc_client();
     let program = client.program(portal::ID)?;
 
-    // Fetch global
-    let data_hyp = rpc_client.get_account_data(&pda!(&[b"global"], &hyperlane_adapter::ID))?;
+    // Fetch globals
+    let data_hyp = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &hyperlane_adapter::ID))?;
     let global_hp = HyperlaneGlobal::try_deserialize(&mut data_hyp.as_slice())?;
+
+    let hyp_user = rpc_client.get_account_data(&pda!(
+        &[GLOBAL_SEED, program.payer().as_ref()],
+        &hyperlane_adapter::ID
+    ))?;
+    let user_hp = HyperlaneUserGlobal::try_deserialize(&mut hyp_user.as_slice())?;
 
     // Send index update
     program
@@ -120,11 +129,13 @@ fn test_02_index_update_hyperlane() -> Result<()> {
         .args(instruction::SendIndex {
             destination_chain_id: 1,
         })
-        .accounts(HyperlaneRemainingAccounts::account_metas(&global_hp))
+        .accounts(HyperlaneRemainingAccounts::account_metas(
+            &global_hp, &user_hp,
+        ))
         .instruction(ComputeBudgetInstruction::set_compute_unit_limit(500_000))
         .send()?;
 
-    let message_account = HyperlaneRemainingAccounts::new(&global_hp).dispatched_message;
+    let message_account = HyperlaneRemainingAccounts::new(&global_hp, &user_hp).dispatched_message;
     let account_data = rpc_client.get_account_data(&message_account)?;
 
     // The last 40 bytes of the account data contain the message body

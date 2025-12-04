@@ -3,7 +3,7 @@ use anyhow::{Context, Result};
 use common::{
     hyperlane_adapter::{
         self,
-        accounts::HyperlaneGlobal,
+        accounts::{HyperlaneGlobal, HyperlaneUserGlobal},
         constants::{
             DASH_SEED, DISPATCHED_MESSAGE_SEED, DISPATCH_SEED_1, DISPATCH_SEED_2, GAS_PAYMENT_SEED,
             HYPERLANE_IGP_SEED, HYPERLANE_SEED, OUTBOX_SEED, PROGRAM_DATA_SEED, SPL_NOOP,
@@ -65,8 +65,14 @@ fn send_index_transaction(
     let data_hyp = rpc_client.get_account_data(&pda!(&[b"global"], &hyperlane_adapter::ID))?;
     let global_hp = HyperlaneGlobal::try_deserialize(&mut data_hyp.as_slice())?;
 
+    let hyp_user = rpc_client.get_account_data(&pda!(
+        &[GLOBAL_SEED, payer.pubkey().as_ref()],
+        &hyperlane_adapter::ID
+    ))?;
+    let user_hp = HyperlaneUserGlobal::try_deserialize(&mut hyp_user.as_slice())?;
+
     let unique_message = pda!(
-        &[UNIQUE_MESSAGE_SEED, global_hp.nonce.to_le_bytes().as_ref()],
+        &[UNIQUE_MESSAGE_SEED, user_hp.nonce.to_le_bytes().as_ref()],
         &hyperlane_adapter::ID
     );
 
