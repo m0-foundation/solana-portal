@@ -72,18 +72,23 @@ pub fn send_message<'info>(
             destination_chain_id,
         )
     } else if bridge_adapter.key() == common::hyperlane_adapter::ID {
+        if remaining_accounts.len() < 10 {
+            return err!(BridgeError::InvalidRemainingAccounts);
+        }
+
         // Delegate account validation to hyperlane adapter
-        let [
-                hyperlane_global,
-                mailbox_outbox,
-                dispatch_authority,
-                unique_message,
-                dispatched_message,
-                mailbox_program,
-                spl_noop_program,
-            ]: [AccountInfo; 7] = remaining_accounts
-                .try_into()
-                .map_err(|_| BridgeError::InvalidRemainingAccounts)?;
+        let hyperlane_global = remaining_accounts[0].clone();
+        let mailbox_outbox = remaining_accounts[1].clone();
+        let dispatch_authority = remaining_accounts[2].clone();
+        let unique_message = remaining_accounts[3].clone();
+        let dispatched_message = remaining_accounts[4].clone();
+        let igp_program_id = remaining_accounts[5].clone();
+        let igp_program_data = remaining_accounts[6].clone();
+        let igp_gas_payment = remaining_accounts[7].clone();
+        let igp_account = remaining_accounts[8].clone();
+        let mailbox_program = remaining_accounts[9].clone();
+        let spl_noop_program = remaining_accounts[10].clone();
+        let igp_overhead_account = remaining_accounts.get(11).cloned();
 
         hyperlane_adapter::cpi::send_message(
             CpiContext::new_with_signer(
@@ -99,6 +104,11 @@ pub fn send_message<'info>(
                     mailbox_program,
                     spl_noop_program,
                     system_program,
+                    igp_program_id,
+                    igp_program_data,
+                    igp_gas_payment,
+                    igp_account,
+                    igp_overhead_account,
                 },
                 &[&[AUTHORITY_SEED, &[portal_authority_bump]]],
             ),

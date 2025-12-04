@@ -11,7 +11,8 @@ use crate::run_surfpool_cmd;
 
 #[test]
 fn test_01_set_peers() -> Result<()> {
-    run_surfpool_cmd(vec!["run", "set_peers", "--unsupervised"])?;
+    let logs = run_surfpool_cmd(vec!["run", "set_peers", "--unsupervised"])?;
+    assert!(!logs.contains("error"), "Set peers failed: {}", logs);
     Ok(())
 }
 

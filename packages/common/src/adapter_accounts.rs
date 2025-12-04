@@ -3,9 +3,11 @@ use anchor_lang::prelude::{sysvar::SysvarId, AccountMeta, Clock, Pubkey};
 use crate::{
     hyperlane_adapter::{
         self,
+        accounts::HyperlaneGlobal,
         constants::{
-            DASH_SEED, DISPATCHED_MESSAGE_SEED, DISPATCH_SEED_1, DISPATCH_SEED_2, HYPERLANE_SEED,
-            MAILBOX_PROGRAM_ID, OUTBOX_SEED, SPL_NOOP, UNIQUE_MESSAGE_SEED,
+            DASH_SEED, DISPATCHED_MESSAGE_SEED, DISPATCH_SEED_1, DISPATCH_SEED_2, GAS_PAYMENT_SEED,
+            HYPERLANE_IGP_SEED, HYPERLANE_SEED, MAILBOX_PROGRAM_ID, OUTBOX_SEED, PROGRAM_DATA_SEED,
+            SPL_NOOP, UNIQUE_MESSAGE_SEED,
         },
     },
     pda,
@@ -82,14 +84,19 @@ pub struct HyperlaneRemainingAccounts {
     pub dispatch_authority: Pubkey,
     pub unique_message: Pubkey,
     pub dispatched_message: Pubkey,
+    pub igp_program_id: Pubkey,
+    pub igp_program_data: Pubkey,
+    pub igp_gas_payment: Pubkey,
+    pub igp_account: Pubkey,
+    pub igp_overhead_account: Option<Pubkey>,
     pub mailbox_program: Pubkey,
     pub spl_noop_program: Pubkey,
 }
 
 impl HyperlaneRemainingAccounts {
-    pub fn new(global_nonce: u64) -> Self {
+    pub fn new(global: &HyperlaneGlobal) -> Self {
         let unique_message = pda!(
-            &[UNIQUE_MESSAGE_SEED, global_nonce.to_le_bytes().as_ref()],
+            &[UNIQUE_MESSAGE_SEED, global.nonce.to_le_bytes().as_ref()],
             &hyperlane_adapter::ID
         );
 
@@ -114,24 +121,51 @@ impl HyperlaneRemainingAccounts {
                 ],
                 &MAILBOX_PROGRAM_ID
             ),
+            igp_program_id: global.igp_program_id,
+            igp_program_data: pda!(
+                &[HYPERLANE_IGP_SEED, DASH_SEED, PROGRAM_DATA_SEED],
+                &global.igp_program_id
+            ),
+            igp_gas_payment: pda!(
+                &[
+                    HYPERLANE_IGP_SEED,
+                    DASH_SEED,
+                    GAS_PAYMENT_SEED,
+                    DASH_SEED,
+                    unique_message.as_ref()
+                ],
+                &global.igp_program_id
+            ),
+            igp_account: global.igp_account,
+            igp_overhead_account: global.igp_overhead_account,
             mailbox_program: MAILBOX_PROGRAM_ID,
             spl_noop_program: SPL_NOOP,
         }
     }
 
-    pub fn account_metas(global_nonce: u64) -> Vec<AccountMeta> {
-        Self::new(global_nonce).to_account_metas()
+    pub fn account_metas(global: &HyperlaneGlobal) -> Vec<AccountMeta> {
+        Self::new(global).to_account_metas()
     }
 
     pub fn to_account_metas(&self) -> Vec<AccountMeta> {
-        vec![
+        let mut accounts = vec![
             AccountMeta::new(self.hyperlane_global, false),
             AccountMeta::new(self.mailbox_outbox, false),
             AccountMeta::new_readonly(self.dispatch_authority, false),
             AccountMeta::new_readonly(self.unique_message, false),
             AccountMeta::new(self.dispatched_message, false),
+            AccountMeta::new_readonly(self.igp_program_id, false),
+            AccountMeta::new(self.igp_program_data, false),
+            AccountMeta::new(self.igp_gas_payment, false),
+            AccountMeta::new(self.igp_account, false),
             AccountMeta::new_readonly(self.mailbox_program, false),
             AccountMeta::new_readonly(self.spl_noop_program, false),
-        ]
+        ];
+
+        if let Some(igp_overhead_account) = self.igp_overhead_account {
+            accounts.push(AccountMeta::new_readonly(igp_overhead_account, false));
+        }
+
+        accounts
     }
 }

@@ -5,8 +5,9 @@ use common::{
         self,
         accounts::HyperlaneGlobal,
         constants::{
-            DASH_SEED, DISPATCHED_MESSAGE_SEED, DISPATCH_SEED_1, DISPATCH_SEED_2, HYPERLANE_SEED,
-            OUTBOX_SEED, SPL_NOOP, UNIQUE_MESSAGE_SEED,
+            DASH_SEED, DISPATCHED_MESSAGE_SEED, DISPATCH_SEED_1, DISPATCH_SEED_2, GAS_PAYMENT_SEED,
+            HYPERLANE_IGP_SEED, HYPERLANE_SEED, OUTBOX_SEED, PROGRAM_DATA_SEED, SPL_NOOP,
+            UNIQUE_MESSAGE_SEED,
         },
     },
     pda,
@@ -69,7 +70,7 @@ fn send_index_transaction(
         &hyperlane_adapter::ID
     );
 
-    // Add Hyperlane remaining accounts (using nonce 0 as default)
+    // Add Hyperlane remaining accounts (using testnet values)
     let hyperlane_accounts = HyperlaneRemainingAccounts {
         hyperlane_global: pda!(&[GLOBAL_SEED], &hyperlane_adapter::ID),
         mailbox_outbox: pda!(
@@ -91,6 +92,23 @@ fn send_index_transaction(
             ],
             &MAILBOX_PROGRAM_ID
         ),
+        igp_program_id: global_hp.igp_program_id,
+        igp_program_data: pda!(
+            &[HYPERLANE_IGP_SEED, DASH_SEED, PROGRAM_DATA_SEED],
+            &global_hp.igp_program_id
+        ),
+        igp_gas_payment: pda!(
+            &[
+                HYPERLANE_IGP_SEED,
+                DASH_SEED,
+                GAS_PAYMENT_SEED,
+                DASH_SEED,
+                unique_message.as_ref()
+            ],
+            &global_hp.igp_program_id
+        ),
+        igp_account: global_hp.igp_account,
+        igp_overhead_account: global_hp.igp_overhead_account,
         mailbox_program: MAILBOX_PROGRAM_ID,
         spl_noop_program: SPL_NOOP,
     };

@@ -1318,7 +1318,6 @@
         },
         {
           "name": "igp_overhead_account",
-          "writable": true,
           "optional": true
         },
         {

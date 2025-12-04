@@ -15,14 +15,15 @@ use crate::run_surfpool_cmd;
 
 #[test]
 fn test_01_initialize_programs() -> Result<()> {
-    run_surfpool_cmd(vec!["run", "initialize", "--unsupervised"])?;
+    let logs = run_surfpool_cmd(vec!["run", "initialize", "--unsupervised"])?;
+    assert!(!logs.contains("error"), "Initialization failed: {}", logs);
     Ok(())
 }
 
 #[test]
 fn test_02_rerun_initailize() -> Result<()> {
     let logs = run_surfpool_cmd(vec!["run", "initialize", "--unsupervised"])?;
-    assert!(logs.contains("Pre-condition failed"),);
+    assert!(logs.contains("Pre-condition failed"));
     Ok(())
 }
 

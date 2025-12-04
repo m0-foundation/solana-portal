@@ -97,7 +97,7 @@ impl ReceiveMessage<'_> {
             CpiContext::new_with_signer(
                 ctx.accounts.portal_program.to_account_info(),
                 portal::cpi::accounts::ReceiveMessage {
-                    sender: ctx.accounts.receive_payer.to_account_info(),
+                    payer: ctx.accounts.receive_payer.to_account_info(),
                     adapter_authority: ctx.accounts.hyperlane_adapter_authority.to_account_info(),
                     portal_authority: ctx.accounts.portal_authority.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info(),

@@ -1,14 +1,15 @@
 use anchor_client::{Client, Cluster};
-use anchor_lang::system_program;
+use anchor_lang::{system_program, AccountDeserialize};
 use anyhow::Result;
 use common::{
-    hyperlane_adapter, pda,
+    hyperlane_adapter::{self, accounts::HyperlaneGlobal},
+    pda,
     portal::constants::GLOBAL_SEED,
     wormhole_adapter::{self, constants::EMITTER_SEED},
     HyperlaneRemainingAccounts, Payload, WormholeRemainingAccounts, AUTHORITY_SEED,
 };
 use portal::{accounts, instruction};
-use solana_sdk::bs58;
+use solana_sdk::{bs58, compute_budget::ComputeBudgetInstruction};
 use solana_transaction_status_client_types::{UiInstruction, UiTransactionEncoding};
 
 use crate::{get_rpc_client, get_signer};
@@ -102,6 +103,10 @@ fn test_02_index_update_hyperlane() -> Result<()> {
     let rpc_client = get_rpc_client();
     let program = client.program(portal::ID)?;
 
+    // Fetch global
+    let data_hyp = rpc_client.get_account_data(&pda!(&[b"global"], &hyperlane_adapter::ID))?;
+    let global_hp = HyperlaneGlobal::try_deserialize(&mut data_hyp.as_slice())?;
+
     // Send index update
     program
         .request()
@@ -115,10 +120,11 @@ fn test_02_index_update_hyperlane() -> Result<()> {
         .args(instruction::SendIndex {
             destination_chain_id: 1,
         })
-        .accounts(HyperlaneRemainingAccounts::account_metas(0))
+        .accounts(HyperlaneRemainingAccounts::account_metas(&global_hp))
+        .instruction(ComputeBudgetInstruction::set_compute_unit_limit(500_000))
         .send()?;
 
-    let message_account = HyperlaneRemainingAccounts::new(0).dispatched_message;
+    let message_account = HyperlaneRemainingAccounts::new(&global_hp).dispatched_message;
     let account_data = rpc_client.get_account_data(&message_account)?;
 
     // The last 40 bytes of the account data contain the message body
@@ -137,7 +143,7 @@ fn test_02_index_update_hyperlane() -> Result<()> {
     let recipient = &account_data[len - 73..len - 41];
     assert_eq!(
         hex::encode(recipient),
-        "0000000000000000000000000763196a091575adf99e2306e5e90e0be5154841"
+        "0b6a86806a0354c82b8f049eb75d9c97e370a6f0c0cfa15f47909c3fe1c8f794"
     );
 
     Ok(())

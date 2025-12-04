@@ -113,7 +113,6 @@ pub struct SendMessage<'info> {
 
     // CHECK: optional account only needed for overhead IGPs
     #[account(
-        mut,
         owner = igp_program_id.key(),
         constraint = igp_overhead_account.key() == hyperlane_global.igp_overhead_account.unwrap() @ BridgeError::InvalidIgpAccount,
     )]

@@ -101,7 +101,7 @@ impl ReceiveMessage<'_> {
             CpiContext::new_with_signer(
                 ctx.accounts.portal_program.to_account_info(),
                 portal::cpi::accounts::ReceiveMessage {
-                    sender: ctx.accounts.relayer.to_account_info(),
+                    payer: ctx.accounts.relayer.to_account_info(),
                     portal_global: ctx.accounts.portal_global.to_account_info(),
                     adapter_authority: ctx.accounts.wormhole_adapter_authority.to_account_info(),
                     portal_authority: ctx.accounts.portal_authority.to_account_info(),
