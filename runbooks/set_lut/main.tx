@@ -1,0 +1,36 @@
+addon "svm" {
+    rpc_api_url = input.rpc_api_url
+    network_id = input.network_id
+}
+
+variable "wormhole_adapter_program" {
+    value = svm::get_program_from_anchor_project("wormhole_adapter")
+}
+
+action "recent_slot_data" "std::send_http_request" {
+  url = input.rpc_api_url
+  method = "POST"
+  body = {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getSlot",
+    "params": [{"commitment": "finalized"}]
+  }
+}
+
+variable "recent_slot" {
+    value = jq(action.recent_slot_data.response_body,  ".result")
+    editable = true
+}
+
+action "set_lut" "svm::process_instructions" {
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.wormhole_adapter_program.idl
+        instruction_name = "set_lut"
+        payer {
+            public_key = signer.caller.public_key
+        }
+        instruction_args = [variable.recent_slot]
+    }
+}

@@ -1,0 +1,15 @@
+signer "payer" "svm::secret_key" {
+    description = "Pays fees for program deployments and operations"
+    keypair_json = "~/.config/solana/id.json"
+    expected_address = "D76ySoHPwD8U2nnTTDqXeUJQg5UkD9UD1PUE1rnvPAGm"
+}
+
+// connect a wallet that is on the multisig
+signer "initiator" "svm::web_wallet" {}
+
+signer "authority" "svm::squads" {
+    description = "Can upgrade programs and manage critical ops"
+    multisig_account_public_key = "BKEgAKFUBAYee5JuTAf6HjMHAiFLqvNtAKxxZb5aay5F"
+    create_key = "Ga8eDs74ZjWx7Prbm5Yu9pBc91YZgLqdURM4aK3HcYrX"
+    initiator = signer.initiator
+}

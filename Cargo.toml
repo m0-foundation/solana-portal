@@ -1,5 +1,5 @@
 [workspace]
-members = ["programs/*"]
+members = ["programs/*", "packages/*", "tests", "cli"]
 resolver = "2"
 
 [profile.release]
@@ -10,3 +10,11 @@ codegen-units = 1
 opt-level = 3
 incremental = false
 codegen-units = 1
+
+[workspace.dependencies]
+anchor-lang = "0.32.1"
+anchor-spl = "0.32.1"
+anchor-client = "0.32.1"
+solana-security-txt = "1.1.1"
+cfg-if = "1.0"
+borsh = "0.10.3"

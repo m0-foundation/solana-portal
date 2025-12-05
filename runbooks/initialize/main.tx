@@ -1,0 +1,134 @@
+addon "svm" {
+    rpc_api_url = input.rpc_api_url
+    network_id = input.network_id
+}
+
+variable "portal_program" {
+    value = svm::get_program_from_anchor_project("portal")
+}
+variable "wormhole_adapter_program" {
+    value = svm::get_program_from_anchor_project("wormhole_adapter")
+}
+variable "hyperlane_adapter_program" {
+    value = svm::get_program_from_anchor_project("hyperlane_adapter")
+}
+
+variable "portal_global" {
+    value = svm::find_pda("MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce", ["global"])
+}
+variable "wormhole_global" {
+    value = svm::find_pda("mzp1q2j5Hr1QuLC3KFBCAUz5aUckT6qyuZKZ3WJnMmY", ["global"])
+}
+variable "hyperlane_global" {
+    value = svm::find_pda("mZhPGteS36G7FhMTcRofLQU8ocBNAsGq7u8SKSHfL2X", ["global"])
+}
+
+action "portal_global_account" "std::send_http_request" {
+  url = input.rpc_api_url
+  method = "POST"
+  body = {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getAccountInfo",
+    "params": [
+        variable.portal_global.pda,
+        { "encoding": "base64" }
+    ]
+  }
+}
+
+action "wormhole_global_account" "std::send_http_request" {
+  url = input.rpc_api_url
+  method = "POST"
+  body = {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getAccountInfo",
+    "params": [
+        variable.wormhole_global.pda,
+        { "encoding": "base64" }
+    ]
+  }
+}
+
+action "hyperlane_global_account" "std::send_http_request" {
+  url = input.rpc_api_url
+  method = "POST"
+  body = {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getAccountInfo",
+    "params": [
+        variable.hyperlane_global.pda,
+        { "encoding": "base64" }
+    ]
+  }
+}
+
+action "initialize_portal" "svm::process_instructions" {
+    description = "Initializes the Portal program"
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.portal_program.idl
+        instruction_name = "initialize"
+        admin {
+            public_key = signer.caller.public_key
+        }
+        instruction_args = [input.chain_id]
+    }
+    pre_condition {
+        behavior = "skip"
+        assertion = jq(action.portal_global_account.response_body, ".result.value") == null
+    }
+}
+
+action "initialize_wormhole_adapter" "svm::process_instructions" {
+    description = "Initializes the Wormhole Adapter program"
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.wormhole_adapter_program.idl
+        instruction_name = "initialize"
+        admin {
+            public_key = signer.caller.public_key
+        }
+        m_mint {
+            public_key = "mzerojk9tg56ebsrEAhfkyc9VgKjTW2zDqp6C5mhjzH"
+        }
+    }
+    pre_condition {
+        behavior = "skip"
+        assertion = and_bool(input.wormhole_adapter == "true", jq(action.wormhole_global_account.response_body,  ".result.value") == null)
+    }
+}
+
+action "initialize_hyperlane_adapter" "svm::process_instructions" {
+    description = "Initializes the Hyperlane Adapter program"
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.hyperlane_adapter_program.idl
+        instruction_name = "initialize"
+        admin {
+            public_key = signer.caller.public_key
+        }
+    }
+    pre_condition {
+        behavior = "skip"
+        assertion = and_bool(input.hyperlane_adapter == "true", jq(action.hyperlane_global_account.response_body,  ".result.value") == null)
+    }
+}
+
+action "sync_ext_hyperlane_adapter" "svm::process_instructions" {
+    description = "Sync extensions on the Hyperlane Adapter program"
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.hyperlane_adapter_program.idl
+        instruction_name = "sync_extensions"
+        payer {
+            public_key = signer.caller.public_key
+        }
+    }
+    pre_condition {
+        behavior = "skip"
+        assertion = input.hyperlane_adapter == "true"
+    }
+}

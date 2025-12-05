@@ -1,0 +1,4 @@
+signer "caller" "svm::secret_key" {
+    description = "Local key that pays for the lut"
+    keypair_json = "~/.config/solana/id.json"
+}

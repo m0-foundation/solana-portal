@@ -1,0 +1,57 @@
+---
+name: solana-portal
+id: solana-portal
+runbooks:
+  - name: deployment
+    description: Deploy programs
+    location: runbooks/deployment
+  - name: initialize
+    description: Initialize programs
+    location: runbooks/initialize
+  - name: set_peers
+    description: Set peers
+    location: runbooks/set_peers
+  - name: pause
+    description: Pause or unpause Portal program
+    location: runbooks/pause
+  - name: set_lut
+    description: Set the Wormhole Adapter LUT
+    location: runbooks/set_lut
+  - name: fund_receive_payer
+    description: Fund the Hyperlane receive payer account
+    location: runbooks/fund_receive_payer
+environments:
+  localnet:
+    network_id: localnet
+    rpc_api_url: http://127.0.0.1:8899
+    local_signer: 43fc825e966dfb386828d229d27f67d1fc9d2906d2f76903fde9e8a2a17e88460d3b72feead9928540668b0cc280f48ee1ecf91230b1cfae78190f21390d0e9a
+    chain_id: 1399811149
+    wormhole_adapter: true
+    hyperlane_adapter: true
+    build_dir: target/deploy
+    chain_id_idx: 0
+  devnet:
+    network_id: devnet
+    rpc_api_url: https://lindsy-gxe51w-fast-devnet.helius-rpc.com
+    chain_id: 1399811150
+    wormhole_adapter: true
+    hyperlane_adapter: false
+    build_dir: target/deploy
+    chain_id_idx: 1
+  testnet:
+    network_id: testnet
+    rpc_api_url: https://api.testnet.solana.com
+    chain_id: 1399811150
+    wormhole_adapter: false
+    hyperlane_adapter: true
+    build_dir: target/deploy
+    chain_id_idx: 1
+  mainnet:
+    network_id: mainnet
+    rpc_api_url: https://hatty-73mn84-fast-mainnet.helius-rpc.com
+    chain_id: 1399811149
+    wormhole_adapter: true
+    hyperlane_adapter: false
+    build_dir: target/verifiable
+    chain_id_idx: 0
+    pause_action: pause

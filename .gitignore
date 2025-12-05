@@ -4,3 +4,5 @@ target
 node_modules
 test-ledger
 .yarn
+.surfpool
+surfpool_validator.log

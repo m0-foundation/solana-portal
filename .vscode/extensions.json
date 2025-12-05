@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "rust-lang.rust-analyzer",
+    "tamasfe.even-better-toml",
+    "shardulm94.trailing-spaces",
+    "txtx.txtx"
+  ],
+  "unwantedRecommendations": []
+}

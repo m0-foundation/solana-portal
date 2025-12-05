@@ -6,7 +6,9 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-portal = "7eVvG1ofbppUebcB744q5VVjUBFCphGgzBuHhdLHkNzT"
+hyperlane-adapter = "mZhPGteS36G7FhMTcRofLQU8ocBNAsGq7u8SKSHfL2X"
+portal = "MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce"
+wormhole-adapter = "mzp1q2j5Hr1QuLC3KFBCAUz5aUckT6qyuZKZ3WJnMmY"
 
 [registry]
 url = "https://api.apr.dev"

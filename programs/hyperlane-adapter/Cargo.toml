@@ -1,0 +1,35 @@
+[package]
+name = "hyperlane-adapter"
+version = "0.1.0"
+description = "Created with Anchor"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "hyperlane_adapter"
+
+[features]
+default = ["mainnet"]
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = [
+    "anchor-lang/idl-build",
+    "anchor-spl/idl-build",
+    "common/idl-build",
+]
+anchor-debug = []
+custom-heap = []
+custom-panic = []
+mainnet = []
+testnet = []
+
+[dependencies]
+anchor-lang = { workspace = true, features = ["init-if-needed"] }
+anchor-spl.workspace = true
+common = { path = "../../packages/common" }
+cfg-if.workspace = true
+borsh.workspace = true
+solana-security-txt.workspace = true
+fixed-hash = "0.8.0"
