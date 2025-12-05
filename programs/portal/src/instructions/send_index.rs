@@ -8,6 +8,7 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct SendIndex<'info> {
+    #[account(mut)]
     pub sender: Signer<'info>,
 
     #[account(

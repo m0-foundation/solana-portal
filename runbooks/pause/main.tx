@@ -3,17 +3,43 @@ addon "svm" {
     network_id = input.network_id
 }
 
-variable "portal_program" {
-    value = svm::get_program_from_anchor_project("portal")
+variable "program_name" {
+    description = "The name of the program to pause"
+    value = "portal"
+    editable = true
+}
+
+variable "program" {
+    value = svm::get_program_from_anchor_project(variable.program_name)
+}
+
+variable "data" {
+    description = "The data for the 'pause' instruction"
+    value = svm::get_instruction_data_from_idl(
+		variable.program.idl,
+		input.pause_action,
+		[]
+	)
+}
+
+variable "global_account" {
+    description = "The PDA of the event authority"
+    value = svm::find_pda(variable.program.program_id, ["global"])
 }
 
 action "pause_portal" "svm::process_instructions" {
     signers = [signer.caller]
-    instruction {
-        program_idl = variable.portal_program.idl
-        instruction_name = "pause"
-        admin {
-            public_key = signer.caller.public_key
-        }
-    }
+	instruction {
+		program_id = variable.program.program_id
+		account {
+			public_key = signer.caller.public_key
+			is_signer = true
+			is_writable = true
+		}
+		account {
+			public_key = variable.global_account.pda
+			is_writable = true
+		}
+		data = variable.data
+	}
 }

@@ -12,6 +12,7 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct SendTokens<'info> {
+    #[account(mut)]
     pub sender: Signer<'info>,
 
     #[account(

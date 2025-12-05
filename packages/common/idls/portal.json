@@ -321,7 +321,68 @@
       "accounts": [
         {
           "name": "sender",
+          "writable": true,
           "signer": true
+        },
+        {
+          "name": "order_book_global",
+          "docs": [
+            "Only order_book can send fill reports"
+          ],
+          "writable": true,
+          "signer": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                50,
+                164,
+                153,
+                208,
+                221,
+                249,
+                235,
+                104,
+                241,
+                66,
+                230,
+                169,
+                193,
+                47,
+                193,
+                222,
+                114,
+                9,
+                233,
+                21,
+                116,
+                117,
+                138,
+                135,
+                155,
+                46,
+                31,
+                77,
+                43,
+                101,
+                79,
+                49
+              ]
+            }
+          }
         },
         {
           "name": "portal_global",
@@ -431,6 +492,7 @@
       "accounts": [
         {
           "name": "sender",
+          "writable": true,
           "signer": true
         },
         {
@@ -503,6 +565,7 @@
       "accounts": [
         {
           "name": "sender",
+          "writable": true,
           "signer": true
         },
         {
@@ -630,6 +693,7 @@
       "accounts": [
         {
           "name": "sender",
+          "writable": true,
           "signer": true
         },
         {

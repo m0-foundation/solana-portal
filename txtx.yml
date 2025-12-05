@@ -12,11 +12,8 @@ runbooks:
     description: Set peers
     location: runbooks/set_peers
   - name: pause
-    description: Pause Portal program
+    description: Pause or unpause Portal program
     location: runbooks/pause
-  - name: unpause
-    description: Unpause Portal program
-    location: runbooks/unpause
   - name: set_lut
     description: Set the Wormhole Adapter LUT
     location: runbooks/set_lut
@@ -57,3 +54,4 @@ environments:
     hyperlane_adapter: false
     build_dir: target/verifiable
     chain_id_idx: 0
+    pause_action: pause

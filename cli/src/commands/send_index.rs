@@ -21,6 +21,8 @@ use solana_sdk::{
     transaction::Transaction,
 };
 
+use crate::types::calculate_instruction_discriminator;
+
 // Testnet values
 const RPC_URL: &str = "https://api.testnet.solana.com";
 const MAILBOX_PROGRAM_ID: Pubkey = pubkey!("75HBBLae3ddeneJVrZeyrDfv6vb7SMC3aCpBucSXS5aR");
@@ -49,7 +51,7 @@ fn send_index_transaction(
     let portal_authority = pda!(&[AUTHORITY_SEED], &portal::ID);
 
     // Build the SendIndex instruction with discriminator
-    let mut instruction_data = vec![92, 203, 229, 128, 118, 111, 243, 53];
+    let mut instruction_data = calculate_instruction_discriminator("send_index").to_vec();
     instruction_data.extend_from_slice(&destination_chain_id.to_le_bytes());
 
     let mut accounts = vec![

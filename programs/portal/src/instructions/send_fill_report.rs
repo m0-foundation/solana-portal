@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::{BridgeAdapter, BridgeError, FillReportPayload, Payload};
+use common::{order_book, BridgeAdapter, BridgeError, FillReportPayload, Payload};
 
 use crate::{
     instructions::send_message,
@@ -8,7 +8,17 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct SendFillReport<'info> {
+    #[account(mut)]
     pub sender: Signer<'info>,
+
+    /// Only order_book can send fill reports
+    #[account(
+        mut,
+        seeds = [GLOBAL_SEED],
+        seeds::program = order_book::ID,
+        bump,
+    )]
+    pub order_book_global: Signer<'info>,
 
     #[account(
         mut,

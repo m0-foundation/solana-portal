@@ -11,6 +11,7 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct SendMerkleRoot<'info> {
+    #[account(mut)]
     pub sender: Signer<'info>,
 
     #[account(

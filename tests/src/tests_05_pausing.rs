@@ -10,7 +10,13 @@ use crate::run_surfpool_cmd;
 
 #[test]
 fn test_01_pause() -> Result<()> {
-    run_surfpool_cmd(vec!["run", "pause", "--unsupervised"])?;
+    run_surfpool_cmd(vec![
+        "run",
+        "pause",
+        "--unsupervised",
+        "--input",
+        "pause_action=pause",
+    ])?;
 
     let client = crate::get_rpc_client();
     let data_portal = client.get_account_data(&pda!(&[b"global"], &portal::ID))?;
@@ -23,7 +29,13 @@ fn test_01_pause() -> Result<()> {
 
 #[test]
 fn test_02_unpause() -> Result<()> {
-    run_surfpool_cmd(vec!["run", "unpause", "--unsupervised"])?;
+    run_surfpool_cmd(vec![
+        "run",
+        "pause",
+        "--unsupervised",
+        "--input",
+        "pause_action=unpause",
+    ])?;
 
     let client = crate::get_rpc_client();
     let data_portal = client.get_account_data(&pda!(&[b"global"], &portal::ID))?;
