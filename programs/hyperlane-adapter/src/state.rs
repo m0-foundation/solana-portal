@@ -46,6 +46,7 @@ pub struct HyperlaneGlobal {
     pub ism: Option<Pubkey>,
     pub pending_admin: Option<Pubkey>,
     pub peers: Vec<Peer>,
+    pub padding: [u8; 128],
 }
 
 #[account]
@@ -68,7 +69,8 @@ impl HyperlaneGlobal {
         1 + 32 + // ism option + ism pubkey
         1 + 32 + // pending admin
         4 + // length of peers
-        peers * 36 // each peer
+        peers * 36 + // each peer
+        128 // padding
     }
 
     pub fn get_peer(&self, chain_id: u32) -> Result<Peer> {

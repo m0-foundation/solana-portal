@@ -56,6 +56,7 @@ impl Initialize<'_> {
             peers: Vec::new(),
             pending_admin: None,
             receive_lut: None,
+            padding: [0u8; 128],
         });
 
         // Relinquish mint authority

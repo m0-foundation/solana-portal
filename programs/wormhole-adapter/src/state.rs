@@ -14,6 +14,7 @@ pub struct WormholeGlobal {
     pub receive_lut: Option<Pubkey>,
     pub pending_admin: Option<Pubkey>,
     pub peers: Vec<Peer>,
+    pub padding: [u8; 128],
 }
 
 #[account]
@@ -33,7 +34,8 @@ impl WormholeGlobal {
         1 + // pending_admin option
         32 + // pending_admin pubkey
         4 + // length of peers
-        peers * 36 // each peer
+        peers * 36 + // each peer
+        128 // padding
     }
 
     pub fn validate(&self, vaa: &VaaBody) -> Result<()> {

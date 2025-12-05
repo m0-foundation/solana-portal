@@ -1135,6 +1135,15 @@
             "type": {
               "option": "pubkey"
             }
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                128
+              ]
+            }
           }
         ]
       }

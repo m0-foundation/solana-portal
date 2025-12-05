@@ -22,6 +22,7 @@ pub struct PortalGlobal {
     pub m_index: u64,
     pub message_nonce: u64,
     pub pending_admin: Option<Pubkey>,
+    pub padding: [u8; 128],
 }
 
 impl PortalGlobal {
