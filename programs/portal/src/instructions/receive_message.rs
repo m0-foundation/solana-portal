@@ -189,6 +189,7 @@ impl ReceiveMessage<'_> {
                 amount_in_to_release: payload.amount_in_to_release,
                 amount_out_filled: payload.amount_out_filled,
                 origin_recipient: payload.origin_recipient,
+                token_in: payload.token_in,
             },
         )
     }

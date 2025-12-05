@@ -8,6 +8,29 @@
   },
   "instructions": [
     {
+      "name": "accept_admin_role",
+      "discriminator": [244, 156, 126, 62, 113, 146, 82, 8],
+      "accounts": [
+        {
+          "name": "new_admin",
+          "signer": true
+        },
+        {
+          "name": "global_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "claim_refund",
       "discriminator": [15, 16, 30, 161, 255, 228, 97, 60],
       "accounts": [
@@ -151,6 +174,30 @@
       ]
     },
     {
+      "name": "clear_new_admin",
+      "discriminator": [4, 179, 250, 166, 62, 138, 248, 53],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": ["global_account"]
+        },
+        {
+          "name": "global_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "configure_destination",
       "discriminator": [19, 199, 247, 156, 159, 152, 242, 87],
       "accounts": [
@@ -190,6 +237,23 @@
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "event_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  95, 95, 101, 118, 101, 110, 116, 95, 97, 117, 116, 104, 111,
+                  114, 105, 116, 121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "program"
         }
       ],
       "args": [
@@ -273,6 +337,10 @@
         {
           "name": "associated_token_program",
           "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
         },
         {
           "name": "order",
@@ -525,25 +593,6 @@
           }
         },
         {
-          "name": "messenger_authority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [97, 117, 116, 104, 111, 114, 105, 116, 121]
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                108, 222, 152, 31, 92, 20, 137, 218, 219, 236, 252, 167, 40,
-                254, 124, 7, 176, 175, 163, 239, 177, 216, 234, 38, 113, 88, 45,
-                149, 185, 160, 165, 69
-              ]
-            }
-          }
-        },
-        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
@@ -552,6 +601,10 @@
         {
           "name": "chain_id",
           "type": "u32"
+        },
+        {
+          "name": "messenger_authority",
+          "type": "pubkey"
         }
       ]
     },
@@ -771,6 +824,7 @@
         },
         {
           "name": "order_token_in_ata",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -886,6 +940,64 @@
           }
         }
       ]
+    },
+    {
+      "name": "set_messenger_authority",
+      "discriminator": [145, 255, 61, 204, 135, 22, 251, 160],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": ["global_account"]
+        },
+        {
+          "name": "global_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "messenger_authority",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "set_new_admin",
+      "discriminator": [62, 156, 4, 148, 79, 162, 148, 252],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": ["global_account"]
+        },
+        {
+          "name": "global_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "new_admin",
+          "type": "pubkey"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -894,16 +1006,16 @@
       "discriminator": [72, 240, 126, 108, 12, 157, 206, 229]
     },
     {
-      "name": "ForeignOrder",
-      "discriminator": [224, 183, 137, 113, 226, 49, 121, 45]
+      "name": "Nonce",
+      "discriminator": [143, 197, 147, 95, 106, 165, 50, 43]
     },
     {
       "name": "NativeOrder",
-      "discriminator": [73, 92, 55, 60, 190, 54, 114, 229]
+      "discriminator": [134, 173, 223, 185, 77, 86, 28, 51]
     },
     {
-      "name": "Nonce",
-      "discriminator": [143, 197, 147, 95, 106, 165, 50, 43]
+      "name": "ForeignOrder",
+      "discriminator": [134, 173, 223, 185, 77, 86, 28, 51]
     },
     {
       "name": "OrderBookGlobal",
@@ -914,6 +1026,10 @@
     {
       "name": "CancelRequested",
       "discriminator": [178, 234, 154, 172, 145, 115, 28, 116]
+    },
+    {
+      "name": "DestinationConfigUpdated",
+      "discriminator": [240, 237, 162, 247, 85, 250, 173, 190]
     },
     {
       "name": "FillReported",
@@ -1101,8 +1217,40 @@
             "type": "u64"
           },
           {
+            "name": "new_finality_buffer",
+            "type": "u64"
+          },
+          {
+            "name": "new_finality_buffer_effective_timestamp",
+            "type": "u64"
+          },
+          {
             "name": "bump",
             "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DestinationConfigUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "dest_chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "is_supported",
+            "type": "bool"
+          },
+          {
+            "name": "new_finality_buffer",
+            "type": "u64"
+          },
+          {
+            "name": "new_finality_buffer_effective_timestamp",
+            "type": "u64"
           }
         ]
       }
@@ -1146,6 +1294,12 @@
           },
           {
             "name": "origin_recipient",
+            "type": {
+              "array": ["u8", 32]
+            }
+          },
+          {
+            "name": "token_in",
             "type": {
               "array": ["u8", 32]
             }
@@ -1325,6 +1479,12 @@
             "type": "pubkey"
           },
           {
+            "name": "new_admin",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
             "name": "chain_id",
             "type": "u32"
           },
@@ -1391,6 +1551,12 @@
             "type": "u64"
           },
           {
+            "name": "token_in",
+            "type": {
+              "array": ["u8", 32]
+            }
+          },
+          {
             "name": "token_out",
             "type": {
               "array": ["u8", 32]
@@ -1455,6 +1621,10 @@
             "type": {
               "array": ["u8", 32]
             }
+          },
+          {
+            "name": "sender",
+            "type": "pubkey"
           },
           {
             "name": "token_in",
