@@ -55,7 +55,6 @@ impl Initialize<'_> {
     pub fn handler(ctx: Context<Self>) -> Result<()> {
         ctx.accounts.hyperlane_global.set_inner(HyperlaneGlobal {
             bump: ctx.bumps.hyperlane_global,
-            nonce: 0,
             admin: ctx.accounts.admin.key(),
             ism: None,
             paused: false,
@@ -65,6 +64,7 @@ impl Initialize<'_> {
             igp_account: DEFAULT_IGP_ACCOUNT,
             igp_overhead_account: Some(DEFAULT_OVERHEAD_IGP_ACCOUNT),
             igp_gas_amount: DEFAULT_HANDLE_GAS_AMOUNT,
+            padding: [0u8; 128],
         });
 
         ctx.accounts.account_metas_data.set_inner(AccountMetasData {
