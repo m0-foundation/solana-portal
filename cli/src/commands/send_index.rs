@@ -5,9 +5,7 @@ use common::{
         self,
         accounts::{HyperlaneGlobal, HyperlaneUserGlobal},
         constants::{
-            DASH_SEED, DISPATCHED_MESSAGE_SEED, DISPATCH_SEED_1, DISPATCH_SEED_2, GAS_PAYMENT_SEED,
-            HYPERLANE_IGP_SEED, HYPERLANE_SEED, OUTBOX_SEED, PROGRAM_DATA_SEED, SPL_NOOP,
-            UNIQUE_MESSAGE_SEED,
+            DASH_SEED, DISPATCHED_MESSAGE_SEED, HYPERLANE_SEED, OUTBOX_SEED, UNIQUE_MESSAGE_SEED,
         },
     },
     pda,
@@ -68,56 +66,45 @@ fn send_index_transaction(
     let hyp_user = rpc_client.get_account_data(&pda!(
         &[GLOBAL_SEED, payer.pubkey().as_ref()],
         &hyperlane_adapter::ID
-    ))?;
-    let user_hp = HyperlaneUserGlobal::try_deserialize(&mut hyp_user.as_slice())?;
+    ));
+    let user_global = match hyp_user {
+        Ok(data) => Some(HyperlaneUserGlobal::try_deserialize(&mut data.as_slice())?),
+        Err(_) => None,
+    };
 
+    // Unique message PDA based on user global nonce
     let unique_message = pda!(
-        &[UNIQUE_MESSAGE_SEED, user_hp.nonce.to_le_bytes().as_ref()],
+        &[
+            UNIQUE_MESSAGE_SEED,
+            &user_global
+                .map(|g| g.nonce)
+                .unwrap_or_default()
+                .to_be_bytes()
+        ],
         &hyperlane_adapter::ID
     );
 
-    // Add Hyperlane remaining accounts (using testnet values)
-    let hyperlane_accounts = HyperlaneRemainingAccounts {
-        hyperlane_global: pda!(&[GLOBAL_SEED], &hyperlane_adapter::ID),
-        mailbox_outbox: pda!(
-            &[HYPERLANE_SEED, DASH_SEED, OUTBOX_SEED],
-            &MAILBOX_PROGRAM_ID
-        ),
-        dispatch_authority: pda!(
-            &[DISPATCH_SEED_1, DASH_SEED, DISPATCH_SEED_2],
-            &hyperlane_adapter::ID
-        ),
-        unique_message,
-        dispatched_message: pda!(
-            &[
-                HYPERLANE_SEED,
-                DASH_SEED,
-                DISPATCHED_MESSAGE_SEED,
-                DASH_SEED,
-                unique_message.as_ref(),
-            ],
-            &MAILBOX_PROGRAM_ID
-        ),
-        igp_program_id: global_hp.igp_program_id,
-        igp_program_data: pda!(
-            &[HYPERLANE_IGP_SEED, DASH_SEED, PROGRAM_DATA_SEED],
-            &global_hp.igp_program_id
-        ),
-        igp_gas_payment: pda!(
-            &[
-                HYPERLANE_IGP_SEED,
-                DASH_SEED,
-                GAS_PAYMENT_SEED,
-                DASH_SEED,
-                unique_message.as_ref()
-            ],
-            &global_hp.igp_program_id
-        ),
-        igp_account: global_hp.igp_account,
-        igp_overhead_account: global_hp.igp_overhead_account,
-        mailbox_program: MAILBOX_PROGRAM_ID,
-        spl_noop_program: SPL_NOOP,
-    };
+    // Remaining accounts for Hyperlane
+    let mut hyperlane_accounts =
+        HyperlaneRemainingAccounts::new(&payer.pubkey(), &global_hp, user_global.as_ref());
+
+    // Update mailbox accounts (program_id is different on testnet)
+    hyperlane_accounts.mailbox_program = MAILBOX_PROGRAM_ID;
+    hyperlane_accounts.mailbox_outbox = pda!(
+        &[HYPERLANE_SEED, DASH_SEED, OUTBOX_SEED],
+        &MAILBOX_PROGRAM_ID
+    );
+    hyperlane_accounts.dispatched_message = pda!(
+        &[
+            HYPERLANE_SEED,
+            DASH_SEED,
+            DISPATCHED_MESSAGE_SEED,
+            DASH_SEED,
+            unique_message.as_ref(),
+        ],
+        &MAILBOX_PROGRAM_ID
+    );
+
     accounts.extend(hyperlane_accounts.to_account_metas());
 
     let instruction = SolanaInstruction {

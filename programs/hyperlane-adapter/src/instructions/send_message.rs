@@ -66,7 +66,7 @@ pub struct SendMessage<'info> {
         seeds = [
             UNIQUE_MESSAGE_SEED,
             hyperlane_user_global.key().as_ref(),
-            &hyperlane_user_global.nonce.to_le_bytes(),
+            &hyperlane_user_global.nonce.to_be_bytes(),
         ],
         bump
     )]
@@ -192,7 +192,7 @@ impl SendMessage<'_> {
                     &[
                         UNIQUE_MESSAGE_SEED,
                         ctx.accounts.hyperlane_user_global.key().as_ref(),
-                        &ctx.accounts.hyperlane_user_global.nonce.to_le_bytes(),
+                        &ctx.accounts.hyperlane_user_global.nonce.to_be_bytes(),
                         &[ctx.bumps.unique_message],
                     ],
                 ],
@@ -252,14 +252,21 @@ impl SendMessage<'_> {
                 &[&[
                     UNIQUE_MESSAGE_SEED,
                     ctx.accounts.hyperlane_user_global.key().as_ref(),
-                    &ctx.accounts.hyperlane_user_global.nonce.to_le_bytes(),
+                    &ctx.accounts.hyperlane_user_global.nonce.to_be_bytes(),
                     &[ctx.bumps.unique_message],
                 ]],
             )?;
         }
 
-        // Bump the nonce used to generate unique message accounts
-        ctx.accounts.hyperlane_user_global.nonce += 1;
+        // Might not be initialized
+        ctx.accounts
+            .hyperlane_user_global
+            .set_inner(HyperlaneUserGlobal {
+                bump: ctx.bumps.hyperlane_user_global,
+                user: ctx.accounts.payer.key(),
+                // Bump the nonce used to generate unique message accounts
+                nonce: ctx.accounts.hyperlane_user_global.nonce + 1,
+            });
 
         Ok(())
     }

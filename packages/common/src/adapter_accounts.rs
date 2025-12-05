@@ -82,6 +82,7 @@ pub struct HyperlaneRemainingAccounts {
     pub hyperlane_global: Pubkey,
     pub mailbox_outbox: Pubkey,
     pub dispatch_authority: Pubkey,
+    pub hyperlane_user_global: Pubkey,
     pub unique_message: Pubkey,
     pub dispatched_message: Pubkey,
     pub igp_program_id: Pubkey,
@@ -94,11 +95,24 @@ pub struct HyperlaneRemainingAccounts {
 }
 
 impl HyperlaneRemainingAccounts {
-    pub fn new(global: &HyperlaneGlobal, user_global: &HyperlaneUserGlobal) -> Self {
+    pub fn new(
+        payer: &Pubkey,
+        global: &HyperlaneGlobal,
+        user_global: Option<&HyperlaneUserGlobal>,
+    ) -> Self {
+        let hyperlane_user_global = pda!(
+            &[GLOBAL_SEED, DASH_SEED, payer.as_ref()],
+            &hyperlane_adapter::ID
+        );
+
         let unique_message = pda!(
             &[
                 UNIQUE_MESSAGE_SEED,
-                user_global.nonce.to_le_bytes().as_ref()
+                hyperlane_user_global.as_ref(),
+                &user_global
+                    .map(|g| g.nonce)
+                    .unwrap_or_default()
+                    .to_be_bytes()
             ],
             &hyperlane_adapter::ID
         );
@@ -113,6 +127,7 @@ impl HyperlaneRemainingAccounts {
                 &[DISPATCH_SEED_1, DASH_SEED, DISPATCH_SEED_2],
                 &hyperlane_adapter::ID
             ),
+            hyperlane_user_global,
             unique_message,
             dispatched_message: pda!(
                 &[
@@ -147,10 +162,11 @@ impl HyperlaneRemainingAccounts {
     }
 
     pub fn account_metas(
+        payer: &Pubkey,
         global: &HyperlaneGlobal,
-        user_global: &HyperlaneUserGlobal,
+        user_global: Option<&HyperlaneUserGlobal>,
     ) -> Vec<AccountMeta> {
-        Self::new(global, user_global).to_account_metas()
+        Self::new(payer, global, user_global).to_account_metas()
     }
 
     pub fn to_account_metas(&self) -> Vec<AccountMeta> {
@@ -158,6 +174,7 @@ impl HyperlaneRemainingAccounts {
             AccountMeta::new(self.hyperlane_global, false),
             AccountMeta::new(self.mailbox_outbox, false),
             AccountMeta::new_readonly(self.dispatch_authority, false),
+            AccountMeta::new(self.hyperlane_user_global, false),
             AccountMeta::new_readonly(self.unique_message, false),
             AccountMeta::new(self.dispatched_message, false),
             AccountMeta::new_readonly(self.igp_program_id, false),
