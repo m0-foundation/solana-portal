@@ -116,6 +116,15 @@ impl Payload {
             _ => panic!("Invalid payload type"),
         }
     }
+
+    pub fn message_id(&self) -> [u8; 32] {
+        match self {
+            Payload::TokenTransfer(payload) => payload.message_id,
+            Payload::Index(payload) => payload.message_id,
+            Payload::FillReport(payload) => payload.message_id,
+            Payload::EarnerMerkleRoot(payload) => payload.message_id,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

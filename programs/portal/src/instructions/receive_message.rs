@@ -8,9 +8,10 @@ use common::{
     TokenTransferPayload,
 };
 
-use crate::state::{PortalGlobal, AUTHORITY_SEED, GLOBAL_SEED};
+use crate::state::{BridgeMessage, PortalGlobal, AUTHORITY_SEED, GLOBAL_SEED, MESSAGE_SEED};
 
 #[derive(Accounts)]
+#[instruction(payload: Vec<u8>)]
 pub struct ReceiveMessage<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -23,6 +24,15 @@ pub struct ReceiveMessage<'info> {
     pub portal_global: Account<'info, PortalGlobal>,
 
     pub adapter_authority: Signer<'info>,
+
+    #[account(
+        init,
+        payer = payer,
+        space = BridgeMessage::SIZE,
+        seeds = [MESSAGE_SEED, &Payload::decode(&payload).message_id()],
+        bump,
+    )]
+    pub message_account: Account<'info, BridgeMessage>,
 
     #[account(
         seeds = [AUTHORITY_SEED],
@@ -50,6 +60,11 @@ impl ReceiveMessage<'_> {
         payload: Vec<u8>,
     ) -> Result<()> {
         let message = Payload::decode(&payload);
+
+        // Protect against replays in case the adapter is not
+        ctx.accounts.message_account.set_inner(BridgeMessage {
+            message_id: message.message_id(),
+        });
 
         match message {
             Payload::TokenTransfer(payload) => {
