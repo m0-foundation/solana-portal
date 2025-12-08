@@ -18,9 +18,8 @@ pub struct ReceiveMessage<'info> {
     pub relayer: Signer<'info>,
 
     #[account(
-        constraint = !wormhole_global.paused,
         seeds = [GLOBAL_SEED],
-        bump,
+        bump = wormhole_global.bump,
     )]
     pub wormhole_global: Account<'info, WormholeGlobal>,
 

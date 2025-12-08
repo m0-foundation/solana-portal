@@ -47,9 +47,8 @@ pub struct ReceiveMessage<'info> {
     pub receive_payer: AccountInfo<'info>,
 
     #[account(
-        constraint = !hyperlane_global.paused,
         seeds = [GLOBAL_SEED],
-        bump,
+        bump = hyperlane_global.bump,
     )]
     pub hyperlane_global: Account<'info, HyperlaneGlobal>,
 
