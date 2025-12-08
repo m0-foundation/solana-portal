@@ -73,7 +73,7 @@ impl ReceiveMessage<'_> {
         // Protect against replays in case the adapter is not
         ctx.accounts
             .message_account
-            .set_inner(BridgeMessage { message_id });
+            .set_inner(BridgeMessage { consumed: true });
 
         match message {
             Payload::TokenTransfer(payload) => {

@@ -49,7 +49,7 @@ impl PortalGlobal {
 #[account]
 #[derive(InitSpace)]
 pub struct BridgeMessage {
-    pub message_id: [u8; 32],
+    pub consumed: bool,
 }
 
 impl BridgeMessage {

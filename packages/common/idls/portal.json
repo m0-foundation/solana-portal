@@ -1180,13 +1180,8 @@
         "kind": "struct",
         "fields": [
           {
-            "name": "message_id",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
+            "name": "consumed",
+            "type": "bool"
           }
         ]
       }
