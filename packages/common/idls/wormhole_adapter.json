@@ -486,6 +486,10 @@
           }
         },
         {
+          "name": "message_account",
+          "writable": true
+        },
+        {
           "name": "guardian_set",
           "pda": {
             "seeds": [
