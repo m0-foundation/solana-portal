@@ -1,22 +1,21 @@
 use anchor_lang::{
-    prelude::*,
-    solana_program::entrypoint::MAX_PERMITTED_DATA_INCREASE,
-    system_program,
+    prelude::*, solana_program::entrypoint::MAX_PERMITTED_DATA_INCREASE, system_program,
     InstructionData,
 };
-use anchor_spl::associated_token::spl_associated_token_account::solana_program::system_instruction::MAX_PERMITTED_DATA_LENGTH;
+use anchor_spl::associated_token::spl_associated_token_account::solana_program::{
+   system_instruction::MAX_PERMITTED_DATA_LENGTH,
+};
 use common::{
     earn::{self, accounts::EarnGlobal},
     ext_swap::{self, accounts::SwapGlobal},
     pda,
-    portal,
-    require_metas,
-    wormhole_verify_vaa_shim,
-    BridgeError,
-    Extension,
+    portal::{self, constants::MESSAGE_SEED},
+    require_metas, wormhole_verify_vaa_shim, BridgeError, Extension,
 };
 use executor_account_resolver_svm::{
-    InstructionGroup, InstructionGroups, MissingAccounts, RESOLVER_PUBKEY_GUARDIAN_SET, RESOLVER_PUBKEY_PAYER, RESOLVER_PUBKEY_SHIM_VAA_SIGS, RESOLVER_RESULT_ACCOUNT, RESOLVER_RESULT_ACCOUNT_SEED, Resolver, SerializableInstruction, find_account, missing_account
+    find_account, missing_account, InstructionGroup, InstructionGroups, MissingAccounts, Resolver,
+    SerializableInstruction, RESOLVER_PUBKEY_GUARDIAN_SET, RESOLVER_PUBKEY_PAYER,
+    RESOLVER_PUBKEY_SHIM_VAA_SIGS, RESOLVER_RESULT_ACCOUNT, RESOLVER_RESULT_ACCOUNT_SEED,
 };
 use wormhole_svm_definitions::{zero_copy::GuardianSet, GUARDIAN_SET_SEED};
 
@@ -39,6 +38,7 @@ impl ResolveExecuteVaa {
         vaa_body: Vec<u8>,
     ) -> Result<Resolver<InstructionGroups>> {
         let vaa = VaaBody::from_bytes(&vaa_body)?;
+        let message_id = vaa.payload.message_id();
 
         let result_account = pda!(&[RESOLVER_RESULT_ACCOUNT_SEED], &crate::ID);
         let global = pda!(&[GLOBAL_SEED], &crate::ID);
@@ -198,6 +198,7 @@ impl ResolveExecuteVaa {
                 AccountMeta::new(pda!(&[GLOBAL_SEED], &portal::ID), false).into(),
                 AccountMeta::new_readonly(pda!(&[AUTHORITY_SEED], &crate::ID), false).into(),
                 AccountMeta::new_readonly(pda!(&[AUTHORITY_SEED], &portal::ID), false).into(),
+                AccountMeta::new(pda!(&[MESSAGE_SEED, &message_id], &portal::ID), false).into(),
                 AccountMeta::new_readonly(guardian_set, false).into(),
                 AccountMeta::new_readonly(RESOLVER_PUBKEY_SHIM_VAA_SIGS, false).into(),
                 AccountMeta::new_readonly(wormhole_verify_vaa_shim::ID, false).into(),

@@ -105,8 +105,9 @@ pub mod portal {
 
     pub fn receive_message<'info>(
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
+        message_id: [u8; 32],
         payload: Vec<u8>,
     ) -> Result<()> {
-        ReceiveMessage::handler(ctx, payload)
+        ReceiveMessage::handler(ctx, message_id, payload)
     }
 }

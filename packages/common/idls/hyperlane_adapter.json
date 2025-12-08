@@ -725,6 +725,10 @@
           }
         },
         {
+          "name": "message_account",
+          "writable": true
+        },
+        {
           "name": "portal_program",
           "address": "MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce"
         },

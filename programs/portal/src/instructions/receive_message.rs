@@ -11,7 +11,7 @@ use common::{
 use crate::state::{BridgeMessage, PortalGlobal, AUTHORITY_SEED, GLOBAL_SEED, MESSAGE_SEED};
 
 #[derive(Accounts)]
-#[instruction(payload: Vec<u8>)]
+#[instruction(message_id: [u8; 32])]
 pub struct ReceiveMessage<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -29,7 +29,7 @@ pub struct ReceiveMessage<'info> {
         init,
         payer = payer,
         space = BridgeMessage::SIZE,
-        seeds = [MESSAGE_SEED, &Payload::decode(&payload).message_id()],
+        seeds = [MESSAGE_SEED, &message_id],
         bump,
     )]
     pub message_account: Account<'info, BridgeMessage>,
@@ -45,7 +45,15 @@ pub struct ReceiveMessage<'info> {
 }
 
 impl ReceiveMessage<'_> {
-    fn validate(&self) -> Result<()> {
+    fn validate(&self, message_id: [u8; 32], payload: &Vec<u8>) -> Result<()> {
+        let message = Payload::decode(&payload);
+
+        // Verify the message_id matches the decoded payload
+        require!(
+            message_id == message.message_id(),
+            BridgeError::InvalidMessageId
+        );
+
         // Check that one of the supported adapters signed the message
         if !BridgeAdapter::is_authority(&self.adapter_authority.key()) {
             return err!(BridgeError::InvalidAdapterAuthority);
@@ -54,17 +62,18 @@ impl ReceiveMessage<'_> {
         Ok(())
     }
 
-    #[access_control(ctx.accounts.validate())]
+    #[access_control(ctx.accounts.validate(message_id, &payload))]
     pub fn handler<'info>(
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
+        message_id: [u8; 32],
         payload: Vec<u8>,
     ) -> Result<()> {
         let message = Payload::decode(&payload);
 
         // Protect against replays in case the adapter is not
-        ctx.accounts.message_account.set_inner(BridgeMessage {
-            message_id: message.message_id(),
-        });
+        ctx.accounts
+            .message_account
+            .set_inner(BridgeMessage { message_id });
 
         match message {
             Payload::TokenTransfer(payload) => {

@@ -34,4 +34,6 @@ pub enum BridgeError {
     InvalidAdapterAuthority,
     #[msg("Invalid Hyperlane IGP account")]
     InvalidIgpAccount,
+    #[msg("Message ID does not match payload")]
+    InvalidMessageId,
 }

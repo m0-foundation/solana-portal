@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use common::{
     pda,
-    portal::{self, accounts::PortalGlobal, program::Portal},
+    portal::{self, accounts::PortalGlobal, constants::MESSAGE_SEED, program::Portal},
     require_metas, BridgeError, Payload, AUTHORITY_SEED,
 };
 
@@ -69,6 +69,10 @@ pub struct ReceiveMessage<'info> {
     /// CHECK: Account does not hold data
     pub portal_authority: AccountInfo<'info>,
 
+    #[account(mut)]
+    /// CHECK: Initialized and verified in CPI to Portal
+    pub message_account: AccountInfo<'info>,
+
     pub portal_program: Program<'info, Portal>,
 
     pub system_program: Program<'info, System>,
@@ -98,6 +102,7 @@ impl ReceiveMessage<'_> {
                 portal::cpi::accounts::ReceiveMessage {
                     payer: ctx.accounts.receive_payer.to_account_info(),
                     adapter_authority: ctx.accounts.hyperlane_adapter_authority.to_account_info(),
+                    message_account: ctx.accounts.message_account.to_account_info(),
                     portal_authority: ctx.accounts.portal_authority.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info(),
                     portal_global: ctx.accounts.portal_global.to_account_info(),
@@ -105,6 +110,7 @@ impl ReceiveMessage<'_> {
                 &[&[AUTHORITY_SEED, &[ctx.bumps.hyperlane_adapter_authority]]],
             )
             .with_remaining_accounts(ctx.remaining_accounts.to_vec()),
+            Payload::decode(&message).message_id(),
             message,
         )
     }
@@ -139,6 +145,7 @@ impl<'info> ReceiveMessageMetas<'info> {
         let portal_global = pda!(&[GLOBAL_SEED], &portal::ID);
         let payer = pda!(&[PAYER_SEED], &crate::ID);
         let portal_authority = pda!(&[AUTHORITY_SEED], &portal::ID);
+        let message_account = pda!(&[MESSAGE_SEED, &payload.message_id()], &portal::ID);
 
         // Accounts needed by all payload types
         let mut account_metas: Vec<SerializableAccountMeta> = vec![
@@ -147,6 +154,7 @@ impl<'info> ReceiveMessageMetas<'info> {
             AccountMeta::new_readonly(hyperlane_global, false).into(),
             AccountMeta::new(portal_global, false).into(),
             AccountMeta::new_readonly(portal_authority, false).into(),
+            AccountMeta::new(message_account, false).into(),
             AccountMeta::new_readonly(portal::ID, false).into(),
             AccountMeta::new_readonly(system_program::ID, false).into(),
         ];
