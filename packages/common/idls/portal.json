@@ -1304,6 +1304,10 @@
             "type": "u32"
           },
           {
+            "name": "bridge_adapter",
+            "type": "pubkey"
+          },
+          {
             "name": "order_id",
             "type": {
               "array": [
@@ -1360,6 +1364,10 @@
             "type": "u32"
           },
           {
+            "name": "bridge_adapter",
+            "type": "pubkey"
+          },
+          {
             "name": "order_id",
             "type": {
               "array": [
@@ -1393,10 +1401,6 @@
                 32
               ]
             }
-          },
-          {
-            "name": "bridge_adapter",
-            "type": "pubkey"
           },
           {
             "name": "message_id",
@@ -1518,6 +1522,10 @@
           {
             "name": "source_chain_id",
             "type": "u32"
+          },
+          {
+            "name": "bridge_adapter",
+            "type": "pubkey"
           },
           {
             "name": "destination_token",

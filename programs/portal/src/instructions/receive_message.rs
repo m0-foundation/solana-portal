@@ -55,7 +55,7 @@ impl ReceiveMessage<'_> {
         );
 
         // Check that one of the supported adapters signed the message
-        if !BridgeAdapter::is_authority(&self.adapter_authority.key()) {
+        if BridgeAdapter::from_authority(&self.adapter_authority.key()).is_none() {
             return err!(BridgeError::InvalidAdapterAuthority);
         }
 
@@ -79,17 +79,23 @@ impl ReceiveMessage<'_> {
         match message {
             Payload::TokenTransfer(payload) => {
                 msg!("Received Token Transfer Payload: {}", payload.amount);
-                ctx.accounts.portal_global.update_index(message_id, payload.index);
+                ctx.accounts
+                    .portal_global
+                    .update_index(message_id, payload.index);
                 return Self::handle_token_transfer_payload(ctx, source_chain_id, payload);
             }
             Payload::Index(payload) => {
                 msg!("Received Index Payload: {}", payload.index);
-                ctx.accounts.portal_global.update_index(message_id, payload.index);
+                ctx.accounts
+                    .portal_global
+                    .update_index(message_id, payload.index);
                 return Self::handle_index_payload(&ctx, payload.into());
             }
             Payload::EarnerMerkleRoot(payload) => {
                 msg!("Received EarnerMerkleRoot Payload");
-                ctx.accounts.portal_global.update_index(message_id, payload.index);
+                ctx.accounts
+                    .portal_global
+                    .update_index(message_id, payload.index);
                 return Self::handle_index_payload(&ctx, payload);
             }
             Payload::FillReport(fill_report) => {
@@ -181,7 +187,10 @@ impl ReceiveMessage<'_> {
         )?;
 
         emit!(TokenReceived {
-            source_chain_id: source_chain_id,
+            source_chain_id,
+            bridge_adapter: BridgeAdapter::from_authority(&ctx.accounts.adapter_authority.key())
+                .unwrap()
+                .get_id(),
             destination_token: payload.destination_token,
             sender: payload.sender,
             recipient: payload.recipient,
@@ -232,6 +241,9 @@ impl ReceiveMessage<'_> {
 
         emit!(FillReportReceived {
             source_chain_id: source_chain_id,
+            bridge_adapter: BridgeAdapter::from_authority(&ctx.accounts.adapter_authority.key())
+                .unwrap()
+                .get_id(),
             order_id: payload.order_id,
             amount_in_to_release: payload.amount_in_to_release,
             amount_out_filled: payload.amount_out_filled,
@@ -241,13 +253,13 @@ impl ReceiveMessage<'_> {
         });
 
         Ok(())
-
     }
 }
 
 #[event]
 pub struct TokenReceived {
     pub source_chain_id: u32,
+    pub bridge_adapter: Pubkey,
     pub destination_token: [u8; 32],
     pub sender: [u8; 32],
     pub recipient: [u8; 32],
@@ -259,6 +271,7 @@ pub struct TokenReceived {
 #[event]
 pub struct FillReportReceived {
     pub source_chain_id: u32,
+    pub bridge_adapter: Pubkey,
     pub order_id: [u8; 32],
     pub amount_in_to_release: u128,
     pub amount_out_filled: u128,
