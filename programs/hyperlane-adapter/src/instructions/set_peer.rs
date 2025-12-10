@@ -27,6 +27,9 @@ pub struct SetPeer<'info> {
 
 impl SetPeer<'_> {
     pub fn handler(ctx: Context<Self>, peer: Peer) -> Result<()> {
+
+        let peer_clone = peer.clone();
+
         // Insert or overwrite peer
         match ctx
             .accounts
@@ -35,10 +38,21 @@ impl SetPeer<'_> {
             .iter_mut()
             .find(|p| p.chain_id == peer.chain_id)
         {
-            Some(existing_peer) => *existing_peer = peer,
-            None => ctx.accounts.hyperlane_global.peers.push(peer),
+            Some(existing_peer) => *existing_peer = peer_clone,
+            None => ctx.accounts.hyperlane_global.peers.push(peer_clone),
         }
+
+        emit!(PeerSet {
+            chain_id: peer.chain_id,
+            peer: peer.address,
+        });
 
         Ok(())
     }
+}
+
+#[event]
+pub struct PeerSet {
+    pub chain_id: u32,
+    pub peer: [u8; 32],
 }

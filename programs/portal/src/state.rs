@@ -28,8 +28,13 @@ pub struct PortalGlobal {
 }
 
 impl PortalGlobal {
-    pub fn update_index(&mut self, new_index: u64) {
+    pub fn update_index(&mut self, message_id: [u8; 32], new_index: u64) {
         self.m_index = max(new_index, self.m_index);
+
+         emit!(MTokenIndexReceived {
+            index: new_index,
+            message_id,
+        }); 
     }
 
     pub fn generate_message_id(&mut self) -> [u8; 32] {
@@ -54,4 +59,10 @@ pub struct BridgeMessage {
 
 impl BridgeMessage {
     pub const SIZE: usize = BridgeMessage::INIT_SPACE + BridgeMessage::DISCRIMINATOR.len();
+}
+
+#[event]
+pub struct MTokenIndexReceived {
+    pub index: u64,
+    pub message_id: [u8; 32],
 }

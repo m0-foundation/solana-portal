@@ -100,7 +100,8 @@ impl ReceiveMessage<'_> {
         #[allow(unused_variables)] guardian_set_index: u32,
         vaa_body: Vec<u8>,
     ) -> Result<()> {
-        let payload = VaaBody::from_bytes(&vaa_body)?.payload;
+        let vm = VaaBody::from_bytes(&vaa_body)?;
+        let payload = vm.payload;
 
         portal::cpi::receive_message(
             CpiContext::new_with_signer(
@@ -116,6 +117,7 @@ impl ReceiveMessage<'_> {
                 &[&[AUTHORITY_SEED, &[ctx.bumps.wormhole_adapter_authority]]],
             )
             .with_remaining_accounts(ctx.remaining_accounts.to_vec()),
+            vm.emitter_chain.into(),
             payload.message_id(),
             payload.encode(),
         )
