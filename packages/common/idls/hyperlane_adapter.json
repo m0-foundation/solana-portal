@@ -90,6 +90,9 @@
     },
     {
       "name": "get_ism",
+      "docs": [
+        "Read-only Instructions"
+      ],
       "discriminator": [
         45,
         18,
@@ -139,6 +142,9 @@
     },
     {
       "name": "initialize",
+      "docs": [
+        "Admin Instructions"
+      ],
       "discriminator": [
         175,
         175,
@@ -408,6 +414,9 @@
     },
     {
       "name": "receive_message",
+      "docs": [
+        "Inbound Instructions"
+      ],
       "discriminator": [
         33,
         210,
@@ -1567,6 +1576,9 @@
     },
     {
       "name": "sync_extensions",
+      "docs": [
+        "Outbound Instructions"
+      ],
       "discriminator": [
         247,
         48,
@@ -1849,6 +1861,21 @@
       ]
     }
   ],
+  "events": [
+    {
+      "name": "PeerSet",
+      "discriminator": [
+        27,
+        114,
+        255,
+        165,
+        25,
+        240,
+        245,
+        93
+      ]
+    }
+  ],
   "types": [
     {
       "name": "AccountMetasData",
@@ -2039,6 +2066,27 @@
           {
             "name": "chain_id",
             "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PeerSet",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "peer",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           }
         ]
       }

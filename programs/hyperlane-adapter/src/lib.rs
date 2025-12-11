@@ -29,6 +29,8 @@ declare_id!("mZhPGteS36G7FhMTcRofLQU8ocBNAsGq7u8SKSHfL2X");
 pub mod hyperlane_adapter {
     use super::*;
 
+    /// Admin Instructions
+
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
         Initialize::handler(ctx)
     }
@@ -57,10 +59,6 @@ pub mod hyperlane_adapter {
         SetPeer::handler(ctx, peer)
     }
 
-    pub fn sync_extensions(ctx: Context<SyncExtensions>) -> Result<()> {
-        SyncExtensions::handler(ctx)
-    }
-
     pub fn set_ism(ctx: Context<SetIsm>, ism: Option<Pubkey>) -> Result<()> {
         SetIsm::handler(ctx, ism)
     }
@@ -73,6 +71,12 @@ pub mod hyperlane_adapter {
         SetIgpGasAmount::handler(ctx, igp_gas_amount)
     }
 
+    /// Outbound Instructions
+
+    pub fn sync_extensions(ctx: Context<SyncExtensions>) -> Result<()> {
+        SyncExtensions::handler(ctx)
+    }
+
     pub fn send_message(
         ctx: Context<SendMessage>,
         message: Vec<u8>,
@@ -80,6 +84,8 @@ pub mod hyperlane_adapter {
     ) -> Result<()> {
         SendMessage::handler(ctx, message, destination_chain_id)
     }
+
+    /// Inbound Instructions
 
     #[instruction(discriminator = &HANDLE_DISCRIMINATOR)]
     pub fn receive_message<'info>(
@@ -100,6 +106,8 @@ pub mod hyperlane_adapter {
     ) -> Result<()> {
         ReceiveMessageMetas::handler(ctx, origin, sender, message)
     }
+
+    /// Read-only Instructions
 
     #[instruction(discriminator = &ISM_DISCRIMINATOR)]
     pub fn get_ism(ctx: Context<GetIsm>) -> Result<()> {

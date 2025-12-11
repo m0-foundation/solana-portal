@@ -109,6 +109,7 @@ impl ReceiveMessage<'_> {
                 &[&[AUTHORITY_SEED, &[ctx.bumps.hyperlane_adapter_authority]]],
             )
             .with_remaining_accounts(ctx.remaining_accounts.to_vec()),
+            origin,
             Payload::decode(&message).message_id(),
             message,
         )

@@ -325,6 +325,10 @@
       ],
       "args": [
         {
+          "name": "source_chain_id",
+          "type": "u32"
+        },
+        {
           "name": "message_id",
           "type": {
             "array": [
@@ -1173,6 +1177,73 @@
       ]
     }
   ],
+  "events": [
+    {
+      "name": "FillReportReceived",
+      "discriminator": [
+        101,
+        71,
+        41,
+        220,
+        125,
+        65,
+        44,
+        48
+      ]
+    },
+    {
+      "name": "FillReportSent",
+      "discriminator": [
+        127,
+        44,
+        168,
+        99,
+        163,
+        152,
+        5,
+        94
+      ]
+    },
+    {
+      "name": "MTokenIndexReceived",
+      "discriminator": [
+        8,
+        176,
+        76,
+        78,
+        200,
+        62,
+        28,
+        142
+      ]
+    },
+    {
+      "name": "TokenReceived",
+      "discriminator": [
+        251,
+        126,
+        204,
+        211,
+        2,
+        159,
+        194,
+        227
+      ]
+    },
+    {
+      "name": "TokenSent",
+      "discriminator": [
+        1,
+        10,
+        12,
+        13,
+        206,
+        47,
+        175,
+        162
+      ]
+    }
+  ],
   "types": [
     {
       "name": "BridgeMessage",
@@ -1219,6 +1290,147 @@
           {
             "name": "bump",
             "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FillReportReceived",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "source_chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "bridge_adapter",
+            "type": "pubkey"
+          },
+          {
+            "name": "order_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "amount_in_to_release",
+            "type": "u128"
+          },
+          {
+            "name": "amount_out_filled",
+            "type": "u128"
+          },
+          {
+            "name": "origin_recipient",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "token_in",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "message_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "FillReportSent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "destination_chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "bridge_adapter",
+            "type": "pubkey"
+          },
+          {
+            "name": "order_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "amount_in_to_release",
+            "type": "u128"
+          },
+          {
+            "name": "amount_out_filled",
+            "type": "u128"
+          },
+          {
+            "name": "origin_recipient",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "token_in",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "message_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MTokenIndexReceived",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "index",
+            "type": "u64"
+          },
+          {
+            "name": "message_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           }
         ]
       }
@@ -1297,6 +1509,125 @@
                   "name": "WhitelistedExtension"
                 }
               }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "TokenReceived",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "source_chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "bridge_adapter",
+            "type": "pubkey"
+          },
+          {
+            "name": "destination_token",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "sender",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "recipient",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "amount",
+            "type": "u128"
+          },
+          {
+            "name": "index",
+            "type": "u64"
+          },
+          {
+            "name": "message_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "TokenSent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "source_token",
+            "type": "pubkey"
+          },
+          {
+            "name": "destination_chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "destination_token",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "sender",
+            "type": "pubkey"
+          },
+          {
+            "name": "recipient",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "amount",
+            "type": "u128"
+          },
+          {
+            "name": "index",
+            "type": "u64"
+          },
+          {
+            "name": "bridge_adapter",
+            "type": "pubkey"
+          },
+          {
+            "name": "message_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
             }
           }
         ]
