@@ -584,134 +584,6 @@
       ]
     },
     {
-      "name": "send_merkle_root",
-      "discriminator": [
-        15,
-        184,
-        227,
-        45,
-        154,
-        255,
-        227,
-        63
-      ],
-      "accounts": [
-        {
-          "name": "sender",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "portal_global",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  108,
-                  111,
-                  98,
-                  97,
-                  108
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "earn_global",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  108,
-                  111,
-                  98,
-                  97,
-                  108
-                ]
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                11,
-                134,
-                11,
-                7,
-                229,
-                245,
-                33,
-                49,
-                225,
-                170,
-                183,
-                171,
-                210,
-                177,
-                147,
-                110,
-                166,
-                55,
-                182,
-                49,
-                97,
-                242,
-                35,
-                170,
-                152,
-                135,
-                152,
-                108,
-                102,
-                78,
-                112,
-                208
-              ]
-            }
-          }
-        },
-        {
-          "name": "portal_authority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "bridge_adapter"
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "destination_chain_id",
-          "type": "u32"
-        }
-      ]
-    },
-    {
       "name": "send_token",
       "discriminator": [
         157,
@@ -1134,19 +1006,6 @@
       ]
     },
     {
-      "name": "EarnGlobal",
-      "discriminator": [
-        229,
-        50,
-        25,
-        132,
-        207,
-        93,
-        185,
-        23
-      ]
-    },
-    {
       "name": "PortalGlobal",
       "discriminator": [
         83,
@@ -1182,43 +1041,6 @@
           {
             "name": "consumed",
             "type": "bool"
-          }
-        ]
-      }
-    },
-    {
-      "name": "EarnGlobal",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "admin",
-            "type": "pubkey"
-          },
-          {
-            "name": "m_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "portal_authority",
-            "type": "pubkey"
-          },
-          {
-            "name": "ext_swap_global_account",
-            "type": "pubkey"
-          },
-          {
-            "name": "earner_merkle_root",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "bump",
-            "type": "u8"
           }
         ]
       }

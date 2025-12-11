@@ -1898,7 +1898,7 @@
             "type": "pubkey"
           },
           {
-            "name": "earner_merkle_root",
+            "name": "padding",
             "type": {
               "array": [
                 "u8",
