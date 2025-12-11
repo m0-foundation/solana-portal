@@ -1,5 +1,5 @@
 #[repr(u8)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Payload {
     TokenTransfer(TokenTransferPayload),
     Index(IndexPayload),
@@ -35,6 +35,7 @@ impl Payload {
                 let mut data = vec![Self::REGISTRAR_LIST_DISCRIMINANT];
                 data.extend_from_slice(&payload.list_name);
                 data.extend_from_slice(&payload.address);
+                data.push(if payload.add { 1 } else { 0 });
                 data.extend_from_slice(&payload.message_id);
                 data
             }

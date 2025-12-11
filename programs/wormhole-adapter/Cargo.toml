@@ -21,6 +21,7 @@ idl-build = [
 ]
 mainnet = []
 devnet = []
+skip-validation = []
 
 [dependencies]
 anchor-lang.workspace = true

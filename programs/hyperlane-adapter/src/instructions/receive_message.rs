@@ -16,6 +16,7 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct ReceiveMessage<'info> {
+    #[cfg(not(feature = "skip-validation"))]
     #[account(
         mut,
         seeds = [

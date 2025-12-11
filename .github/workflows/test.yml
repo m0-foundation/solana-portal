@@ -65,7 +65,7 @@ jobs:
         run: echo "${{ secrets.HYPERLANE_ADAPTER_KEYPAIR }}" > target/deploy/hyperlane_adapter-keypair.json
 
       - name: Build programs
-        run: anchor build
+        run: anchor build -- --features skip-validation
         shell: bash
 
       - name: Run tests

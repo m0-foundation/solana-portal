@@ -153,3 +153,6 @@ mod tests_05_pausing;
 
 #[cfg(test)]
 mod tests_06_set_lut;
+
+#[cfg(test)]
+mod tests_07_receive_message;

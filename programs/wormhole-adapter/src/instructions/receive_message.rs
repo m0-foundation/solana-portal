@@ -75,6 +75,7 @@ impl ReceiveMessage<'_> {
         let digest = keccak::hash(message_hash.as_slice()).to_bytes();
 
         // Verify the hash against the signatures.
+        #[cfg(not(feature = "skip-validation"))]
         wormhole_verify_vaa_shim::cpi::verify_hash(
             CpiContext::new(
                 self.wormhole_verify_vaa_shim.to_account_info(),
