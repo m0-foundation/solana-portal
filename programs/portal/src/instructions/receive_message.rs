@@ -1,10 +1,13 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface;
 use common::{
-    earn::{self, cpi::accounts::PropagateIndex},
+    earn::{
+        self,
+        cpi::accounts::{AddRegistrarEarner, PropagateIndex, RemoveRegistrarEarner},
+    },
     ext_swap,
     order_book::{self, types::FillReport},
-    BridgeAdapter, BridgeError, EarnerMerkleRootPayload, FillReportPayload, Payload,
+    BridgeAdapter, BridgeError, FillReportPayload, IndexPayload, Payload, RegistrarListPayload,
     TokenTransferPayload,
 };
 
@@ -84,12 +87,11 @@ impl ReceiveMessage<'_> {
             Payload::Index(payload) => {
                 msg!("Received Index Payload: {}", payload.index);
                 ctx.accounts.portal_global.update_index(payload.index);
-                return Self::handle_index_payload(&ctx, payload.into());
-            }
-            Payload::EarnerMerkleRoot(payload) => {
-                msg!("Received EarnerMerkleRoot Payload");
-                ctx.accounts.portal_global.update_index(payload.index);
                 return Self::handle_index_payload(&ctx, payload);
+            }
+            Payload::RegistrarList(payload) => {
+                msg!("Received RegistrarList Payload");
+                return Self::handle_registrar_payload(ctx, payload);
             }
             Payload::FillReport(fill_report) => {
                 msg!("Received Fill Report Payload");
@@ -100,7 +102,7 @@ impl ReceiveMessage<'_> {
 
     fn handle_index_payload<'info>(
         ctx: &Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
-        payload: EarnerMerkleRootPayload,
+        payload: IndexPayload,
     ) -> Result<()> {
         let accounts = payload.parse_and_validate_accounts(ctx.remaining_accounts.to_vec())?;
         let authority_seed: &[&[&[u8]]] = &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]];
@@ -117,7 +119,54 @@ impl ReceiveMessage<'_> {
         );
 
         msg!("Index update: {}", payload.index);
-        earn::cpi::propagate_index(propogate_ctx, payload.index, payload.merkle_root)
+        earn::cpi::propagate_index(propogate_ctx, payload.index)
+    }
+
+    fn handle_registrar_payload<'info>(
+        ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
+        payload: RegistrarListPayload,
+    ) -> Result<()> {
+        let accounts = payload.parse_and_validate_accounts(ctx.remaining_accounts.to_vec())?;
+        let authority_seed: &[&[&[u8]]] = &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]];
+
+        if payload.add {
+            let add_ctx = CpiContext::new_with_signer(
+                accounts.earn_program.to_account_info(),
+                AddRegistrarEarner {
+                    payer: ctx.accounts.payer.to_account_info(),
+                    authority: ctx.accounts.portal_authority.to_account_info(),
+                    global_account: accounts.m_global,
+                    user: accounts.user.to_account_info(),
+                    m_mint: accounts.m_mint,
+                    user_token_account: accounts.user_token_account.to_account_info(),
+                    token_program: accounts.m_token_program,
+                    associated_token_program: accounts.associated_token_program.to_account_info(),
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                },
+                authority_seed,
+            );
+
+            msg!("Adding earner: {:?}", payload.address);
+            earn::cpi::add_registrar_earner(add_ctx)
+        } else {
+            let remove_ctx = CpiContext::new_with_signer(
+                accounts.earn_program.to_account_info(),
+                RemoveRegistrarEarner {
+                    payer: ctx.accounts.payer.to_account_info(),
+                    authority: ctx.accounts.portal_authority.to_account_info(),
+                    global_account: accounts.m_global,
+                    user: accounts.user.to_account_info(),
+                    m_mint: accounts.m_mint,
+                    user_token_account: accounts.user_token_account.to_account_info(),
+                    token_program: accounts.m_token_program,
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                },
+                authority_seed,
+            );
+
+            msg!("Removing earner: {:?}", payload.address);
+            earn::cpi::remove_registrar_earner(remove_ctx)
+        }
     }
 
     fn handle_token_transfer_payload<'info>(

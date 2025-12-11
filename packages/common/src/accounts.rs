@@ -4,8 +4,8 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use common_macros::ExtractAccounts;
 
 use crate::{
-    earn, ext_swap, order_book, BridgeError, EarnerMerkleRootPayload, FillReportPayload,
-    IndexPayload, TokenTransferPayload,
+    earn, ext_swap, order_book, BridgeError, FillReportPayload, IndexPayload, RegistrarListPayload,
+    TokenTransferPayload,
 };
 
 #[derive(ExtractAccounts)]
@@ -31,14 +31,35 @@ impl IndexPayload {
     }
 }
 
-impl EarnerMerkleRootPayload {
+#[derive(ExtractAccounts)]
+pub struct RegistrarListPayloadAccounts<'info> {
+    pub earn_program: AccountInfo<'info>,
+    pub m_global: AccountInfo<'info>,
+    pub user: AccountInfo<'info>,
+    pub m_mint: AccountInfo<'info>,
+    pub user_token_account: AccountInfo<'info>,
+    pub m_token_program: AccountInfo<'info>,
+    pub associated_token_program: AccountInfo<'info>,
+}
+
+impl RegistrarListPayload {
     pub fn parse_and_validate_accounts<'info>(
         &self,
         remaining_accounts: Vec<AccountInfo<'info>>,
-    ) -> Result<IndexPayloadAccounts<'info>> {
-        let accounts = IndexPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
+    ) -> Result<RegistrarListPayloadAccounts<'info>> {
+        let accounts =
+            RegistrarListPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
+
+        // Ensure the registrar address matches the payload
+        if accounts.user.key() != Pubkey::from(self.address) {
+            return err!(BridgeError::InvalidRemainingAccount);
+        }
 
         if accounts.earn_program.key != &earn::ID {
+            return err!(BridgeError::InvalidRemainingAccount);
+        }
+
+        if accounts.associated_token_program.key != &anchor_spl::associated_token::ID {
             return err!(BridgeError::InvalidRemainingAccount);
         }
 

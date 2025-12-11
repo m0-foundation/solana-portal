@@ -3,15 +3,15 @@
 pub enum Payload {
     TokenTransfer(TokenTransferPayload),
     Index(IndexPayload),
+    RegistrarList(RegistrarListPayload),
     FillReport(FillReportPayload),
-    EarnerMerkleRoot(EarnerMerkleRootPayload),
 }
 
 impl Payload {
     const TOKEN_TRANSFER_DISCRIMINANT: u8 = 0;
     const INDEX_DISCRIMINANT: u8 = 1;
+    const REGISTRAR_LIST_DISCRIMINANT: u8 = 3;
     const FILL_REPORT_DISCRIMINANT: u8 = 4;
-    const EARNER_MERKLE_ROOT_DISCRIMINANT: u8 = 5;
 
     pub fn encode(&self) -> Vec<u8> {
         match self {
@@ -31,10 +31,10 @@ impl Payload {
                 data.extend_from_slice(&payload.message_id);
                 data
             }
-            Payload::EarnerMerkleRoot(payload) => {
-                let mut data = vec![Self::EARNER_MERKLE_ROOT_DISCRIMINANT];
-                data.extend_from_slice(&payload.index.to_be_bytes());
-                data.extend_from_slice(&payload.merkle_root);
+            Payload::RegistrarList(payload) => {
+                let mut data = vec![Self::REGISTRAR_LIST_DISCRIMINANT];
+                data.extend_from_slice(&payload.list_name);
+                data.extend_from_slice(&payload.address);
                 data.extend_from_slice(&payload.message_id);
                 data
             }
@@ -102,14 +102,16 @@ impl Payload {
                     message_id: message_id_bytes.try_into().unwrap(),
                 })
             }
-            Self::EARNER_MERKLE_ROOT_DISCRIMINANT => {
-                let (index_bytes, merkle_root_bytes) = data.split_at(8);
-                let (merkle_root_bytes, data) = merkle_root_bytes.split_at(32);
+            Self::REGISTRAR_LIST_DISCRIMINANT => {
+                let (list_name, data) = data.split_at(32);
+                let (address_bytes, data) = data.split_at(32);
+                let (add, data) = data.split_at(1);
                 let (message_id_bytes, _) = data.split_at(32);
 
-                Payload::EarnerMerkleRoot(EarnerMerkleRootPayload {
-                    index: u64::from_be_bytes(index_bytes.try_into().unwrap()),
-                    merkle_root: merkle_root_bytes.try_into().unwrap(),
+                Payload::RegistrarList(RegistrarListPayload {
+                    list_name: list_name.try_into().unwrap(),
+                    address: address_bytes.try_into().unwrap(),
+                    add: add[0] == 1,
                     message_id: message_id_bytes.try_into().unwrap(),
                 })
             }
@@ -122,7 +124,7 @@ impl Payload {
             Payload::TokenTransfer(payload) => payload.message_id,
             Payload::Index(payload) => payload.message_id,
             Payload::FillReport(payload) => payload.message_id,
-            Payload::EarnerMerkleRoot(payload) => payload.message_id,
+            Payload::RegistrarList(payload) => payload.message_id,
         }
     }
 }
@@ -137,11 +139,10 @@ pub struct TokenTransferPayload {
     pub message_id: [u8; 32],
 }
 
-impl Into<EarnerMerkleRootPayload> for TokenTransferPayload {
-    fn into(self) -> EarnerMerkleRootPayload {
-        EarnerMerkleRootPayload {
+impl Into<IndexPayload> for TokenTransferPayload {
+    fn into(self) -> IndexPayload {
+        IndexPayload {
             index: self.index,
-            merkle_root: [0; 32],
             message_id: self.message_id,
         }
     }
@@ -164,20 +165,11 @@ pub struct IndexPayload {
 }
 
 #[derive(Debug, Clone)]
-pub struct EarnerMerkleRootPayload {
-    pub index: u64,
-    pub merkle_root: [u8; 32],
+pub struct RegistrarListPayload {
+    pub list_name: [u8; 32],
+    pub address: [u8; 32],
+    pub add: bool,
     pub message_id: [u8; 32],
-}
-
-impl Into<EarnerMerkleRootPayload> for IndexPayload {
-    fn into(self) -> EarnerMerkleRootPayload {
-        EarnerMerkleRootPayload {
-            index: self.index,
-            merkle_root: [0; 32],
-            message_id: self.message_id,
-        }
-    }
 }
 
 #[cfg(test)]
@@ -261,24 +253,26 @@ mod tests {
     }
 
     #[test]
-    fn test_earner_merkle_root_encode_decode() {
-        let original = EarnerMerkleRootPayload {
-            index: 999,
-            merkle_root: [10u8; 32],
-            message_id: [11u8; 32],
+    fn test_registrar_list_encode_decode() {
+        let original = RegistrarListPayload {
+            list_name: [10u8; 32],
+            address: [11u8; 32],
+            add: true,
+            message_id: [12u8; 32],
         };
 
-        let payload = Payload::EarnerMerkleRoot(original);
+        let payload = Payload::RegistrarList(original);
         let encoded = payload.encode();
         let decoded = Payload::decode(&encoded);
 
         match decoded {
-            Payload::EarnerMerkleRoot(decoded_payload) => {
-                assert_eq!(decoded_payload.index, 999);
-                assert_eq!(decoded_payload.merkle_root, [10u8; 32]);
-                assert_eq!(decoded_payload.message_id, [11u8; 32]);
+            Payload::RegistrarList(decoded_payload) => {
+                assert_eq!(decoded_payload.list_name, [10u8; 32]);
+                assert_eq!(decoded_payload.address, [11u8; 32]);
+                assert_eq!(decoded_payload.add, true);
+                assert_eq!(decoded_payload.message_id, [12u8; 32]);
             }
-            _ => panic!("Expected EarnerMerkleRoot payload"),
+            _ => panic!("Expected RegistrarList payload"),
         }
     }
 }

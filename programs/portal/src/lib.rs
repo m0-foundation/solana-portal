@@ -58,13 +58,6 @@ pub mod portal {
         SendIndex::handler(ctx, destination_chain_id)
     }
 
-    pub fn send_merkle_root<'info>(
-        ctx: Context<'_, '_, '_, 'info, SendMerkleRoot<'info>>,
-        destination_chain_id: u32,
-    ) -> Result<()> {
-        SendMerkleRoot::handler(ctx, destination_chain_id)
-    }
-
     pub fn send_token<'info>(
         ctx: Context<'_, '_, '_, 'info, SendTokens<'info>>,
         amount: u64,

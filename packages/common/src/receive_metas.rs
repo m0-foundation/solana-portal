@@ -99,7 +99,7 @@ pub fn require_metas(
                 AccountMeta::new_readonly(ext_swap::ID, false),
             ])
         }
-        Payload::Index(_) | Payload::EarnerMerkleRoot(_) => {
+        Payload::Index(_) => {
             let m_global = pda!(&[GLOBAL_SEED], &earn::ID);
             let m_mint = m_mint.ok_or(BridgeError::MissingOptionalAccount)?;
 
@@ -108,6 +108,24 @@ pub fn require_metas(
                 AccountMeta::new(m_mint, false),
                 AccountMeta::new_readonly(earn::ID, false),
                 AccountMeta::new_readonly(token_2022::ID, false),
+            ])
+        }
+        Payload::RegistrarList(entry) => {
+            let m_global = pda!(&[GLOBAL_SEED], &earn::ID);
+            let m_mint = m_mint.ok_or(BridgeError::MissingOptionalAccount)?;
+            let user = Pubkey::from(entry.address);
+
+            let user_token_account =
+                get_associated_token_address_with_program_id(&user, &m_mint, &token_2022::ID);
+
+            Ok(vec![
+                AccountMeta::new_readonly(earn::ID, false),
+                AccountMeta::new_readonly(m_global, false),
+                AccountMeta::new_readonly(user, false),
+                AccountMeta::new_readonly(m_mint, false),
+                AccountMeta::new(user_token_account, false),
+                AccountMeta::new_readonly(token_2022::ID, false),
+                AccountMeta::new_readonly(anchor_spl::associated_token::ID, false),
             ])
         }
         Payload::FillReport(report) => {

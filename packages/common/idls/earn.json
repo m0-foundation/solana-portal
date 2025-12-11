@@ -21,8 +21,12 @@
       ],
       "accounts": [
         {
-          "name": "signer",
+          "name": "payer",
           "writable": true,
+          "signer": true
+        },
+        {
+          "name": "authority",
           "signer": true
         },
         {
@@ -44,6 +48,12 @@
           }
         },
         {
+          "name": "user",
+          "docs": [
+            "part of registrar payload and validated by the bridge"
+          ]
+        },
+        {
           "name": "m_mint",
           "relations": [
             "global_account"
@@ -51,29 +61,75 @@
         },
         {
           "name": "user_token_account",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "m_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
         },
         {
           "name": "token_program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
-        }
-      ],
-      "args": [
-        {
-          "name": "user",
-          "type": "pubkey"
         },
         {
-          "name": "proof",
-          "type": {
-            "vec": {
-              "defined": {
-                "name": "ProofElement"
-              }
-            }
-          }
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
         }
-      ]
+      ],
+      "args": []
     },
     {
       "name": "initialize",
@@ -421,15 +477,6 @@
         {
           "name": "index",
           "type": "u64"
-        },
-        {
-          "name": "earner_merkle_root",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
         }
       ]
     },
@@ -514,8 +561,12 @@
       ],
       "accounts": [
         {
-          "name": "signer",
+          "name": "payer",
           "writable": true,
+          "signer": true
+        },
+        {
+          "name": "authority",
           "signer": true
         },
         {
@@ -537,6 +588,12 @@
           }
         },
         {
+          "name": "user",
+          "docs": [
+            "part of registrar payload and validated by the bridge"
+          ]
+        },
+        {
           "name": "m_mint",
           "relations": [
             "global_account"
@@ -544,45 +601,71 @@
         },
         {
           "name": "user_token_account",
-          "docs": [
-            "We originally allowed this account to be validated later and potentially be closed,",
-            "but this is not necessary anymore since if the account is closed, it will be frozen",
-            "when re-initialized. Therefore, closing a token account is equivalent to removing an earner.",
-            "For this reason, we also know that if there is a thawed token account, it went through the",
-            "add registrar earner flow and thus the owner is the original since we required it to be immutable."
-          ],
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "m_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
         },
         {
           "name": "token_program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
-        }
-      ],
-      "args": [
-        {
-          "name": "proofs",
-          "type": {
-            "vec": {
-              "vec": {
-                "defined": {
-                  "name": "ProofElement"
-                }
-              }
-            }
-          }
         },
         {
-          "name": "neighbors",
-          "type": {
-            "vec": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          }
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
         }
-      ]
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -720,7 +803,7 @@
             "type": "pubkey"
           },
           {
-            "name": "earner_merkle_root",
+            "name": "padding",
             "type": {
               "array": [
                 "u8",
@@ -759,27 +842,6 @@
           {
             "name": "new_multiplier",
             "type": "f64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "ProofElement",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "node",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "on_right",
-            "type": "bool"
           }
         ]
       }
