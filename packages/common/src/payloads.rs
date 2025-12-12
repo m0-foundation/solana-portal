@@ -173,6 +173,33 @@ pub struct RegistrarListPayload {
     pub message_id: [u8; 32],
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ListType {
+    SolanaEarners,
+    Unsupported(String),
+}
+
+impl RegistrarListPayload {
+    pub fn name(&self) -> String {
+        // Find first trailing zero (0x00); if none, use full length
+        let end = self
+            .list_name
+            .iter()
+            .position(|&b| b == 0)
+            .unwrap_or(self.list_name.len());
+
+        String::from_utf8(self.list_name[..end].to_vec()).expect("bytes32 contained invalid UTF-8")
+    }
+
+    pub fn list_type(&self) -> ListType {
+        let name = self.name();
+        match name.as_str() {
+            "solana-earners" => ListType::SolanaEarners,
+            _ => ListType::Unsupported(name),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -275,5 +302,21 @@ mod tests {
             }
             _ => panic!("Expected RegistrarList payload"),
         }
+    }
+
+    #[test]
+    fn test_registrar_list_name() {
+        let payload = RegistrarListPayload {
+            list_name: [
+                0x73, 0x6f, 0x6c, 0x61, 0x6e, 0x61, 0x2d, 0x65, 0x61, 0x72, 0x6e, 0x65, 0x72, 0x73,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00,
+            ],
+            address: [0u8; 32],
+            add: true,
+            message_id: [0u8; 32],
+        };
+
+        assert_eq!(payload.name(), "solana-earners");
     }
 }

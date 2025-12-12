@@ -7,8 +7,8 @@ use common::{
     },
     ext_swap,
     order_book::{self, types::FillReport},
-    BridgeAdapter, BridgeError, FillReportPayload, IndexPayload, Payload, RegistrarListPayload,
-    TokenTransferPayload,
+    BridgeAdapter, BridgeError, FillReportPayload, IndexPayload, ListType, Payload,
+    RegistrarListPayload, TokenTransferPayload,
 };
 
 use crate::state::{BridgeMessage, PortalGlobal, AUTHORITY_SEED, GLOBAL_SEED, MESSAGE_SEED};
@@ -128,6 +128,10 @@ impl ReceiveMessage<'_> {
     ) -> Result<()> {
         let accounts = payload.parse_and_validate_accounts(ctx.remaining_accounts.to_vec())?;
         let authority_seed: &[&[&[u8]]] = &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]];
+
+        if payload.list_type() != ListType::SolanaEarners {
+            return err!(BridgeError::UnsupportedRegistrarList);
+        }
 
         if payload.add {
             let add_ctx = CpiContext::new_with_signer(
