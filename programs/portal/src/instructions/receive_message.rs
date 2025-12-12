@@ -137,6 +137,13 @@ impl ReceiveMessage<'_> {
             return Ok(());
         }
 
+        emit!(RegistrarListReceived {
+            list_name: payload.name(),
+            address: payload.address,
+            add: payload.add,
+            message_id: payload.message_id,
+        });
+
         if payload.add {
             let add_ctx = CpiContext::new_with_signer(
                 accounts.earn_program.to_account_info(),
@@ -274,4 +281,12 @@ impl ReceiveMessage<'_> {
             },
         )
     }
+}
+
+#[event]
+pub struct RegistrarListReceived {
+    pub list_name: String,
+    pub address: [u8; 32],
+    pub add: bool,
+    pub message_id: [u8; 32],
 }
