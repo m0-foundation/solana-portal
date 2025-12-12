@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use once_cell::sync::Lazy;
+use once_cell::sync::OnceCell;
 use solana_client::rpc_client::RpcClient;
 use solana_sdk::signature::Keypair;
 use solana_sdk::signer::Signer;
@@ -10,8 +10,7 @@ use std::time::Duration;
 use std::{thread, time};
 
 // Global validator instance that starts once and is shared across all tests
-static VALIDATOR: Lazy<Mutex<SurfnetValidator>> =
-    Lazy::new(|| Mutex::new(SurfnetValidator::start().expect("Failed to start global validator")));
+static VALIDATOR: OnceCell<Mutex<SurfnetValidator>> = OnceCell::new();
 
 pub struct SurfnetValidator {
     process: Child,
@@ -104,17 +103,27 @@ impl SurfnetValidator {
 // Ensure validator cleanup happens when tests complete
 #[ctor::dtor]
 fn cleanup() {
-    let mut validator = VALIDATOR.lock().unwrap();
-    validator.stop();
+    if let Some(validator) = VALIDATOR.get() {
+        let mut validator = validator.lock().unwrap();
+        validator.stop();
+    }
 }
 
 pub fn get_rpc_client() -> Arc<RpcClient> {
-    let validator = VALIDATOR.lock().unwrap();
+    let validator = VALIDATOR
+        .get_or_try_init(|| SurfnetValidator::start().map(Mutex::new))
+        .expect("Failed to initialize validator")
+        .lock()
+        .unwrap();
     Arc::clone(&validator.client)
 }
 
 pub fn get_signer() -> Arc<Keypair> {
-    let validator = VALIDATOR.lock().unwrap();
+    let validator = VALIDATOR
+        .get_or_try_init(|| SurfnetValidator::start().map(Mutex::new))
+        .expect("Failed to initialize validator")
+        .lock()
+        .unwrap();
     Arc::clone(&validator.keypair)
 }
 
