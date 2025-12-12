@@ -18,8 +18,7 @@ variable "evm_transeiver_address" {
 
 variable "peer_address" {
     description = "Peer address on EVM chains"
-    value = [11, 106, 134, 128, 106, 3, 84, 200, 43, 143, 4, 158, 183, 93, 156, 151,227, 112, 166, 240, 192, 207, 161, 95, 71, 144, 156, 63, 225, 200, 247, 148
-]
+    value = [11, 106, 134, 128, 106, 3, 84, 200, 43, 143, 4, 158, 183, 93, 156, 151,227, 112, 166, 240, 192, 207, 161, 95, 71, 144, 156, 63, 225, 200, 247, 148]
 }
 
 action "set_wormhole_peer_ethereum" "svm::process_instructions" {

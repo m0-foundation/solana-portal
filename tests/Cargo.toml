@@ -17,6 +17,7 @@ ctor = "0.2"
 common = { path = "../packages/common" }
 portal = { path = "../programs/portal" }
 wormhole-adapter = { path = "../programs/wormhole-adapter" }
+hyperlane-adapter = { path = "../programs/hyperlane-adapter" }
 anchor-lang.workspace = true
 
 [dev-dependencies]

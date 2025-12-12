@@ -70,6 +70,9 @@ pub struct ReceiveMessage<'info> {
 
 impl ReceiveMessage<'_> {
     fn validate(&self, guardian_set_bump: u8, vaa_body: &Vec<u8>) -> Result<()> {
+        #[cfg(feature = "skip-validation")]
+        msg!("SKIPPING VALIDATION FEATURE ENABLED");
+
         // Compute the message hash.
         let message_hash = &keccak::hashv(&[&vaa_body]).to_bytes();
         let digest = keccak::hash(message_hash.as_slice()).to_bytes();
