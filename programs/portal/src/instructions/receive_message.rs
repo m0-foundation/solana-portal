@@ -130,7 +130,11 @@ impl ReceiveMessage<'_> {
         let authority_seed: &[&[&[u8]]] = &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]];
 
         if payload.list_type() != ListType::SolanaEarners {
-            return err!(BridgeError::UnsupportedRegistrarList);
+            msg!(
+                "Ignoring unsupported registrar list type: {}",
+                payload.name()
+            );
+            return Ok(());
         }
 
         if payload.add {

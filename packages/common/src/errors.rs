@@ -36,6 +36,4 @@ pub enum BridgeError {
     InvalidIgpAccount,
     #[msg("Message ID does not match payload")]
     InvalidMessageId,
-    #[msg("The registrar list type is not supported")]
-    UnsupportedRegistrarList,
 }
