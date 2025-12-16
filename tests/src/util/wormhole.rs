@@ -1,5 +1,4 @@
 use crate::util::constants::{WH_EVENT_DISCRIMINATOR, WH_SHIM_POST_MESSAGE_DISCRIMINATOR};
-use crate::util::DecodedIndex;
 use common::IndexPayload;
 use common::Payload;
 use solana_sdk::bs58;
@@ -71,12 +70,12 @@ pub fn decode_shim_post_message<'a>(data: &'a [u8]) -> Option<ShimPostMessageDat
     })
 }
 
-pub fn decode_payload_from_shim_ix_data(data: &[u8]) -> Option<DecodedIndex> {
+pub fn decode_payload_from_shim_ix_data(data: &[u8]) -> Option<IndexPayload> {
     let shim = decode_shim_post_message(data)?;
     let decoded = Payload::decode(&shim.payload.to_vec());
 
     if let Payload::Index(idx) = decoded {
-        return Some(DecodedIndex {
+        return Some(IndexPayload {
             index: idx.index,
             message_id: idx.message_id,
         });

@@ -2,7 +2,11 @@ use anchor_client::{Client, Cluster};
 use anchor_lang::{system_program, AccountDeserialize};
 use anyhow::Result;
 use common::{
-    hyperlane_adapter::{self, accounts::HyperlaneGlobal},
+    hyperlane_adapter::{
+        self,
+        accounts::{HyperlaneGlobal, HyperlaneUserGlobal},
+        constants::DASH_SEED
+    },
     pda,
     portal::constants::GLOBAL_SEED,
     wormhole_adapter::{self, constants::EMITTER_SEED},
@@ -80,7 +84,7 @@ fn test_01_index_update_wormhole() -> Result<()> {
 }
 
 #[test]
-fn test_02_index_update_wormhole_wrong_dest() -> Result<()> {
+fn test_02_index_update_wormhole_bad_dest() -> Result<()> {
     let client = Client::new(Cluster::Localnet, get_signer());
 
     let program = client.program(portal::ID)?;
@@ -103,7 +107,7 @@ fn test_02_index_update_wormhole_wrong_dest() -> Result<()> {
         .unwrap_err();
 
     let s = err.to_string();
-    assert!(s.contains("Custom(6008)") || s.contains("custom program error: 0x1778"));
+    assert!(s.contains("6008") || s.contains("custom program error: 0x1778"));
     assert!(s.contains("UnsupportedDestinationChain"));
 
     Ok(())
@@ -170,17 +174,58 @@ fn test_03_index_update_hyperlane() -> Result<()> {
 }
 
 #[test]
-fn test_02_index_update_hyperlane_wrong_dest() -> Result<()> {
+fn test_04_index_update_hyperlane_repeat_msgid() -> Result<()> {
     let client = Client::new(Cluster::Localnet, get_signer());
     let rpc_client = get_rpc_client();
-
     let program = client.program(portal::ID)?;
 
     // Fetch global
     let data_hyp = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &hyperlane_adapter::ID))?;
     let global_hp = HyperlaneGlobal::try_deserialize(&mut data_hyp.as_slice())?;
 
+    // user_global already exists, so message ID will be repeated
     let accounts = HyperlaneRemainingAccounts::new(&program.payer(), &global_hp, None);
+
+    // Send index update
+    let err = program
+        .request()
+        .accounts(accounts::SendIndex {
+            sender: program.payer(),
+            system_program: system_program::ID,
+            portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
+            portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
+            bridge_adapter: hyperlane_adapter::ID,
+        })
+        .args(instruction::SendIndex {
+            destination_chain_id: 1,
+        })
+        .accounts(accounts.to_account_metas())
+        .instruction(ComputeBudgetInstruction::set_compute_unit_limit(500_000))
+        .send()
+        .unwrap_err();
+
+    let s = err.to_string();
+    println!("Error: {}", s);
+    assert!(s.contains("2006") || s.contains("custom program error: 0x07d6"));
+    assert!(s.contains("ConstraintSeeds"));
+
+    Ok(())
+
+}
+
+#[test]
+fn test_05_index_update_hyperlane_bad_dest() -> Result<()> {
+    let client = Client::new(Cluster::Localnet, get_signer());
+    let rpc_client = get_rpc_client();
+    let program = client.program(portal::ID)?;
+
+    // Fetch global
+    let data_hyp = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &hyperlane_adapter::ID))?;
+    let global_hp = HyperlaneGlobal::try_deserialize(&mut data_hyp.as_slice())?;
+    let user_data_hyp = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED, DASH_SEED, program.payer().as_ref()], &hyperlane_adapter::ID))?;
+    let user_hp = HyperlaneUserGlobal::try_deserialize(&mut user_data_hyp.as_slice())?;
+
+    let accounts = HyperlaneRemainingAccounts::new(&program.payer(), &global_hp, Some(&user_hp));
 
     // Send index update
     let err = program
@@ -200,9 +245,11 @@ fn test_02_index_update_hyperlane_wrong_dest() -> Result<()> {
         .send()
         .unwrap_err();
 
-    let s = err.to_string();
-    assert!(s.contains("Custom(6008)") || s.contains("custom program error: 0x1778"));
-    assert!(s.contains("UnsupportedDestinationChain"));
+        let s = err.to_string();
+        assert!(s.contains("6008") || s.contains("custom program error: 0x1778"));
+        assert!(s.contains("UnsupportedDestinationChain"));
 
     Ok(())
+
 }
+
