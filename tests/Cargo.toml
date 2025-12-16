@@ -17,8 +17,8 @@ ctor = "0.2"
 common = { path = "../packages/common" }
 portal = { path = "../programs/portal" }
 anchor-lang.workspace = true
+solana-transaction-status-client-types = "2.3.13"
 
 [dev-dependencies]
 anchor-client.workspace = true
-solana-transaction-status-client-types = "2.3.13"
 hex = "0.4"
