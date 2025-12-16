@@ -50,6 +50,7 @@ impl SendMerkleRoot<'_> {
             index: ctx.accounts.portal_global.m_index,
             merkle_root: ctx.accounts.earn_global.earner_merkle_root,
             message_id: ctx.accounts.portal_global.generate_message_id(),
+            destination_chain_id,
         });
 
         send_message(

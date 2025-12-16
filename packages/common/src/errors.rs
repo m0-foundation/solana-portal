@@ -36,4 +36,6 @@ pub enum BridgeError {
     InvalidIgpAccount,
     #[msg("Message ID does not match payload")]
     InvalidMessageId,
+    #[msg("Destination chain does not match")]
+    InvalidDestinationChain,
 }

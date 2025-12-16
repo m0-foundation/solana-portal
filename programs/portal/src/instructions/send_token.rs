@@ -177,6 +177,7 @@ impl SendTokens<'_> {
             recipient,
             index: ctx.accounts.portal_global.m_index,
             message_id: ctx.accounts.portal_global.generate_message_id(),
+            destination_chain_id,
         });
 
         // Send message to bridge adapter

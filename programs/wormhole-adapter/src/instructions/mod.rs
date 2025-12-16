@@ -43,6 +43,7 @@ impl VaaBody {
         let (consistency_level_bytes, payload_bytes) = data.split_at(1);
 
         // Transform legacy TransceiverMessage
+        #[cfg(feature = "legacy-ntt")]
         let payload = if payload_bytes.starts_with(&[0x99, 0x45, 0xFF, 0x10]) {
             let (_source_ntt_manager, rest) = payload_bytes[4..].split_at(32);
             let (_recipient_ntt_manager, rest) = rest.split_at(32);
@@ -68,9 +69,10 @@ impl VaaBody {
                     amount: u64::from_be_bytes(amount_bytes.try_into().unwrap()) as u128,
                     destination_token: destination_token.try_into().unwrap(),
                     recipient: to.try_into().unwrap(),
-                    index: u64::from_be_bytes(index.try_into().unwrap()),
+                    index: u64::from_be_bytes(index.try_into().unwrap()) as u128,
                     sender: [0u8; 32], // NTT does not provide sender info
                     message_id: id.try_into().unwrap(),
+                    destination_chain_id: 1399811149, // M0 chain id for Solana
                 })
             } else {
                 return err!(BridgeError::InvalidVaa);
@@ -79,6 +81,9 @@ impl VaaBody {
             // M0 message format
             Payload::decode(&payload_bytes.to_vec())
         };
+
+        #[cfg(not(feature = "legacy-ntt"))]
+        let payload = Payload::decode(&payload_bytes.to_vec());
 
         Ok(VaaBody {
             timestamp: u32::from_be_bytes(timestamp_bytes.try_into().unwrap()),

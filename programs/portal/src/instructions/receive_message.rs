@@ -59,6 +59,11 @@ impl ReceiveMessage<'_> {
             return err!(BridgeError::InvalidAdapterAuthority);
         }
 
+        // Make sure the message is intended for this chain
+        if message.destination_chain_id() != self.portal_global.chain_id {
+            return err!(BridgeError::InvalidDestinationChain);
+        }
+
         Ok(())
     }
 
@@ -117,7 +122,14 @@ impl ReceiveMessage<'_> {
         );
 
         msg!("Index update: {}", payload.index);
-        earn::cpi::propagate_index(propogate_ctx, payload.index, payload.merkle_root)
+        earn::cpi::propagate_index(
+            propogate_ctx,
+            payload
+                .index
+                .try_into()
+                .expect("could not cast index to u64"),
+            payload.merkle_root,
+        )
     }
 
     fn handle_token_transfer_payload<'info>(

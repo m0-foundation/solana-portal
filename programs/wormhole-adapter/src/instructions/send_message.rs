@@ -95,13 +95,17 @@ pub struct SendMessage<'info> {
 }
 
 impl SendMessage<'_> {
-    fn validate(&self, destination_chain_id: u32) -> Result<()> {
-        self.wormhole_global.get_peer(destination_chain_id)?;
+    fn validate(&self, m0_destination_chain_id: u32) -> Result<()> {
+        self.wormhole_global.get_m0_peer(m0_destination_chain_id)?;
         Ok(())
     }
 
-    #[access_control(ctx.accounts.validate(destination_chain_id))]
-    pub fn handler(ctx: Context<Self>, message: Vec<u8>, destination_chain_id: u32) -> Result<()> {
+    #[access_control(ctx.accounts.validate(m0_destination_chain_id))]
+    pub fn handler(
+        ctx: Context<Self>,
+        message: Vec<u8>,
+        m0_destination_chain_id: u32,
+    ) -> Result<()> {
         let bridge_fee = parse_bridge_fee(&ctx.accounts.bridge.try_borrow_data()?);
 
         if bridge_fee > 0 {

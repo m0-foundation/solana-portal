@@ -23,12 +23,14 @@ impl Payload {
                 data.extend_from_slice(&payload.recipient);
                 data.extend_from_slice(&payload.index.to_be_bytes());
                 data.extend_from_slice(&payload.message_id);
+                data.extend_from_slice(&payload.destination_chain_id.to_be_bytes());
                 data
             }
             Payload::Index(payload) => {
                 let mut data = vec![Self::INDEX_DISCRIMINANT];
                 data.extend_from_slice(&payload.index.to_be_bytes());
                 data.extend_from_slice(&payload.message_id);
+                data.extend_from_slice(&payload.destination_chain_id.to_be_bytes());
                 data
             }
             Payload::EarnerMerkleRoot(payload) => {
@@ -36,6 +38,7 @@ impl Payload {
                 data.extend_from_slice(&payload.index.to_be_bytes());
                 data.extend_from_slice(&payload.merkle_root);
                 data.extend_from_slice(&payload.message_id);
+                data.extend_from_slice(&payload.destination_chain_id.to_be_bytes());
                 data
             }
             Payload::FillReport(payload) => {
@@ -46,6 +49,7 @@ impl Payload {
                 data.extend_from_slice(&payload.origin_recipient);
                 data.extend_from_slice(&payload.token_in);
                 data.extend_from_slice(&payload.message_id);
+                data.extend_from_slice(&payload.destination_chain_id.to_be_bytes());
                 data
             }
         }
@@ -60,25 +64,29 @@ impl Payload {
                 let (destination_token_bytes, data) = data.split_at(32);
                 let (sender_bytes, data) = data.split_at(32);
                 let (recipient_bytes, data) = data.split_at(32);
-                let (index_bytes, data) = data.split_at(8);
-                let (message_id_bytes, _) = data.split_at(32);
+                let (index_bytes, data) = data.split_at(16);
+                let (message_id_bytes, data) = data.split_at(32);
+                let (chain_id_bytes, _) = data.split_at(4);
 
                 Payload::TokenTransfer(TokenTransferPayload {
                     amount: u128::from_be_bytes(amount_bytes.try_into().unwrap()),
                     destination_token: destination_token_bytes.try_into().unwrap(),
                     sender: sender_bytes.try_into().unwrap(),
                     recipient: recipient_bytes.try_into().unwrap(),
-                    index: u64::from_be_bytes(index_bytes.try_into().unwrap()),
+                    index: u128::from_be_bytes(index_bytes.try_into().unwrap()),
                     message_id: message_id_bytes.try_into().unwrap(),
+                    destination_chain_id: u32::from_be_bytes(chain_id_bytes.try_into().unwrap()),
                 })
             }
             Self::INDEX_DISCRIMINANT => {
-                let (index_bytes, message_id_bytes) = data.split_at(8);
-                let (message_id_bytes, _) = message_id_bytes.split_at(32);
+                let (index_bytes, message_id_bytes) = data.split_at(16);
+                let (message_id_bytes, data) = message_id_bytes.split_at(32);
+                let (chain_id_bytes, _) = data.split_at(4);
 
                 Payload::Index(IndexPayload {
-                    index: u64::from_be_bytes(index_bytes.try_into().unwrap()),
+                    index: u128::from_be_bytes(index_bytes.try_into().unwrap()),
                     message_id: message_id_bytes.try_into().unwrap(),
+                    destination_chain_id: u32::from_be_bytes(chain_id_bytes.try_into().unwrap()),
                 })
             }
             Self::FILL_REPORT_DISCRIMINANT => {
@@ -87,7 +95,8 @@ impl Payload {
                 let (amount_out_filled_bytes, data) = data.split_at(16);
                 let (origin_recipient_bytes, data) = data.split_at(32);
                 let (token_in_bytes, data) = data.split_at(32);
-                let (message_id_bytes, _) = data.split_at(32);
+                let (message_id_bytes, data) = data.split_at(32);
+                let (chain_id_bytes, _) = data.split_at(4);
 
                 Payload::FillReport(FillReportPayload {
                     order_id: order_id_bytes.try_into().unwrap(),
@@ -100,17 +109,20 @@ impl Payload {
                     origin_recipient: origin_recipient_bytes.try_into().unwrap(),
                     token_in: token_in_bytes.try_into().unwrap(),
                     message_id: message_id_bytes.try_into().unwrap(),
+                    destination_chain_id: u32::from_be_bytes(chain_id_bytes.try_into().unwrap()),
                 })
             }
             Self::EARNER_MERKLE_ROOT_DISCRIMINANT => {
-                let (index_bytes, merkle_root_bytes) = data.split_at(8);
-                let (merkle_root_bytes, data) = merkle_root_bytes.split_at(32);
-                let (message_id_bytes, _) = data.split_at(32);
+                let (index_bytes, data) = data.split_at(16);
+                let (merkle_root_bytes, data) = data.split_at(32);
+                let (message_id_bytes, data) = data.split_at(32);
+                let (chain_id_bytes, _) = data.split_at(4);
 
                 Payload::EarnerMerkleRoot(EarnerMerkleRootPayload {
-                    index: u64::from_be_bytes(index_bytes.try_into().unwrap()),
+                    index: u128::from_be_bytes(index_bytes.try_into().unwrap()),
                     merkle_root: merkle_root_bytes.try_into().unwrap(),
                     message_id: message_id_bytes.try_into().unwrap(),
+                    destination_chain_id: u32::from_be_bytes(chain_id_bytes.try_into().unwrap()),
                 })
             }
             _ => panic!("Invalid payload type"),
@@ -125,6 +137,15 @@ impl Payload {
             Payload::EarnerMerkleRoot(payload) => payload.message_id,
         }
     }
+
+    pub fn destination_chain_id(&self) -> u32 {
+        match self {
+            Payload::TokenTransfer(payload) => payload.destination_chain_id,
+            Payload::Index(payload) => payload.destination_chain_id,
+            Payload::FillReport(payload) => payload.destination_chain_id,
+            Payload::EarnerMerkleRoot(payload) => payload.destination_chain_id,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -133,8 +154,9 @@ pub struct TokenTransferPayload {
     pub destination_token: [u8; 32],
     pub sender: [u8; 32],
     pub recipient: [u8; 32],
-    pub index: u64,
+    pub index: u128,
     pub message_id: [u8; 32],
+    pub destination_chain_id: u32,
 }
 
 impl Into<EarnerMerkleRootPayload> for TokenTransferPayload {
@@ -143,6 +165,7 @@ impl Into<EarnerMerkleRootPayload> for TokenTransferPayload {
             index: self.index,
             merkle_root: [0; 32],
             message_id: self.message_id,
+            destination_chain_id: self.destination_chain_id,
         }
     }
 }
@@ -155,19 +178,22 @@ pub struct FillReportPayload {
     pub origin_recipient: [u8; 32],
     pub token_in: [u8; 32],
     pub message_id: [u8; 32],
+    pub destination_chain_id: u32,
 }
 
 #[derive(Debug, Clone)]
 pub struct IndexPayload {
-    pub index: u64,
+    pub index: u128,
     pub message_id: [u8; 32],
+    pub destination_chain_id: u32,
 }
 
 #[derive(Debug, Clone)]
 pub struct EarnerMerkleRootPayload {
-    pub index: u64,
+    pub index: u128,
     pub merkle_root: [u8; 32],
     pub message_id: [u8; 32],
+    pub destination_chain_id: u32,
 }
 
 impl Into<EarnerMerkleRootPayload> for IndexPayload {
@@ -176,6 +202,7 @@ impl Into<EarnerMerkleRootPayload> for IndexPayload {
             index: self.index,
             merkle_root: [0; 32],
             message_id: self.message_id,
+            destination_chain_id: self.destination_chain_id,
         }
     }
 }
@@ -193,6 +220,7 @@ mod tests {
             recipient: [3u8; 32],
             index: 42,
             message_id: [4u8; 32],
+            destination_chain_id: 56,
         };
 
         let payload = Payload::TokenTransfer(original);
@@ -207,6 +235,7 @@ mod tests {
                 assert_eq!(decoded_payload.recipient, [3u8; 32]);
                 assert_eq!(decoded_payload.index, 42);
                 assert_eq!(decoded_payload.message_id, [4u8; 32]);
+                assert_eq!(decoded_payload.destination_chain_id, 56);
             }
             _ => panic!("Expected TokenTransfer payload"),
         }
@@ -217,6 +246,7 @@ mod tests {
         let original = IndexPayload {
             index: 123,
             message_id: [5u8; 32],
+            destination_chain_id: 56,
         };
 
         let payload = Payload::Index(original);
@@ -227,6 +257,7 @@ mod tests {
             Payload::Index(decoded_payload) => {
                 assert_eq!(decoded_payload.index, 123);
                 assert_eq!(decoded_payload.message_id, [5u8; 32]);
+                assert_eq!(decoded_payload.destination_chain_id, 56);
             }
             _ => panic!("Expected Index payload"),
         }
@@ -241,6 +272,7 @@ mod tests {
             origin_recipient: [7u8; 32],
             token_in: [8u8; 32],
             message_id: [9u8; 32],
+            destination_chain_id: 56,
         };
 
         let payload = Payload::FillReport(original);
@@ -255,6 +287,7 @@ mod tests {
                 assert_eq!(decoded_payload.origin_recipient, [7u8; 32]);
                 assert_eq!(decoded_payload.token_in, [8u8; 32]);
                 assert_eq!(decoded_payload.message_id, [9u8; 32]);
+                assert_eq!(decoded_payload.destination_chain_id, 56);
             }
             _ => panic!("Expected FillReport payload"),
         }
@@ -266,6 +299,7 @@ mod tests {
             index: 999,
             merkle_root: [10u8; 32],
             message_id: [11u8; 32],
+            destination_chain_id: 56,
         };
 
         let payload = Payload::EarnerMerkleRoot(original);
@@ -277,6 +311,7 @@ mod tests {
                 assert_eq!(decoded_payload.index, 999);
                 assert_eq!(decoded_payload.merkle_root, [10u8; 32]);
                 assert_eq!(decoded_payload.message_id, [11u8; 32]);
+                assert_eq!(decoded_payload.destination_chain_id, 56);
             }
             _ => panic!("Expected EarnerMerkleRoot payload"),
         }

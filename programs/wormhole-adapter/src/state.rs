@@ -20,7 +20,8 @@ pub struct WormholeGlobal {
 #[account]
 pub struct Peer {
     pub address: [u8; 32],
-    pub chain_id: u32,
+    pub m0_chain_id: u32,
+    pub wormhole_chain_id: u32,
 }
 
 impl WormholeGlobal {
@@ -34,7 +35,7 @@ impl WormholeGlobal {
         1 + // pending_admin option
         32 + // pending_admin pubkey
         4 + // length of peers
-        peers * 36 + // each peer
+        peers * 40 + // each peer
         128 // padding
     }
 
@@ -42,7 +43,10 @@ impl WormholeGlobal {
         if self
             .peers
             .iter()
-            .find(|p| p.chain_id == (vaa.emitter_chain as u32) && p.address == vaa.emitter_address)
+            .find(|p| {
+                p.wormhole_chain_id == (vaa.emitter_chain as u32)
+                    && p.address == vaa.emitter_address
+            })
             .is_none()
         {
             return err!(BridgeError::InvalidPeer);
@@ -51,11 +55,27 @@ impl WormholeGlobal {
         Ok(())
     }
 
-    pub fn get_peer(&self, chain_id: u32) -> Result<Peer> {
+    pub fn get_m0_peer(&self, m0_chain_id: u32) -> Result<Peer> {
         self.peers
             .iter()
-            .find(|peer| peer.chain_id == chain_id)
+            .find(|peer| peer.m0_chain_id == m0_chain_id)
             .cloned()
             .ok_or_else(|| BridgeError::UnsupportedDestinationChain.into())
+    }
+
+    pub fn updated_peers(&self, peer: Peer) -> Vec<Peer> {
+        let mut peers = self.peers.clone();
+
+        // Remove any entries with matching m0_chain_id or wormhole_chain_id
+        peers.retain(|p| {
+            p.m0_chain_id != peer.m0_chain_id && p.wormhole_chain_id != peer.wormhole_chain_id
+        });
+
+        // Only add the new peer if address is set
+        if peer.address != [0u8; 32] {
+            peers.push(peer);
+        }
+
+        peers
     }
 }

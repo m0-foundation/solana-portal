@@ -61,9 +61,9 @@ pub mod wormhole_adapter {
     pub fn send_message(
         ctx: Context<SendMessage>,
         message: Vec<u8>,
-        destination_chain_id: u32,
+        m0_destination_chain_id: u32,
     ) -> Result<()> {
-        SendMessage::handler(ctx, message, destination_chain_id)
+        SendMessage::handler(ctx, message, m0_destination_chain_id)
     }
 
     pub fn receive_message<'info>(

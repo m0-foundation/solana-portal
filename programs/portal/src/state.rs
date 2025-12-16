@@ -21,14 +21,14 @@ pub struct PortalGlobal {
     pub chain_id: u32,
     pub admin: Pubkey,
     pub paused: bool,
-    pub m_index: u64,
+    pub m_index: u128,
     pub message_nonce: u64,
     pub pending_admin: Option<Pubkey>,
     pub padding: [u8; 128],
 }
 
 impl PortalGlobal {
-    pub fn update_index(&mut self, new_index: u64) {
+    pub fn update_index(&mut self, new_index: u128) {
         self.m_index = max(new_index, self.m_index);
     }
 

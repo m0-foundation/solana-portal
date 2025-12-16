@@ -1356,7 +1356,7 @@
           "type": "bytes"
         },
         {
-          "name": "destination_chain_id",
+          "name": "m0_destination_chain_id",
           "type": "u32"
         }
       ]
@@ -2037,7 +2037,11 @@
             }
           },
           {
-            "name": "chain_id",
+            "name": "m0_chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "hyperlane_chain_id",
             "type": "u32"
           }
         ]
@@ -2066,7 +2070,7 @@
           },
           {
             "name": "m_index",
-            "type": "u64"
+            "type": "u128"
           },
           {
             "name": "message_nonce",

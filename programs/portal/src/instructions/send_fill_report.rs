@@ -57,6 +57,7 @@ impl SendFillReport<'_> {
             origin_recipient,
             token_in,
             message_id: ctx.accounts.portal_global.generate_message_id(),
+            destination_chain_id: origin_chain_id,
         });
 
         send_message(
