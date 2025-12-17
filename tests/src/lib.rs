@@ -9,6 +9,9 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{thread, time};
 
+// Test utilities available to all test modules
+pub mod util;
+
 // Global validator instance that starts once and is shared across all tests
 static VALIDATOR: Lazy<Mutex<SurfnetValidator>> =
     Lazy::new(|| Mutex::new(SurfnetValidator::start().expect("Failed to start global validator")));
@@ -153,3 +156,6 @@ mod tests_05_pausing;
 
 #[cfg(test)]
 mod tests_06_set_lut;
+
+#[cfg(test)]
+mod tests_07_send_token;
