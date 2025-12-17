@@ -111,6 +111,8 @@ impl ReceiveMessage<'_> {
             .with_remaining_accounts(ctx.remaining_accounts.to_vec()),
             Payload::decode(&message).message_id(),
             message,
+            // TODO: use m0_chain_id from https://github.com/m0-foundation/solana-portal/pull/12
+            ctx.accounts.hyperlane_global.get_peer(origin)?.chain_id,
         )
     }
 }

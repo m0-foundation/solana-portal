@@ -100,7 +100,7 @@ impl ReceiveMessage<'_> {
         #[allow(unused_variables)] guardian_set_index: u32,
         vaa_body: Vec<u8>,
     ) -> Result<()> {
-        let payload = VaaBody::from_bytes(&vaa_body)?.payload;
+        let vaa = VaaBody::from_bytes(&vaa_body)?;
 
         portal::cpi::receive_message(
             CpiContext::new_with_signer(
@@ -116,8 +116,13 @@ impl ReceiveMessage<'_> {
                 &[&[AUTHORITY_SEED, &[ctx.bumps.wormhole_adapter_authority]]],
             )
             .with_remaining_accounts(ctx.remaining_accounts.to_vec()),
-            payload.message_id(),
-            payload.encode(),
+            vaa.payload.message_id(),
+            vaa.payload.encode(),
+            // TODO: use m0_chain_id from https://github.com/m0-foundation/solana-portal/pull/12
+            ctx.accounts
+                .wormhole_global
+                .get_peer(vaa.emitter_chain as u32)?
+                .chain_id,
         )
     }
 }

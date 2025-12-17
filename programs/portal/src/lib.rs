@@ -49,6 +49,14 @@ pub mod portal {
         CancelAdminTransfer::handler(ctx)
     }
 
+    pub fn add_isolated_spoke(ctx: Context<AddIsolatedSpoke>, chain_id: u32) -> Result<()> {
+        AddIsolatedSpoke::handler(ctx, chain_id)
+    }
+
+    pub fn remove_isolated_spoke(ctx: Context<RemoveIsolatedSpoke>, chain_id: u32) -> Result<()> {
+        RemoveIsolatedSpoke::handler(ctx, chain_id)
+    }
+
     /// Outbound Instructions
 
     pub fn send_index<'info>(
@@ -107,7 +115,8 @@ pub mod portal {
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
         message_id: [u8; 32],
         payload: Vec<u8>,
+        source_chain_id: u32,
     ) -> Result<()> {
-        ReceiveMessage::handler(ctx, message_id, payload)
+        ReceiveMessage::handler(ctx, message_id, payload, source_chain_id)
     }
 }

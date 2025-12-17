@@ -189,6 +189,22 @@ impl SendTokens<'_> {
             ctx.remaining_accounts.to_vec(),
             message.encode(),
             destination_chain_id,
-        )
+        )?;
+
+        // Track outbound if necessary
+        if let Some(spoke) = ctx
+            .accounts
+            .portal_global
+            .isolated_spokes
+            .iter_mut()
+            .find(|spoke| spoke.chain_id == destination_chain_id)
+        {
+            spoke.bridged_amount = spoke
+                .bridged_amount
+                .checked_add(m_amount as u128)
+                .expect("overflow");
+        }
+
+        return Ok(());
     }
 }

@@ -15,7 +15,6 @@ pub use common::interfaces::AUTHORITY_SEED;
 pub const MESSAGE_SEED: &[u8] = b"message";
 
 #[account]
-#[derive(InitSpace)]
 pub struct PortalGlobal {
     pub bump: u8,
     pub chain_id: u32,
@@ -24,10 +23,32 @@ pub struct PortalGlobal {
     pub m_index: u64,
     pub message_nonce: u64,
     pub pending_admin: Option<Pubkey>,
+    pub isolated_spokes: Vec<IsolatedSpoke>,
     pub padding: [u8; 128],
 }
 
+#[account]
+pub struct IsolatedSpoke {
+    pub chain_id: u32,
+    pub bridged_amount: u128,
+}
+
 impl PortalGlobal {
+    pub fn size(isolated_spokes: usize) -> usize {
+        8 + // discriminator
+        1 + // bump
+        4 + // chain_id
+        32 + // admin
+        1 + // paused
+        8 + // m_index
+        8 + // message_nonce
+        1 + // pending_admin option
+        32 + // pending_admin pubkey
+        4 + // length of isolated_spokes
+        isolated_spokes * 20 + // each isolated_spoke
+        128 // padding
+    }
+
     pub fn update_index(&mut self, new_index: u64) {
         self.m_index = max(new_index, self.m_index);
     }
@@ -40,10 +61,6 @@ impl PortalGlobal {
         ])
         .to_bytes()
     }
-}
-
-impl PortalGlobal {
-    pub const SIZE: usize = PortalGlobal::INIT_SPACE + PortalGlobal::DISCRIMINATOR.len();
 }
 
 #[account]

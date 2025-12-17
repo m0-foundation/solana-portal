@@ -36,4 +36,9 @@ pub enum BridgeError {
     InvalidIgpAccount,
     #[msg("Message ID does not match payload")]
     InvalidMessageId,
+    #[msg("Chain is already in the isolated spokes list")]
+    ChainAlreadyIsolated,
+    ChainNotIsolated,
+    #[msg("Spoke attempted to bridge more $M than available")]
+    InsolventSpoke,
 }

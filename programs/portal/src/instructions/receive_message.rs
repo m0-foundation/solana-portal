@@ -67,6 +67,7 @@ impl ReceiveMessage<'_> {
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
         message_id: [u8; 32],
         payload: Vec<u8>,
+        source_chain_id: u32,
     ) -> Result<()> {
         let message = Payload::decode(&payload);
 
@@ -79,7 +80,7 @@ impl ReceiveMessage<'_> {
             Payload::TokenTransfer(payload) => {
                 msg!("Received Token Transfer Payload: {}", payload.amount);
                 ctx.accounts.portal_global.update_index(payload.index);
-                return Self::handle_token_transfer_payload(ctx, payload);
+                return Self::handle_token_transfer_payload(ctx, payload, source_chain_id);
             }
             Payload::Index(payload) => {
                 msg!("Received Index Payload: {}", payload.index);
@@ -123,6 +124,7 @@ impl ReceiveMessage<'_> {
     fn handle_token_transfer_payload<'info>(
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
         payload: TokenTransferPayload,
+        source_chain_id: u32,
     ) -> Result<()> {
         if payload.index > 0 {
             Self::handle_index_payload(&ctx, payload.clone().into())?;
@@ -137,6 +139,20 @@ impl ReceiveMessage<'_> {
                 .new_multiplier
                 .into(),
         );
+
+        // Track bridged amount for isolated spokes
+        if let Some(spoke) = ctx
+            .accounts
+            .portal_global
+            .isolated_spokes
+            .iter_mut()
+            .find(|spoke| spoke.chain_id == source_chain_id)
+        {
+            spoke.bridged_amount = spoke
+                .bridged_amount
+                .checked_sub(principal)
+                .ok_or(BridgeError::InsolventSpoke)?;
+        }
 
         // Mint to authority account which will wrap it to the recipient
         token_interface::mint_to(

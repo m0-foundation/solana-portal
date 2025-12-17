@@ -2023,6 +2023,22 @@
       }
     },
     {
+      "name": "IsolatedSpoke",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "bridged_amount",
+            "type": "u128"
+          }
+        ]
+      }
+    },
+    {
       "name": "Peer",
       "type": {
         "kind": "struct",
@@ -2076,6 +2092,16 @@
             "name": "pending_admin",
             "type": {
               "option": "pubkey"
+            }
+          },
+          {
+            "name": "isolated_spokes",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "IsolatedSpoke"
+                }
+              }
             }
           },
           {

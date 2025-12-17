@@ -47,6 +47,58 @@
       "args": []
     },
     {
+      "name": "add_isolated_spoke",
+      "discriminator": [
+        188,
+        12,
+        55,
+        124,
+        223,
+        180,
+        13,
+        140
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "portal_global"
+          ]
+        },
+        {
+          "name": "portal_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "chain_id",
+          "type": "u32"
+        }
+      ]
+    },
+    {
       "name": "cancel_admin_transfer",
       "discriminator": [
         38,
@@ -336,6 +388,62 @@
         {
           "name": "payload",
           "type": "bytes"
+        },
+        {
+          "name": "source_chain_id",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "remove_isolated_spoke",
+      "discriminator": [
+        183,
+        15,
+        130,
+        197,
+        145,
+        84,
+        151,
+        3
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "portal_global"
+          ]
+        },
+        {
+          "name": "portal_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "chain_id",
+          "type": "u32"
         }
       ]
     },
@@ -1224,6 +1332,22 @@
       }
     },
     {
+      "name": "IsolatedSpoke",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "bridged_amount",
+            "type": "u128"
+          }
+        ]
+      }
+    },
+    {
       "name": "PortalGlobal",
       "type": {
         "kind": "struct",
@@ -1256,6 +1380,16 @@
             "name": "pending_admin",
             "type": {
               "option": "pubkey"
+            }
+          },
+          {
+            "name": "isolated_spokes",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "IsolatedSpoke"
+                }
+              }
             }
           },
           {

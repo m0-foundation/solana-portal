@@ -10,7 +10,7 @@ pub struct Initialize<'info> {
     #[account(
         init,
         payer = admin,
-        space =  PortalGlobal::SIZE,
+        space =  PortalGlobal::size(0),
         seeds = [GLOBAL_SEED],
         bump,
     )]
@@ -29,6 +29,7 @@ impl Initialize<'_> {
             chain_id,
             message_nonce: 0,
             pending_admin: None,
+            isolated_spokes: vec![],
             padding: [0u8; 128],
         });
 
