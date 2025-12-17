@@ -2,6 +2,8 @@ pub mod constants;
 pub mod hyperlane;
 pub mod wormhole;
 
+pub mod tokens;
+
 use solana_sdk::keccak::hashv;
 
 pub fn compute_expected_message_id(chain_id: u32, message_nonce: u64) -> [u8; 32] {

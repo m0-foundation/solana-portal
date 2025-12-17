@@ -11,7 +11,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-pub struct SendTokens<'info> {
+pub struct SendToken<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
 
@@ -104,7 +104,7 @@ pub struct SendTokens<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl SendTokens<'_> {
+impl SendToken<'_> {
     fn validate(&self, amount: u64) -> Result<()> {
         if self.portal_global.paused {
             return err!(BridgeError::Paused);
@@ -132,7 +132,7 @@ impl SendTokens<'_> {
 
     #[access_control(ctx.accounts.validate(amount))]
     pub fn handler<'info>(
-        ctx: Context<'_, '_, '_, 'info, SendTokens<'info>>,
+        ctx: Context<'_, '_, '_, 'info, SendToken<'info>>,
         amount: u64,
         destination_token: [u8; 32],
         destination_chain_id: u32,

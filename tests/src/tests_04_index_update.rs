@@ -205,7 +205,6 @@ fn test_04_index_update_hyperlane_repeat_msgid() -> Result<()> {
         .unwrap_err();
 
     let s = err.to_string();
-    println!("Error: {}", s);
     assert!(s.contains("2006") || s.contains("custom program error: 0x07d6"));
     assert!(s.contains("ConstraintSeeds"));
 
