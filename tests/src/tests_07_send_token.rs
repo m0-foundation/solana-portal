@@ -24,11 +24,12 @@ fn test_01_send_token_wormhole_unauthorized_unwrapper() -> Result<()> {
     let rpc_client: Arc<solana_client::rpc_client::RpcClient> = get_rpc_client();
 
     let program = client.program(portal::ID)?;
-    let m_mint = Pubkey::from_str("mzeroXDoBpRVhnEXBra27qzAMdxgpWVY3DzQW7xMVJp").unwrap();
+    let m_mint = Pubkey::from_str("mzerojk9tg56ebsrEAhfkyc9VgKjTW2zDqp6C5mhjzH").unwrap();
+    let extension_mint = Pubkey::from_str("mzeroXDoBpRVhnEXBra27qzAMdxgpWVY3DzQW7xMVJp").unwrap();
     let extension_program = Pubkey::from_str("wMXX1K1nca5W4pZr1piETe78gcAVVrEFi9f4g46uXko").unwrap();
 
     let m_token_account = crate::util::tokens::get_or_create_ata_2022(&rpc_client, &get_signer(), &pda!(&[AUTHORITY_SEED], &portal::ID), &m_mint)?;
-    let extension_token_account = crate::util::tokens::get_or_create_ata_2022(&rpc_client, &get_signer(), &program.payer(), &m_mint)?;
+    let extension_token_account = crate::util::tokens::get_or_create_ata_2022(&rpc_client, &get_signer(), &program.payer(), &extension_mint)?;
     let ext_m_vault= crate::util::tokens::get_or_create_ata_2022(&rpc_client, &get_signer(), &pda!(&[M_VAULT_SEED], &extension_program), &m_mint)?;
     
     // Send token update
@@ -40,7 +41,7 @@ fn test_01_send_token_wormhole_unauthorized_unwrapper() -> Result<()> {
             swap_global: pda!(&[GLOBAL_SEED], &ext_swap::ID),
             extension_global: pda!(&[GLOBAL_SEED], &extension_program),
             m_mint,
-            extension_mint: m_mint,
+            extension_mint,
             m_token_account,
             extension_token_account,
             portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
@@ -50,7 +51,7 @@ fn test_01_send_token_wormhole_unauthorized_unwrapper() -> Result<()> {
             swap_program: ext_swap::ID,
             extension_program,
             m_token_program: token_2022::ID,
-            extension_token_program: token_2022::ID, // Token-2022
+            extension_token_program: token_2022::ID,
             bridge_adapter: wormhole_adapter::ID,
             system_program: system_program::ID,
         })
