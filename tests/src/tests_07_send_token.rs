@@ -73,7 +73,7 @@ fn test_01_send_token_wormhole_unauthorized_unwrapper() -> Result<()> {
 }
 
 #[test]
-fn test_02_send_token_hyperlane() -> Result<()> {
+fn test_02_send_token_hyperlane_unauthorized_unwrapper() -> Result<()> {
     let client: Client<Arc<Keypair>> = Client::new(Cluster::Localnet, get_signer());
     let rpc_client: Arc<solana_client::rpc_client::RpcClient> = get_rpc_client();
 

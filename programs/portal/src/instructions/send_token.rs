@@ -170,7 +170,7 @@ impl SendToken<'_> {
         ctx.accounts.m_token_account.reload()?;
         let m_amount = ctx.accounts.m_token_account.amount - m_pre_balance;
 
-        let message_id = ctx.accounts.portal_global.generate_message_id();
+        let message_id = ctx.accounts.portal_global.generate_message_id(destination_chain_id);
 
         let message = Payload::TokenTransfer(TokenTransferPayload {
             amount: m_amount as u128,

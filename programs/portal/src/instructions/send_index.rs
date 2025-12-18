@@ -38,7 +38,7 @@ impl SendIndex<'_> {
     ) -> Result<()> {
         let message = Payload::Index(IndexPayload {
             index: ctx.accounts.portal_global.m_index,
-            message_id: ctx.accounts.portal_global.generate_message_id(),
+            message_id: ctx.accounts.portal_global.generate_message_id(destination_chain_id),
         });
 
         send_message(

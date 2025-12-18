@@ -37,11 +37,12 @@ impl PortalGlobal {
         }); 
     }
 
-    pub fn generate_message_id(&mut self) -> [u8; 32] {
+    pub fn generate_message_id(&mut self, destination_chain_id: u32) -> [u8; 32] {
         self.message_nonce += 1;
         hashv(&[
-            &self.chain_id.to_le_bytes(),
-            &self.message_nonce.to_le_bytes(),
+            &destination_chain_id.to_be_bytes(),
+            &self.chain_id.to_be_bytes(),
+            &self.message_nonce.to_be_bytes(),
         ])
         .to_bytes()
     }

@@ -50,7 +50,7 @@ impl SendFillReport<'_> {
         origin_recipient: [u8; 32],
         origin_chain_id: u32,
     ) -> Result<()> {
-        let message_id = ctx.accounts.portal_global.generate_message_id();
+        let message_id = ctx.accounts.portal_global.generate_message_id(origin_chain_id);
 
         let message = Payload::FillReport(FillReportPayload {
             order_id,

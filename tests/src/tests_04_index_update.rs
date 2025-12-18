@@ -29,6 +29,7 @@ fn test_01_index_update_wormhole() -> Result<()> {
     let program = client.program(portal::ID)?;
 
     // Send index update
+    let destination_chain_id = 2;
     let signature = program
         .request()
         .accounts(accounts::SendIndex {
@@ -39,7 +40,7 @@ fn test_01_index_update_wormhole() -> Result<()> {
             bridge_adapter: wormhole_adapter::ID,
         })
         .args(instruction::SendIndex {
-            destination_chain_id: 2,
+            destination_chain_id
         })
         .accounts(WormholeRemainingAccounts::account_metas())
         .send()?;
@@ -75,6 +76,7 @@ fn test_01_index_update_wormhole() -> Result<()> {
 
     // Message ID should match expected computation
     let expected_message_id = crate::util::compute_expected_message_id(
+        destination_chain_id,
         portal_global.chain_id,
         portal_global.message_nonce,
     );
@@ -126,6 +128,7 @@ fn test_03_index_update_hyperlane() -> Result<()> {
     let accounts = HyperlaneRemainingAccounts::new(&program.payer(), &global_hp, None);
 
     // Send index update
+    let destination_chain_id = 1;
     program
         .request()
         .accounts(accounts::SendIndex {
@@ -136,7 +139,7 @@ fn test_03_index_update_hyperlane() -> Result<()> {
             bridge_adapter: hyperlane_adapter::ID,
         })
         .args(instruction::SendIndex {
-            destination_chain_id: 1,
+            destination_chain_id,
         })
         .accounts(accounts.to_account_metas())
         .instruction(ComputeBudgetInstruction::set_compute_unit_limit(500_000))
@@ -157,6 +160,7 @@ fn test_03_index_update_hyperlane() -> Result<()> {
 
     // Message ID should match expected computation
     let expected_message_id = crate::util::compute_expected_message_id(
+        destination_chain_id,
         portal_global.chain_id,
         portal_global.message_nonce,
     );
@@ -251,4 +255,7 @@ fn test_05_index_update_hyperlane_bad_dest() -> Result<()> {
     Ok(())
 
 }
+
+
+
 
