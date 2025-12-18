@@ -161,4 +161,4 @@ mod tests_06_set_lut;
 mod tests_07_send_token;
 
 #[cfg(test)]
-mod tests_09_message_id_endian;
+mod tests_08_message_id_endian;
