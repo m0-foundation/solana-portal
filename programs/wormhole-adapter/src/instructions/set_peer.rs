@@ -14,8 +14,7 @@ pub struct SetPeer<'info> {
         bump = wormhole_global.bump,
         has_one = admin,
         realloc = WormholeGlobal::size(
-            wormhole_global.peers.len() +
-            wormhole_global.get_peer(peer.chain_id).is_err() as usize
+            wormhole_global.updated_peers(peer.clone()).len()
         ),
         realloc::payer = admin,
         realloc::zero = false,
@@ -27,23 +26,12 @@ pub struct SetPeer<'info> {
 
 impl SetPeer<'_> {
     pub fn handler(ctx: Context<Self>, peer: Peer) -> Result<()> {
-
-        let peer_clone = peer.clone();
-
-        // Insert or overwrite peer
-        match ctx
-            .accounts
-            .wormhole_global
-            .peers
-            .iter_mut()
-            .find(|p| p.chain_id == peer.chain_id)
-        {
-            Some(existing_peer) => *existing_peer = peer_clone,
-            None => ctx.accounts.wormhole_global.peers.push(peer_clone),
-        }
+        ctx.accounts.wormhole_global.peers =
+            ctx.accounts.wormhole_global.updated_peers(peer.clone());
 
         emit!(PeerSet {
-            chain_id: peer.chain_id,
+            m0_chain_id: peer.m0_chain_id,
+            wormhole_chain_id: peer.wormhole_chain_id,
             peer: peer.address,
         });
 
@@ -53,6 +41,7 @@ impl SetPeer<'_> {
 
 #[event]
 pub struct PeerSet {
-    pub chain_id: u32,
+    pub m0_chain_id: u32,
+    pub wormhole_chain_id: u32,
     pub peer: [u8; 32],
 }

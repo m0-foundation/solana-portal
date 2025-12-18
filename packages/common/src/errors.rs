@@ -38,4 +38,8 @@ pub enum BridgeError {
     InvalidMessageId,
     #[msg("Spoke is isolated and cannot send to this chain")]
     InvalidIsolatedHub,
+    #[msg("Destination chain does not match")]
+    InvalidDestinationChain,
+    InvalidDestinationPeer,
+    InvalidPayload,
 }

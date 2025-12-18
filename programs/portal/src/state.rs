@@ -1,7 +1,6 @@
 use std::cmp::max;
 
 use anchor_lang::prelude::*;
-use anchor_spl::associated_token::spl_associated_token_account::solana_program::keccak::hashv;
 
 #[constant]
 pub const GLOBAL_SEED: &[u8] = b"global";
@@ -21,7 +20,7 @@ pub struct PortalGlobal {
     pub chain_id: u32,
     pub admin: Pubkey,
     pub paused: bool,
-    pub m_index: u64,
+    pub m_index: u128,
     pub message_nonce: u64,
     pub pending_admin: Option<Pubkey>,
     pub isolated_hub_chain_id: Option<u32>,
@@ -29,7 +28,7 @@ pub struct PortalGlobal {
 }
 
 impl PortalGlobal {
-    pub fn update_index(&mut self, message_id: [u8; 32], new_index: u64) {
+    pub fn update_index(&mut self, message_id: [u8; 32], new_index: u128) {
         self.m_index = max(new_index, self.m_index);
 
         emit!(MTokenIndexReceived {
@@ -64,6 +63,6 @@ impl BridgeMessage {
 
 #[event]
 pub struct MTokenIndexReceived {
-    pub index: u64,
+    pub index: u128,
     pub message_id: [u8; 32],
 }

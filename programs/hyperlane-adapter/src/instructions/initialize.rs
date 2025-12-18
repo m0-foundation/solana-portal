@@ -52,10 +52,12 @@ pub struct Initialize<'info> {
 }
 
 impl Initialize<'_> {
-    pub fn handler(ctx: Context<Self>) -> Result<()> {
+    pub fn handler(ctx: Context<Self>, chain_id: u32) -> Result<()> {
         ctx.accounts.hyperlane_global.set_inner(HyperlaneGlobal {
             bump: ctx.bumps.hyperlane_global,
             admin: ctx.accounts.admin.key(),
+            chain_id,
+            message_nonce: 0,
             ism: None,
             paused: false,
             peers: Vec::new(),

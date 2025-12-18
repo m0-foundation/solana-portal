@@ -14,8 +14,7 @@ pub struct SetPeer<'info> {
         bump = hyperlane_global.bump,
         has_one = admin,
         realloc = HyperlaneGlobal::size(
-            hyperlane_global.peers.len() +
-            hyperlane_global.get_peer(peer.chain_id).is_err() as usize
+            hyperlane_global.updated_peers(peer.clone()).len()
         ),
         realloc::payer = admin,
         realloc::zero = false,
@@ -27,23 +26,12 @@ pub struct SetPeer<'info> {
 
 impl SetPeer<'_> {
     pub fn handler(ctx: Context<Self>, peer: Peer) -> Result<()> {
-
-        let peer_clone = peer.clone();
-
-        // Insert or overwrite peer
-        match ctx
-            .accounts
-            .hyperlane_global
-            .peers
-            .iter_mut()
-            .find(|p| p.chain_id == peer.chain_id)
-        {
-            Some(existing_peer) => *existing_peer = peer_clone,
-            None => ctx.accounts.hyperlane_global.peers.push(peer_clone),
-        }
+        ctx.accounts.hyperlane_global.peers =
+            ctx.accounts.hyperlane_global.updated_peers(peer.clone());
 
         emit!(PeerSet {
-            chain_id: peer.chain_id,
+            m0_chain_id: peer.m0_chain_id,
+            hyperlane_chain_id: peer.hyperlane_chain_id,
             peer: peer.address,
         });
 
@@ -53,6 +41,7 @@ impl SetPeer<'_> {
 
 #[event]
 pub struct PeerSet {
-    pub chain_id: u32,
+    pub m0_chain_id: u32,
+    pub hyperlane_chain_id: u32,
     pub peer: [u8; 32],
 }

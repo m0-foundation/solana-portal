@@ -6591,6 +6591,7 @@ dependencies = [
  "common",
  "ctor",
  "hex",
+ "hyperlane-adapter",
  "once_cell",
  "portal",
  "serde_json",
@@ -6600,6 +6601,7 @@ dependencies = [
  "spl-associated-token-account",
  "spl-token-2022 7.0.0",
  "tokio",
+ "wormhole-adapter",
 ]
 
 [[package]]

@@ -6,7 +6,8 @@ use common::{
     pda,
     portal::constants::GLOBAL_SEED,
     wormhole_adapter::{self, constants::EMITTER_SEED},
-    HyperlaneRemainingAccounts, Payload, WormholeRemainingAccounts, AUTHORITY_SEED,
+    HyperlaneRemainingAccounts, Payload, PayloadData, PayloadHeader, WormholeRemainingAccounts,
+    AUTHORITY_SEED,
 };
 use portal::{accounts, instruction};
 use solana_sdk::{bs58, compute_budget::ComputeBudgetInstruction};
@@ -32,7 +33,7 @@ fn test_01_index_update_wormhole() -> Result<()> {
             bridge_adapter: wormhole_adapter::ID,
         })
         .args(instruction::SendIndex {
-            destination_chain_id: 2,
+            destination_chain_id: 1,
         })
         .accounts(WormholeRemainingAccounts::account_metas())
         .send()?;
@@ -129,12 +130,14 @@ fn test_02_index_update_hyperlane() -> Result<()> {
     let message_account = accounts.dispatched_message;
     let account_data = rpc_client.get_account_data(&message_account)?;
 
-    // The last 40 bytes of the account data contain the message body
-    let len = account_data.len();
-    let message_body = &account_data[len - 41..];
-    let message = Payload::decode(&message_body.to_vec());
+    let payload_size = PayloadHeader::SIZE + 16;
 
-    let Payload::Index(index) = message else {
+    // The last bytes of the account data contain the message body
+    let len = account_data.len();
+    let message_body = &account_data[len - payload_size..];
+    let message = Payload::decode(&message_body.to_vec()).expect("failed to decode payload");
+
+    let PayloadData::Index(index) = message.data else {
         panic!("Expected IndexPayload");
     };
 
@@ -142,7 +145,7 @@ fn test_02_index_update_hyperlane() -> Result<()> {
     assert_eq!(index.index, 0);
 
     // Recipient should be registered peer
-    let recipient = &account_data[len - 73..len - 41];
+    let recipient = &account_data[len - payload_size - 32..len - payload_size];
     assert_eq!(
         hex::encode(recipient),
         "0b6a86806a0354c82b8f049eb75d9c97e370a6f0c0cfa15f47909c3fe1c8f794"

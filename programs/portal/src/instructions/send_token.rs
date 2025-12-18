@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use common::{
     ext_swap::{self, accounts::SwapGlobal, program::ExtSwap},
-    BridgeAdapter, BridgeError, Payload, TokenTransferPayload,
+    BridgeAdapter, BridgeError, PayloadData, TokenTransferPayload,
 };
 
 use crate::{
@@ -177,15 +177,12 @@ impl SendToken<'_> {
         ctx.accounts.m_token_account.reload()?;
         let m_amount = ctx.accounts.m_token_account.amount - m_pre_balance;
 
-        let message_id = ctx.accounts.portal_global.generate_message_id();
-
-        let message = Payload::TokenTransfer(TokenTransferPayload {
+        let payload = PayloadData::TokenTransfer(TokenTransferPayload {
             amount: m_amount as u128,
             destination_token,
             sender: ctx.accounts.sender.key().to_bytes(),
             recipient,
             index: ctx.accounts.portal_global.m_index,
-            message_id,
         });
 
         // Send message to bridge adapter
@@ -196,8 +193,9 @@ impl SendToken<'_> {
             ctx.bumps.portal_authority,
             ctx.accounts.system_program.to_account_info(),
             ctx.remaining_accounts.to_vec(),
-            message.encode(),
             destination_chain_id,
+            payload,
+            PayloadData::TOKEN_TRANSFER_DISCRIMINANT,
         )?;
 
         emit!(TokenSent {
@@ -209,7 +207,6 @@ impl SendToken<'_> {
             amount: m_amount as u128,
             index: ctx.accounts.portal_global.m_index,
             bridge_adapter: ctx.accounts.bridge_adapter.key(),
-            message_id,
         });
 
         Ok(())
@@ -224,7 +221,6 @@ pub struct TokenSent {
     pub sender: Pubkey,
     pub recipient: [u8; 32],
     pub amount: u128,
-    pub index: u64,
+    pub index: u128,
     pub bridge_adapter: Pubkey,
-    pub message_id: [u8; 32],
 }
