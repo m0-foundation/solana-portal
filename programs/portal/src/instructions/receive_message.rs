@@ -63,6 +63,9 @@ impl ReceiveMessage<'_> {
         if message.header.destination_chain_id != self.portal_global.chain_id {
             return err!(BridgeError::InvalidDestinationChain);
         }
+        if message.header.destination_peer != crate::ID.to_bytes() {
+            return err!(BridgeError::InvalidDestinationPeer);
+        }
 
         Ok(())
     }
@@ -70,8 +73,8 @@ impl ReceiveMessage<'_> {
     #[access_control(ctx.accounts.validate(message_id, &payload))]
     pub fn handler<'info>(
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
-        source_chain_id: u32,
         message_id: [u8; 32],
+        source_chain_id: u32,
         payload: Vec<u8>,
     ) -> Result<()> {
         let message = Payload::decode(&payload)?;

@@ -6591,6 +6591,7 @@ dependencies = [
  "common",
  "ctor",
  "hex",
+ "hyperlane-adapter",
  "once_cell",
  "portal",
  "serde_json",

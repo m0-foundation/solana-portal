@@ -16,6 +16,7 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct ReceiveMessage<'info> {
+    #[cfg(not(feature = "skip-validation"))]
     #[account(
         mut,
         seeds = [
@@ -79,6 +80,9 @@ pub struct ReceiveMessage<'info> {
 
 impl ReceiveMessage<'_> {
     fn validate(&self, origin: u32, sender: &[u8; 32]) -> Result<()> {
+        #[cfg(feature = "skip-validation")]
+        msg!("SKIPPING VALIDATION FEATURE ENABLED");
+
         let peer = self.hyperlane_global.get_peer(origin)?;
 
         if &peer.address != sender {
@@ -106,11 +110,14 @@ impl ReceiveMessage<'_> {
                     system_program: ctx.accounts.system_program.to_account_info(),
                     portal_global: ctx.accounts.portal_global.to_account_info(),
                 },
-                &[&[AUTHORITY_SEED, &[ctx.bumps.hyperlane_adapter_authority]]],
+                &[
+                    &[AUTHORITY_SEED, &[ctx.bumps.hyperlane_adapter_authority]],
+                    &[PAYER_SEED, &[ctx.bumps.receive_payer]],
+                ],
             )
             .with_remaining_accounts(ctx.remaining_accounts.to_vec()),
-            origin,
             Payload::decode(&message)?.header.message_id,
+            ctx.accounts.hyperlane_global.get_peer(origin)?.m0_chain_id,
             message,
         )
     }

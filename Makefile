@@ -1,6 +1,7 @@
 .PHONY: test build test-verbose
 
 test:
+	anchor build -- --features skip-validation
 	cargo test --package tests -- --test-threads=1
 
 test-verbose:

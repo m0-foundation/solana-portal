@@ -68,6 +68,14 @@ impl WormholeGlobal {
             .ok_or_else(|| BridgeError::UnsupportedDestinationChain.into())
     }
 
+    pub fn get_peer(&self, wormhole_chain_id: u16) -> Result<Peer> {
+        self.peers
+            .iter()
+            .find(|peer| peer.wormhole_chain_id == wormhole_chain_id as u32)
+            .cloned()
+            .ok_or_else(|| BridgeError::UnsupportedDestinationChain.into())
+    }
+
     pub fn updated_peers(&self, peer: Peer) -> Vec<Peer> {
         let mut peers = self.peers.clone();
 

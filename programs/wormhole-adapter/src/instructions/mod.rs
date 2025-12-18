@@ -101,6 +101,20 @@ impl VaaBody {
             payload,
         })
     }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut data = vec![];
+
+        data.extend_from_slice(&self.timestamp.to_be_bytes());
+        data.extend_from_slice(&self.nonce.to_be_bytes());
+        data.extend_from_slice(&self.emitter_chain.to_be_bytes());
+        data.extend_from_slice(&self.emitter_address);
+        data.extend_from_slice(&self.sequence.to_be_bytes());
+        data.push(self.consistency_level);
+        data.extend_from_slice(&self.payload.encode());
+
+        data
+    }
 }
 
 #[cfg(test)]

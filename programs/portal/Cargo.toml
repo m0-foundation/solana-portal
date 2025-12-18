@@ -20,6 +20,7 @@ idl-build = [
     "common/idl-build",
 ]
 mainnet = []
+skip-validation = []
 
 [dependencies]
 anchor-lang.workspace = true

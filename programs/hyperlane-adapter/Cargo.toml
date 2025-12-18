@@ -24,6 +24,7 @@ custom-heap = []
 custom-panic = []
 mainnet = []
 testnet = []
+skip-validation = []
 
 [dependencies]
 anchor-lang = { workspace = true, features = ["init-if-needed"] }

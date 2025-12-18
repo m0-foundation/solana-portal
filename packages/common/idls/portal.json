@@ -325,10 +325,6 @@
       ],
       "args": [
         {
-          "name": "source_chain_id",
-          "type": "u32"
-        },
-        {
           "name": "message_id",
           "type": {
             "array": [
@@ -336,6 +332,10 @@
               32
             ]
           }
+        },
+        {
+          "name": "source_chain_id",
+          "type": "u32"
         },
         {
           "name": "payload",
