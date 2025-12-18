@@ -18,6 +18,9 @@ common = { path = "../packages/common" }
 portal = { path = "../programs/portal" }
 anchor-lang.workspace = true
 solana-transaction-status-client-types = "2.3.13"
+anchor-spl.workspace = true
+spl-token-2022 = { version = "7.0.0", features = ["no-entrypoint"] }
+spl-associated-token-account = "7.0.0"
 
 [dev-dependencies]
 anchor-client.workspace = true

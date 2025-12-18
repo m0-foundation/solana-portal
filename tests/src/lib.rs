@@ -152,10 +152,10 @@ mod tests_03_set_peers;
 mod tests_04_index_update;
 
 #[cfg(test)]
-mod tests_05_send_token;
+mod tests_05_pausing;
 
 #[cfg(test)]
-mod tests_06_pausing;
+mod tests_06_set_lut;
 
 #[cfg(test)]
-mod tests_07_set_lut;
+mod tests_07_send_token;
