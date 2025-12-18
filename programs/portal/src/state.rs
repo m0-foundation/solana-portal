@@ -23,6 +23,7 @@ pub struct PortalGlobal {
     pub m_index: u128,
     pub message_nonce: u64,
     pub pending_admin: Option<Pubkey>,
+    pub isolated_hub_chain_id: Option<u32>,
     pub padding: [u8; 128],
 }
 
