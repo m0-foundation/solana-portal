@@ -1,6 +1,5 @@
 use anchor_client::{Client, Cluster};
 use anchor_lang::{prelude::Pubkey, system_program, AccountDeserialize};
-use anchor_lang::{prelude::Pubkey, system_program};
 use anchor_spl::token_2022;
 use anyhow::Result;
 use common::hyperlane_adapter::accounts::HyperlaneGlobal;
@@ -10,14 +9,9 @@ use common::{
     portal::constants::{GLOBAL_SEED, MINT_AUTHORITY_SEED, M_VAULT_SEED},
     wormhole_adapter::{self},
     HyperlaneRemainingAccounts, WormholeRemainingAccounts, AUTHORITY_SEED,
-    pda,
-    portal::constants::{GLOBAL_SEED, MINT_AUTHORITY_SEED, M_VAULT_SEED},
-    wormhole_adapter::{self},
-    WormholeRemainingAccounts, AUTHORITY_SEED,
 };
 use std::sync::Arc;
 
-use anchor_spl::token_2022;
 use portal::{accounts as portal_accounts, instruction as portal_instruction};
 use std::str::FromStr;
 
@@ -95,18 +89,34 @@ fn test_01_send_token_wormhole_unauthorized_unwrapper() -> Result<()> {
 }
 
 #[test]
-fn test_02_send_token_hyperlane() -> Result<()> {
+fn test_02_send_token_hyperlane_unauthorized_unwrapper() -> Result<()> {
     let client: Client<Arc<Keypair>> = Client::new(Cluster::Localnet, get_signer());
     let rpc_client: Arc<solana_client::rpc_client::RpcClient> = get_rpc_client();
 
     let program = client.program(portal::ID)?;
     let m_mint = Pubkey::from_str("mzerojk9tg56ebsrEAhfkyc9VgKjTW2zDqp6C5mhjzH").unwrap();
     let extension_mint = Pubkey::from_str("mzeroXDoBpRVhnEXBra27qzAMdxgpWVY3DzQW7xMVJp").unwrap();
-    let extension_program = Pubkey::from_str("wMXX1K1nca5W4pZr1piETe78gcAVVrEFi9f4g46uXko").unwrap();
+    let extension_program =
+        Pubkey::from_str("wMXX1K1nca5W4pZr1piETe78gcAVVrEFi9f4g46uXko").unwrap();
 
-    let m_token_account = crate::util::tokens::get_or_create_ata_2022(&rpc_client, &get_signer(), &pda!(&[AUTHORITY_SEED], &portal::ID), &m_mint)?;
-    let extension_token_account = crate::util::tokens::get_or_create_ata_2022(&rpc_client, &get_signer(), &program.payer(), &extension_mint)?;
-    let ext_m_vault= crate::util::tokens::get_or_create_ata_2022(&rpc_client, &get_signer(), &pda!(&[M_VAULT_SEED], &extension_program), &m_mint)?;
+    let m_token_account = crate::util::tokens::get_or_create_ata_2022(
+        &rpc_client,
+        &get_signer(),
+        &pda!(&[AUTHORITY_SEED], &portal::ID),
+        &m_mint,
+    )?;
+    let extension_token_account = crate::util::tokens::get_or_create_ata_2022(
+        &rpc_client,
+        &get_signer(),
+        &program.payer(),
+        &extension_mint,
+    )?;
+    let ext_m_vault = crate::util::tokens::get_or_create_ata_2022(
+        &rpc_client,
+        &get_signer(),
+        &pda!(&[M_VAULT_SEED], &extension_program),
+        &m_mint,
+    )?;
 
     // Build Hyperlane remaining accounts from on-chain global
     let data_hyp = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &hyperlane_adapter::ID))?;

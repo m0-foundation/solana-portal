@@ -1,16 +1,14 @@
 use crate::util::constants::{WH_EVENT_DISCRIMINATOR, WH_SHIM_POST_MESSAGE_DISCRIMINATOR};
 use common::IndexPayload;
 use common::Payload;
+use common::PayloadData;
 use solana_sdk::bs58;
 use solana_transaction_status_client_types::{
-    UiInstruction,
-    EncodedConfirmedTransactionWithStatusMeta,
-    UiInnerInstructions,
-    option_serializer::OptionSerializer,
+    option_serializer::OptionSerializer, EncodedConfirmedTransactionWithStatusMeta,
+    UiInnerInstructions, UiInstruction,
 };
 
-
-// Matches the MessageEvent 
+// Matches the MessageEvent
 // see: https://github.com/wormhole-foundation/wormhole/blob/main/svm/wormhole-core-shims/programs/post-message/src/lib.rs#L211
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WormholeMessageEvent {
@@ -70,28 +68,22 @@ pub fn decode_shim_post_message<'a>(data: &'a [u8]) -> Option<ShimPostMessageDat
     })
 }
 
-pub fn decode_payload_from_shim_ix_data(data: &[u8]) -> Option<IndexPayload> {
+pub fn decode_payload_from_shim_ix_data(data: &[u8]) -> Option<Payload> {
     let shim = decode_shim_post_message(data)?;
-    let decoded = Payload::decode(&shim.payload.to_vec());
-
-    if let Payload::Index(idx) = decoded {
-        return Some(IndexPayload {
-            index: idx.index,
-            message_id: idx.message_id,
-        });
-    }
-
-    None
+    Payload::decode(&shim.payload.to_vec()).ok()
 }
 
 pub fn decode_payload_from_shim_ix_data_full(data: &[u8]) -> Option<Payload> {
     let shim = decode_shim_post_message(data)?;
-    Some(Payload::decode(&shim.payload.to_vec()))
+    Payload::decode(&shim.payload.to_vec()).ok()
 }
 
 /// Generic helper: scan inner instructions, decode compiled ix data, and run a decoder.
 /// Returns the first successful decode.
-pub fn find_in_inner_instructions<T>( inner_instructions: &[UiInnerInstructions], mut decode: impl FnMut(&[u8]) -> Option<T>) -> Option<T> {
+pub fn find_in_inner_instructions<T>(
+    inner_instructions: &[UiInnerInstructions],
+    mut decode: impl FnMut(&[u8]) -> Option<T>,
+) -> Option<T> {
     for inner in inner_instructions {
         for ix in &inner.instructions {
             let UiInstruction::Compiled(compiled_ix) = ix else {
@@ -121,8 +113,13 @@ pub fn find_index_payload_in_tx(
     tx: &EncodedConfirmedTransactionWithStatusMeta,
 ) -> Option<IndexPayload> {
     find_in_tx_inner_instructions(tx, |bytes| {
-        match decode_payload_from_shim_ix_data_full(bytes)? {
-            Payload::Index(idx) => Some(idx),
+        let payload = decode_payload_from_shim_ix_data_full(bytes);
+        if payload.is_none() {
+            return None;
+        }
+
+        match payload.unwrap().data {
+            PayloadData::Index(idx) => Some(idx),
             _ => None,
         }
     })
@@ -147,4 +144,3 @@ pub fn find_in_tx_inner_instructions<T>(
     let inner = inner_instructions_from_tx(tx)?;
     find_in_inner_instructions(inner, decode)
 }
-

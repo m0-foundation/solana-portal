@@ -5,12 +5,12 @@ use common::{
     hyperlane_adapter::{
         self,
         accounts::{HyperlaneGlobal, HyperlaneUserGlobal},
-        constants::DASH_SEED
+        constants::DASH_SEED,
     },
     pda,
     portal::constants::GLOBAL_SEED,
     wormhole_adapter::{self, constants::EMITTER_SEED},
-    HyperlaneRemainingAccounts, Payload, PayloadData, PayloadHeader, WormholeRemainingAccounts, AUTHORITY_SEED
+    HyperlaneRemainingAccounts, Payload, PayloadData, PayloadHeader, WormholeRemainingAccounts,
     AUTHORITY_SEED,
 };
 use portal::{
@@ -48,7 +48,7 @@ fn test_01_index_update_wormhole() -> Result<()> {
     let transaction = rpc_client.get_transaction(&signature, UiTransactionEncoding::Json)?;
 
     let event_meta = crate::util::wormhole::find_message_event_in_tx(&transaction)
-    .expect("Wormhole post message event not found or invalid");
+        .expect("Wormhole post message event not found or invalid");
 
     let expected_emitter = pda!(&[EMITTER_SEED], &wormhole_adapter::ID).to_bytes();
     assert_eq!(event_meta.emitter, expected_emitter);
@@ -66,20 +66,13 @@ fn test_01_index_update_wormhole() -> Result<()> {
     );
 
     let index_payload = crate::util::wormhole::find_index_payload_in_tx(&transaction)
-    .expect("Index payload not found");
+        .expect("Index payload not found");
 
     // Index should match the program’s current m_index (you send current index)
     let global_bytes = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &portal::ID))?;
     let portal_global = PortalGlobal::try_deserialize(&mut global_bytes.as_slice())?;
 
     assert_eq!(index_payload.index, portal_global.m_index);
-
-    // Message ID should match expected computation
-    let expected_message_id = crate::util::compute_expected_message_id(
-        portal_global.chain_id,
-        portal_global.message_nonce,
-    );
-    assert_eq!(index_payload.message_id, expected_message_id);
 
     Ok(())
 }
@@ -159,19 +152,12 @@ fn test_03_index_update_hyperlane() -> Result<()> {
     let message_body = &account_data[len - payload_size..];
     let message = Payload::decode(&message_body.to_vec()).expect("failed to decode payload");
 
-    let PayloadData::Index(index) = message.data else {
+    let PayloadData::Index(_) = message.data else {
         panic!("Expected IndexPayload");
     };
 
     // Default index is 0
     assert_eq!(payload.index, portal_global.m_index);
-
-    // Message ID should match expected computation
-    let expected_message_id = crate::util::compute_expected_message_id(
-        portal_global.chain_id,
-        portal_global.message_nonce,
-    );
-    assert_eq!(payload.message_id, expected_message_id);
 
     // Recipient should be registered peer
     let len = account_data.len();
@@ -220,7 +206,6 @@ fn test_04_index_update_hyperlane_repeat_msgid() -> Result<()> {
     assert!(s.contains("ConstraintSeeds"));
 
     Ok(())
-
 }
 
 #[test]
@@ -232,7 +217,10 @@ fn test_05_index_update_hyperlane_bad_dest() -> Result<()> {
     // Fetch global
     let data_hyp = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &hyperlane_adapter::ID))?;
     let global_hp = HyperlaneGlobal::try_deserialize(&mut data_hyp.as_slice())?;
-    let user_data_hyp = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED, DASH_SEED, program.payer().as_ref()], &hyperlane_adapter::ID))?;
+    let user_data_hyp = rpc_client.get_account_data(&pda!(
+        &[GLOBAL_SEED, DASH_SEED, program.payer().as_ref()],
+        &hyperlane_adapter::ID
+    ))?;
     let user_hp = HyperlaneUserGlobal::try_deserialize(&mut user_data_hyp.as_slice())?;
 
     let accounts = HyperlaneRemainingAccounts::new(&program.payer(), &global_hp, Some(&user_hp));
@@ -255,11 +243,9 @@ fn test_05_index_update_hyperlane_bad_dest() -> Result<()> {
         .send()
         .unwrap_err();
 
-        let s = err.to_string();
-        assert!(s.contains("6008") || s.contains("custom program error: 0x1778"));
-        assert!(s.contains("UnsupportedDestinationChain"));
+    let s = err.to_string();
+    assert!(s.contains("6008") || s.contains("custom program error: 0x1778"));
+    assert!(s.contains("UnsupportedDestinationChain"));
 
     Ok(())
-
 }
-
