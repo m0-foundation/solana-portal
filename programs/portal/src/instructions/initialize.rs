@@ -29,6 +29,7 @@ impl Initialize<'_> {
             chain_id,
             message_nonce: 0,
             pending_admin: None,
+            isolated_hub_chain_id: None,
             padding: [0u8; 128],
         });
 

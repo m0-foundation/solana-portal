@@ -105,9 +105,16 @@ pub struct SendToken<'info> {
 }
 
 impl SendToken<'_> {
-    fn validate(&self, amount: u64) -> Result<()> {
+    fn validate(&self, amount: u64, destination_chain_id: u32) -> Result<()> {
         if self.portal_global.paused {
             return err!(BridgeError::Paused);
+        }
+
+        // Only allow sending to hub if spoke is isolated
+        if let Some(chain_id) = self.portal_global.isolated_hub_chain_id {
+            if chain_id != destination_chain_id {
+                return err!(BridgeError::InvalidIsolatedHub);
+            }
         }
 
         if self
@@ -130,7 +137,7 @@ impl SendToken<'_> {
         Ok(())
     }
 
-    #[access_control(ctx.accounts.validate(amount))]
+    #[access_control(ctx.accounts.validate(amount, destination_chain_id))]
     pub fn handler<'info>(
         ctx: Context<'_, '_, '_, 'info, SendToken<'info>>,
         amount: u64,
@@ -206,7 +213,6 @@ impl SendToken<'_> {
         });
 
         Ok(())
-
     }
 }
 

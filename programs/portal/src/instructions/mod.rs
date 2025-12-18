@@ -5,6 +5,7 @@ pub mod send_fill_report;
 pub mod send_index;
 pub mod send_merkle_root;
 pub mod send_token;
+pub mod set_isolated_hub;
 pub mod transfer_admin;
 
 use anchor_lang::prelude::*;
@@ -16,6 +17,7 @@ pub use send_fill_report::*;
 pub use send_index::*;
 pub use send_merkle_root::*;
 pub use send_token::*;
+pub use set_isolated_hub::*;
 pub use transfer_admin::*;
 
 use crate::state::AUTHORITY_SEED;

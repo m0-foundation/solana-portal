@@ -24,6 +24,7 @@ pub struct PortalGlobal {
     pub m_index: u64,
     pub message_nonce: u64,
     pub pending_admin: Option<Pubkey>,
+    pub isolated_hub_chain_id: Option<u32>,
     pub padding: [u8; 128],
 }
 
@@ -31,10 +32,10 @@ impl PortalGlobal {
     pub fn update_index(&mut self, message_id: [u8; 32], new_index: u64) {
         self.m_index = max(new_index, self.m_index);
 
-         emit!(MTokenIndexReceived {
+        emit!(MTokenIndexReceived {
             index: new_index,
             message_id,
-        }); 
+        });
     }
 
     pub fn generate_message_id(&mut self) -> [u8; 32] {

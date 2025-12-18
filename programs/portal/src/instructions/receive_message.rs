@@ -132,6 +132,13 @@ impl ReceiveMessage<'_> {
         source_chain_id: u32,
         payload: TokenTransferPayload,
     ) -> Result<()> {
+        // Tokens can only come from the hub if the spoke is isolated
+        if let Some(chain_id) = ctx.accounts.portal_global.isolated_hub_chain_id {
+            if chain_id != source_chain_id {
+                return err!(BridgeError::InvalidIsolatedHub);
+            }
+        }
+
         if payload.index > 0 {
             Self::handle_index_payload(&ctx, payload.clone().into())?;
         }
