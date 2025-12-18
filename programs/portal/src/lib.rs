@@ -66,13 +66,13 @@ pub mod portal {
     }
 
     pub fn send_token<'info>(
-        ctx: Context<'_, '_, '_, 'info, SendTokens<'info>>,
+        ctx: Context<'_, '_, '_, 'info, SendToken<'info>>,
         amount: u64,
         destination_token: [u8; 32],
         destination_chain_id: u32,
         recipient: [u8; 32],
     ) -> Result<()> {
-        SendTokens::handler(
+        SendToken::handler(
             ctx,
             amount,
             destination_token,
@@ -105,9 +105,10 @@ pub mod portal {
 
     pub fn receive_message<'info>(
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
+        source_chain_id: u32,
         message_id: [u8; 32],
         payload: Vec<u8>,
     ) -> Result<()> {
-        ReceiveMessage::handler(ctx, message_id, payload)
+        ReceiveMessage::handler(ctx, source_chain_id, message_id, payload)
     }
 }

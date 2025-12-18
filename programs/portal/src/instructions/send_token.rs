@@ -11,7 +11,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-pub struct SendTokens<'info> {
+pub struct SendToken<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
 
@@ -104,7 +104,7 @@ pub struct SendTokens<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl SendTokens<'_> {
+impl SendToken<'_> {
     fn validate(&self, amount: u64) -> Result<()> {
         if self.portal_global.paused {
             return err!(BridgeError::Paused);
@@ -132,7 +132,7 @@ impl SendTokens<'_> {
 
     #[access_control(ctx.accounts.validate(amount))]
     pub fn handler<'info>(
-        ctx: Context<'_, '_, '_, 'info, SendTokens<'info>>,
+        ctx: Context<'_, '_, '_, 'info, SendToken<'info>>,
         amount: u64,
         destination_token: [u8; 32],
         destination_chain_id: u32,
@@ -170,14 +170,16 @@ impl SendTokens<'_> {
         ctx.accounts.m_token_account.reload()?;
         let m_amount = ctx.accounts.m_token_account.amount - m_pre_balance;
 
+        let message_id = ctx.accounts.portal_global.generate_message_id();
+
         let message = Payload::TokenTransfer(TokenTransferPayload {
             amount: m_amount as u128,
             destination_token,
             sender: ctx.accounts.sender.key().to_bytes(),
             recipient,
             index: ctx.accounts.portal_global.m_index,
-            message_id: ctx.accounts.portal_global.generate_message_id(),
             destination_chain_id,
+            message_id,
         });
 
         // Send message to bridge adapter
@@ -190,6 +192,34 @@ impl SendTokens<'_> {
             ctx.remaining_accounts.to_vec(),
             message.encode(),
             destination_chain_id,
-        )
+        )?;
+
+        emit!(TokenSent {
+            source_token: ctx.accounts.extension_mint.key(),
+            destination_chain_id,
+            destination_token,
+            sender: ctx.accounts.sender.key(),
+            recipient,
+            amount: m_amount as u128,
+            index: ctx.accounts.portal_global.m_index,
+            bridge_adapter: ctx.accounts.bridge_adapter.key(),
+            message_id,
+        });
+
+        Ok(())
+
     }
+}
+
+#[event]
+pub struct TokenSent {
+    pub source_token: Pubkey,
+    pub destination_chain_id: u32,
+    pub destination_token: [u8; 32],
+    pub sender: Pubkey,
+    pub recipient: [u8; 32],
+    pub amount: u128,
+    pub index: u64,
+    pub bridge_adapter: Pubkey,
+    pub message_id: [u8; 32],
 }

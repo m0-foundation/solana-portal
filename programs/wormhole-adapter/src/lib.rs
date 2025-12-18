@@ -26,6 +26,8 @@ declare_id!("mzp1q2j5Hr1QuLC3KFBCAUz5aUckT6qyuZKZ3WJnMmY");
 pub mod wormhole_adapter {
     use super::*;
 
+    /// Admin Instructions
+
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
         Initialize::handler(ctx)
     }
@@ -58,6 +60,8 @@ pub mod wormhole_adapter {
         SetPeer::handler(ctx, peer)
     }
 
+    /// Outbound Instructions
+
     pub fn send_message(
         ctx: Context<SendMessage>,
         message: Vec<u8>,
@@ -65,6 +69,8 @@ pub mod wormhole_adapter {
     ) -> Result<()> {
         SendMessage::handler(ctx, message, m0_destination_chain_id)
     }
+
+    /// Inbound Instructions
 
     pub fn receive_message<'info>(
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,

@@ -90,6 +90,9 @@
     },
     {
       "name": "initialize",
+      "docs": [
+        "Admin Instructions"
+      ],
       "discriminator": [
         175,
         175,
@@ -316,6 +319,9 @@
     },
     {
       "name": "receive_message",
+      "docs": [
+        "Inbound Instructions"
+      ],
       "discriminator": [
         38,
         144,
@@ -617,6 +623,9 @@
     },
     {
       "name": "send_message",
+      "docs": [
+        "Outbound Instructions"
+      ],
       "discriminator": [
         57,
         40,
@@ -1147,6 +1156,21 @@
       ]
     }
   ],
+  "events": [
+    {
+      "name": "PeerSet",
+      "discriminator": [
+        27,
+        114,
+        255,
+        165,
+        25,
+        240,
+        245,
+        93
+      ]
+    }
+  ],
   "types": [
     {
       "name": "InstructionGroup",
@@ -1228,6 +1252,27 @@
           {
             "name": "wormhole_chain_id",
             "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PeerSet",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "peer",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           }
         ]
       }
