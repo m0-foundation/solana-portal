@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use anchor_spl::{associated_token::{get_associated_token_address, get_associated_token_address_with_program_id}, token_2022};
+use anchor_spl::{associated_token::get_associated_token_address_with_program_id, token_2022};
 use solana_client::rpc_client::RpcClient;
 
 use solana_sdk::{
@@ -18,7 +18,6 @@ use spl_token_2022::{
 use spl_associated_token_account::instruction::create_associated_token_account;
 
 // use anchor_spl off-chain ATA instruction builder (takes &Pubkey)
-
 fn send_tx<'a>(rpc: &RpcClient, payer: &'a Keypair, ixs: Vec<Instruction>, mut signers: Vec<&'a Keypair>) -> Result<()> {
     let recent_blockhash = rpc.get_latest_blockhash().context("get_latest_blockhash")?;
 

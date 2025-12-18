@@ -51,7 +51,7 @@ fn test_01_send_token_wormhole_unauthorized_unwrapper() -> Result<()> {
             swap_program: ext_swap::ID,
             extension_program,
             m_token_program: token_2022::ID,
-            extension_token_program: token_2022::ID, // Token-2022
+            extension_token_program: token_2022::ID,
             bridge_adapter: wormhole_adapter::ID,
             system_program: system_program::ID,
         })
