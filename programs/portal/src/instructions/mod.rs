@@ -74,7 +74,7 @@ pub fn send_message<'info>(
             payload_type,
         )
     } else if bridge_adapter.key() == common::hyperlane_adapter::ID {
-        if remaining_accounts.len() < 11 {
+        if remaining_accounts.len() < 12 {
             return err!(BridgeError::InvalidRemainingAccounts);
         }
 
