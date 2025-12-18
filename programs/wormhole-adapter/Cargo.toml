@@ -9,7 +9,7 @@ crate-type = ["cdylib", "lib"]
 name = "wormhole_adapter"
 
 [features]
-default = ["mainnet"]
+default = ["mainnet", "legacy-ntt"]
 cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []
@@ -21,6 +21,8 @@ idl-build = [
 ]
 mainnet = []
 devnet = []
+legacy-ntt = []
+skip-validation = []
 
 [dependencies]
 anchor-lang.workspace = true

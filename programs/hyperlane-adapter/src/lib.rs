@@ -31,8 +31,8 @@ pub mod hyperlane_adapter {
 
     /// Admin Instructions
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        Initialize::handler(ctx)
+    pub fn initialize(ctx: Context<Initialize>, chain_id: u32) -> Result<()> {
+        Initialize::handler(ctx, chain_id)
     }
 
     pub fn pause(ctx: Context<Pause>) -> Result<()> {
@@ -79,10 +79,11 @@ pub mod hyperlane_adapter {
 
     pub fn send_message(
         ctx: Context<SendMessage>,
-        message: Vec<u8>,
-        destination_chain_id: u32,
+        m0_destination_chain_id: u32,
+        payload: Vec<u8>,
+        payload_type: u8,
     ) -> Result<()> {
-        SendMessage::handler(ctx, message, destination_chain_id)
+        SendMessage::handler(ctx, m0_destination_chain_id, payload, payload_type)
     }
 
     /// Inbound Instructions

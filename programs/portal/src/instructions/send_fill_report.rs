@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::{order_book, BridgeAdapter, BridgeError, FillReportPayload, Payload};
+use common::{order_book, BridgeAdapter, BridgeError, FillReportPayload, PayloadData};
 
 use crate::{
     instructions::send_message,
@@ -50,15 +50,12 @@ impl SendFillReport<'_> {
         origin_recipient: [u8; 32],
         origin_chain_id: u32,
     ) -> Result<()> {
-        let message_id = ctx.accounts.portal_global.generate_message_id();
-
-        let message = Payload::FillReport(FillReportPayload {
+        let payload = PayloadData::FillReport(FillReportPayload {
             order_id,
             amount_in_to_release,
             amount_out_filled,
             origin_recipient,
             token_in,
-            message_id,
         });
 
         send_message(
@@ -68,8 +65,9 @@ impl SendFillReport<'_> {
             ctx.bumps.portal_authority,
             ctx.accounts.system_program.to_account_info(),
             ctx.remaining_accounts.to_vec(),
-            message.encode(),
             origin_chain_id,
+            payload,
+            PayloadData::FILL_REPORT_DISCRIMINANT,
         )?;
 
         emit!(FillReportSent {
@@ -80,7 +78,6 @@ impl SendFillReport<'_> {
             amount_out_filled,
             origin_recipient,
             token_in,
-            message_id,
         });
 
         Ok(())
@@ -96,5 +93,4 @@ pub struct FillReportSent {
     pub amount_out_filled: u128,
     pub origin_recipient: [u8; 32],
     pub token_in: [u8; 32],
-    pub message_id: [u8; 32],
 }

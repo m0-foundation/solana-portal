@@ -93,3 +93,10 @@ fn test_04_check_hyperlane_metas_pda() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn test_05_fund_hyperlane_receive_payer() -> Result<()> {
+    let logs = run_surfpool_cmd(vec!["run", "fund_receive_payer", "--unsupervised"])?;
+    assert!(!logs.contains("error"), "Funding failed: {}", logs);
+    Ok(())
+}

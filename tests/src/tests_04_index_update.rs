@@ -10,7 +10,8 @@ use common::{
     pda,
     portal::constants::GLOBAL_SEED,
     wormhole_adapter::{self, constants::EMITTER_SEED},
-    HyperlaneRemainingAccounts, WormholeRemainingAccounts, AUTHORITY_SEED,
+    HyperlaneRemainingAccounts, Payload, PayloadData, PayloadHeader, WormholeRemainingAccounts, AUTHORITY_SEED
+    AUTHORITY_SEED,
 };
 use portal::{
     state::PortalGlobal,
@@ -39,7 +40,7 @@ fn test_01_index_update_wormhole() -> Result<()> {
             bridge_adapter: wormhole_adapter::ID,
         })
         .args(instruction::SendIndex {
-            destination_chain_id: 2,
+            destination_chain_id: 1,
         })
         .accounts(WormholeRemainingAccounts::account_metas())
         .send()?;
@@ -151,6 +152,16 @@ fn test_03_index_update_hyperlane() -> Result<()> {
     // Index should match the program’s current m_index (you send current index)
     let global_bytes = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &portal::ID))?;
     let portal_global = PortalGlobal::try_deserialize(&mut global_bytes.as_slice())?;
+    let payload_size = PayloadHeader::SIZE + 16;
+
+    // The last bytes of the account data contain the message body
+    let len = account_data.len();
+    let message_body = &account_data[len - payload_size..];
+    let message = Payload::decode(&message_body.to_vec()).expect("failed to decode payload");
+
+    let PayloadData::Index(index) = message.data else {
+        panic!("Expected IndexPayload");
+    };
 
     // Default index is 0
     assert_eq!(payload.index, portal_global.m_index);
@@ -164,7 +175,7 @@ fn test_03_index_update_hyperlane() -> Result<()> {
 
     // Recipient should be registered peer
     let len = account_data.len();
-    let recipient = &account_data[len - 73..len - 41];
+    let recipient = &account_data[len - payload_size - 32..len - payload_size];
     assert_eq!(
         hex::encode(recipient),
         "0b6a86806a0354c82b8f049eb75d9c97e370a6f0c0cfa15f47909c3fe1c8f794"

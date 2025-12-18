@@ -25,8 +25,12 @@ pub mod portal {
 
     /// Admin Instructions
 
-    pub fn initialize(ctx: Context<Initialize>, chain_id: u32) -> Result<()> {
-        Initialize::handler(ctx, chain_id)
+    pub fn initialize(
+        ctx: Context<Initialize>,
+        chain_id: u32,
+        isolated_hub_chain_id: Option<u32>,
+    ) -> Result<()> {
+        Initialize::handler(ctx, chain_id, isolated_hub_chain_id)
     }
 
     pub fn pause(ctx: Context<Pause>) -> Result<()> {
@@ -47,6 +51,10 @@ pub mod portal {
 
     pub fn cancel_admin_transfer(ctx: Context<CancelAdminTransfer>) -> Result<()> {
         CancelAdminTransfer::handler(ctx)
+    }
+
+    pub fn enable_cross_spoke_transfers(ctx: Context<EnableCrossSpokeTransfers>) -> Result<()> {
+        EnableCrossSpokeTransfers::handler(ctx)
     }
 
     /// Outbound Instructions
@@ -105,10 +113,10 @@ pub mod portal {
 
     pub fn receive_message<'info>(
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
-        source_chain_id: u32,
         message_id: [u8; 32],
+        source_chain_id: u32,
         payload: Vec<u8>,
     ) -> Result<()> {
-        ReceiveMessage::handler(ctx, source_chain_id, message_id, payload)
+        ReceiveMessage::handler(ctx, message_id, source_chain_id, payload)
     }
 }

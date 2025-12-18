@@ -94,6 +94,7 @@ action "initialize_wormhole_adapter" "svm::process_instructions" {
         m_mint {
             public_key = "mzerojk9tg56ebsrEAhfkyc9VgKjTW2zDqp6C5mhjzH"
         }
+        instruction_args = [input.chain_id]
     }
     pre_condition {
         behavior = "skip"
@@ -110,6 +111,7 @@ action "initialize_hyperlane_adapter" "svm::process_instructions" {
         admin {
             public_key = signer.caller.public_key
         }
+        instruction_args = [input.chain_id]
     }
     pre_condition {
         behavior = "skip"

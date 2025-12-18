@@ -48,11 +48,13 @@ pub struct Initialize<'info> {
 }
 
 impl Initialize<'_> {
-    pub fn handler(ctx: Context<Self>) -> Result<()> {
+    pub fn handler(ctx: Context<Self>, chain_id: u32) -> Result<()> {
         ctx.accounts.wormhole_global.set_inner(WormholeGlobal {
             bump: ctx.bumps.wormhole_global,
             admin: ctx.accounts.admin.key(),
             paused: false,
+            chain_id,
+            message_nonce: 0,
             peers: Vec::new(),
             pending_admin: None,
             receive_lut: None,

@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::associated_token::spl_associated_token_account::solana_program::keccak;
 use common::{
     portal::{self, accounts::PortalGlobal, program::Portal},
-    wormhole_verify_vaa_shim::{self, cpi::accounts::VerifyHash, program::WormholeVerifyVaaShim}
+    wormhole_verify_vaa_shim::{self, cpi::accounts::VerifyHash, program::WormholeVerifyVaaShim},
 };
 
 use crate::{
@@ -70,11 +70,15 @@ pub struct ReceiveMessage<'info> {
 
 impl ReceiveMessage<'_> {
     fn validate(&self, guardian_set_bump: u8, vaa_body: &Vec<u8>) -> Result<()> {
-        // Compute the message hash.
+        #[cfg(feature = "skip-validation")]
+        msg!("SKIPPING VALIDATION FEATURE ENABLED");
+
+        // Compute the message hash
         let message_hash = &keccak::hashv(&[&vaa_body]).to_bytes();
         let digest = keccak::hash(message_hash.as_slice()).to_bytes();
 
-        // Verify the hash against the signatures.
+        // Verify the hash against the signatures
+        #[cfg(not(feature = "skip-validation"))]
         wormhole_verify_vaa_shim::cpi::verify_hash(
             CpiContext::new(
                 self.wormhole_verify_vaa_shim.to_account_info(),
@@ -117,8 +121,11 @@ impl ReceiveMessage<'_> {
                 &[&[AUTHORITY_SEED, &[ctx.bumps.wormhole_adapter_authority]]],
             )
             .with_remaining_accounts(ctx.remaining_accounts.to_vec()),
-            vm.emitter_chain.into(),
-            payload.message_id(),
+            payload.header.message_id,
+            ctx.accounts
+                .wormhole_global
+                .get_peer(vm.emitter_chain)?
+                .m0_chain_id,
             payload.encode(),
         )
     }

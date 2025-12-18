@@ -38,7 +38,7 @@ impl ResolveExecuteVaa {
         vaa_body: Vec<u8>,
     ) -> Result<Resolver<InstructionGroups>> {
         let vaa = VaaBody::from_bytes(&vaa_body)?;
-        let message_id = vaa.payload.message_id();
+        let message_id = vaa.payload.header.message_id;
 
         let result_account = pda!(&[RESOLVER_RESULT_ACCOUNT_SEED], &crate::ID);
         let global = pda!(&[GLOBAL_SEED], &crate::ID);
@@ -50,8 +50,8 @@ impl ResolveExecuteVaa {
         {
             let mut accounts_required = vec![System::id(), result_account, global];
 
-            match vaa.payload {
-                common::Payload::TokenTransfer(_) => {
+            match vaa.payload.data {
+                common::PayloadData::TokenTransfer(_) => {
                     let earn_global = pda!(&[GLOBAL_SEED], &earn::ID);
                     let earn_global_data: Option<EarnGlobal> =
                         deserialize_account(ctx.remaining_accounts, earn_global).ok();
@@ -76,7 +76,7 @@ impl ResolveExecuteVaa {
 
                     accounts_required.extend([earn_global, swap_global]);
                 }
-                common::Payload::FillReport(ref report) => {
+                common::PayloadData::FillReport(ref report) => {
                     accounts_required.push(report.token_in.into());
 
                     // Need mint account to see token program
@@ -208,7 +208,7 @@ impl ResolveExecuteVaa {
         };
 
         let required_remaining = require_metas(
-            &vaa.payload,
+            &vaa.payload.data,
             RESOLVER_PUBKEY_PAYER,
             whitelisted_extensions,
             m_mint,

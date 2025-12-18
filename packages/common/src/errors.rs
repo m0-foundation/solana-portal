@@ -36,4 +36,10 @@ pub enum BridgeError {
     InvalidIgpAccount,
     #[msg("Message ID does not match payload")]
     InvalidMessageId,
+    #[msg("Spoke is isolated and cannot send to this chain")]
+    InvalidTransfer,
+    #[msg("Destination chain does not match")]
+    InvalidDestinationChain,
+    InvalidDestinationPeer,
+    InvalidPayload,
 }
