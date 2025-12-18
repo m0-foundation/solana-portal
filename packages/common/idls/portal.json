@@ -325,10 +325,6 @@
       ],
       "args": [
         {
-          "name": "source_chain_id",
-          "type": "u32"
-        },
-        {
           "name": "message_id",
           "type": {
             "array": [
@@ -336,6 +332,10 @@
               32
             ]
           }
+        },
+        {
+          "name": "source_chain_id",
+          "type": "u32"
         },
         {
           "name": "payload",
@@ -1401,15 +1401,6 @@
                 32
               ]
             }
-          },
-          {
-            "name": "message_id",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
           }
         ]
       }
@@ -1421,7 +1412,7 @@
         "fields": [
           {
             "name": "index",
-            "type": "u64"
+            "type": "u128"
           },
           {
             "name": "message_id",
@@ -1458,7 +1449,7 @@
           },
           {
             "name": "m_index",
-            "type": "u64"
+            "type": "u128"
           },
           {
             "name": "message_nonce",
@@ -1560,7 +1551,7 @@
           },
           {
             "name": "index",
-            "type": "u64"
+            "type": "u128"
           },
           {
             "name": "message_id",
@@ -1615,20 +1606,11 @@
           },
           {
             "name": "index",
-            "type": "u64"
+            "type": "u128"
           },
           {
             "name": "bridge_adapter",
             "type": "pubkey"
-          },
-          {
-            "name": "message_id",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
           }
         ]
       }

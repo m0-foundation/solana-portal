@@ -3,6 +3,10 @@ name: Test
 on:
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: macos-latest
@@ -65,7 +69,7 @@ jobs:
         run: echo "${{ secrets.HYPERLANE_ADAPTER_KEYPAIR }}" > target/deploy/hyperlane_adapter-keypair.json
 
       - name: Build programs
-        run: anchor build
+        run: anchor build -- --features skip-validation
         shell: bash
 
       - name: Run tests

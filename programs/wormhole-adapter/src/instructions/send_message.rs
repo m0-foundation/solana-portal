@@ -5,7 +5,7 @@ use anchor_lang::{
 use common::{
     portal,
     wormhole_post_message_shim::{self, program::WormholePostMessageShim, types::Finality},
-    BridgeError, AUTHORITY_SEED,
+    BridgeError, Payload, PayloadData, PayloadHeader, AUTHORITY_SEED,
 };
 
 use crate::{
@@ -95,13 +95,18 @@ pub struct SendMessage<'info> {
 }
 
 impl SendMessage<'_> {
-    fn validate(&self, destination_chain_id: u32) -> Result<()> {
-        self.wormhole_global.get_peer(destination_chain_id)?;
+    fn validate(&self, m0_destination_chain_id: u32) -> Result<()> {
+        self.wormhole_global.get_m0_peer(m0_destination_chain_id)?;
         Ok(())
     }
 
-    #[access_control(ctx.accounts.validate(destination_chain_id))]
-    pub fn handler(ctx: Context<Self>, message: Vec<u8>, destination_chain_id: u32) -> Result<()> {
+    #[access_control(ctx.accounts.validate(m0_destination_chain_id))]
+    pub fn handler(
+        ctx: Context<Self>,
+        m0_destination_chain_id: u32,
+        payload: Vec<u8>,
+        payload_type: u8,
+    ) -> Result<()> {
         let bridge_fee = parse_bridge_fee(&ctx.accounts.bridge.try_borrow_data()?);
 
         if bridge_fee > 0 {
@@ -118,6 +123,22 @@ impl SendMessage<'_> {
 
             msg!("Sent bridge fee of {}", bridge_fee);
         }
+
+        let peer = ctx
+            .accounts
+            .wormhole_global
+            .get_m0_peer(m0_destination_chain_id)?;
+
+        let message = Payload {
+            header: PayloadHeader {
+                message_id: ctx.accounts.wormhole_global.generate_message_id(),
+                destination_chain_id: m0_destination_chain_id,
+                destination_peer: peer.address,
+                payload_type,
+            },
+            data: PayloadData::decode(payload_type, &payload)?,
+        }
+        .encode();
 
         wormhole_post_message_shim::cpi::post_message(
             CpiContext::new_with_signer(
