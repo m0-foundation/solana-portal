@@ -4,6 +4,7 @@ use common::{
     hyperlane_adapter::{
         self,
         accounts::{AccountMetasData, HyperlaneGlobal},
+        constants::{DEFAULT_IGP_ACCOUNT, DEFAULT_OVERHEAD_IGP_ACCOUNT, DEFAULT_IGP_PROGRAM_ID}
     },
     pda,
     portal::{self, accounts::PortalGlobal},
@@ -39,12 +40,35 @@ fn test_03_check_globals() -> Result<()> {
     let global_wh = WormholeGlobal::try_deserialize(&mut data_wh.as_slice())?;
     let global_hp = HyperlaneGlobal::try_deserialize(&mut data_hyp.as_slice())?;
 
-    assert_eq!(global_portal.admin, global_wh.admin);
-    assert_eq!(global_portal.admin, global_hp.admin);
+    // Assert all fields of global_portal
+    assert_eq!(global_portal.chain_id, 1399811149); // localnet chain_id
+    assert_eq!(global_portal.m_index, 0);
+    assert_eq!(global_portal.message_nonce, 0);
+    assert_eq!(global_portal.pending_admin, None);
+    assert_eq!(global_portal.padding, [0u8; 128]);
     assert!(!global_portal.paused);
-    assert!(!global_wh.paused);
+
+    // Assert all fields of global_hp
+    assert_eq!(global_hp.igp_program_id, DEFAULT_IGP_PROGRAM_ID);
+    assert_eq!(global_hp.igp_gas_amount, 50000);
+    assert_eq!(global_hp.igp_account, DEFAULT_IGP_ACCOUNT);
+    assert_eq!(global_hp.igp_overhead_account, Some(DEFAULT_OVERHEAD_IGP_ACCOUNT));
+    assert_eq!(global_hp.ism, None);
+    assert_eq!(global_hp.pending_admin, None);
+    assert!(global_hp.peers.is_empty());
+    assert_eq!(global_hp.padding, [0u8; 128]);
     assert!(!global_hp.paused);
-    assert!(global_wh.receive_lut.is_none());
+
+    // Assert all fields of global_wh
+    assert_eq!(global_wh.receive_lut, None);
+    assert_eq!(global_wh.pending_admin, None);
+    assert!(global_wh.peers.is_empty());
+    assert_eq!(global_wh.padding, [0u8; 128]);
+    assert_eq!(global_wh.receive_lut, None);
+    assert!(!global_wh.paused);
+
+    assert_eq!(global_wh.admin, global_portal.admin);
+    assert_eq!(global_portal.admin, global_hp.admin);
 
     Ok(())
 }
