@@ -113,7 +113,7 @@ impl SendToken<'_> {
         // Only allow sending to hub if spoke is isolated
         if let Some(chain_id) = self.portal_global.isolated_hub_chain_id {
             if chain_id != destination_chain_id {
-                return err!(BridgeError::InvalidIsolatedHub);
+                return err!(BridgeError::InvalidTransfer);
             }
         }
 

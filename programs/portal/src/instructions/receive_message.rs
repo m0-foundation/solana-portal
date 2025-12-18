@@ -166,7 +166,7 @@ impl ReceiveMessage<'_> {
         // Tokens can only come from the hub if the spoke is isolated
         if let Some(chain_id) = ctx.accounts.portal_global.isolated_hub_chain_id {
             if chain_id != source_chain_id {
-                return err!(BridgeError::InvalidIsolatedHub);
+                return err!(BridgeError::InvalidTransfer);
             }
         }
 

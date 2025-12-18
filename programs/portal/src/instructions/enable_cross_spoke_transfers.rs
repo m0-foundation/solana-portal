@@ -18,7 +18,6 @@ pub struct EnableCrossSpokeTransfers<'info> {
 
 impl EnableCrossSpokeTransfers<'_> {
     pub fn handler(ctx: Context<Self>) -> Result<()> {
-        msg!("Transfers to other spoke chains enabled.");
         ctx.accounts.portal_global.isolated_hub_chain_id = None;
         Ok(())
     }
