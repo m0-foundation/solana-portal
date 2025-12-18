@@ -110,7 +110,7 @@ impl ReceiveMessage<'_> {
             )
             .with_remaining_accounts(ctx.remaining_accounts.to_vec()),
             origin,
-            Payload::decode(&message).message_id(),
+            Payload::decode(&message)?.header.message_id,
             message,
         )
     }
@@ -138,14 +138,14 @@ impl<'info> ReceiveMessageMetas<'info> {
         _sender: [u8; 32],
         message: Vec<u8>,
     ) -> Result<()> {
-        let payload = Payload::decode(&message);
+        let payload = Payload::decode(&message)?;
 
         let hyperlane_adapter_authority = pda!(&[AUTHORITY_SEED], &crate::ID);
         let hyperlane_global = pda!(&[GLOBAL_SEED], &crate::ID);
         let portal_global = pda!(&[GLOBAL_SEED], &portal::ID);
         let payer = pda!(&[PAYER_SEED], &crate::ID);
         let portal_authority = pda!(&[AUTHORITY_SEED], &portal::ID);
-        let message_account = pda!(&[MESSAGE_SEED, &payload.message_id()], &portal::ID);
+        let message_account = pda!(&[MESSAGE_SEED, &payload.header.message_id], &portal::ID);
 
         // Accounts needed by all payload types
         let mut account_metas: Vec<SerializableAccountMeta> = vec![
@@ -160,7 +160,7 @@ impl<'info> ReceiveMessageMetas<'info> {
         ];
 
         let required_remaining = require_metas(
-            &payload,
+            &payload.data,
             ctx.accounts.account_metas_data.key(),
             Some(ctx.accounts.account_metas_data.extensions.clone()),
             Some(ctx.accounts.account_metas_data.m_mint),

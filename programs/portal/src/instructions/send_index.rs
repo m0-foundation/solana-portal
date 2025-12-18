@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::{BridgeAdapter, BridgeError, IndexPayload, Payload};
+use common::{BridgeAdapter, BridgeError, IndexPayload, PayloadData};
 
 use crate::{
     instructions::send_message,
@@ -36,10 +36,8 @@ impl SendIndex<'_> {
         ctx: Context<'_, '_, '_, 'info, SendIndex<'info>>,
         destination_chain_id: u32,
     ) -> Result<()> {
-        let message = Payload::Index(IndexPayload {
+        let payload = PayloadData::Index(IndexPayload {
             index: ctx.accounts.portal_global.m_index,
-            message_id: ctx.accounts.portal_global.generate_message_id(),
-            destination_chain_id,
         });
 
         send_message(
@@ -49,8 +47,9 @@ impl SendIndex<'_> {
             ctx.bumps.portal_authority,
             ctx.accounts.system_program.to_account_info(),
             ctx.remaining_accounts.to_vec(),
-            message.encode(),
             destination_chain_id,
+            payload,
+            PayloadData::INDEX_DISCRIMINANT,
         )
     }
 }

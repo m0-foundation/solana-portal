@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use anchor_spl::associated_token::spl_associated_token_account::solana_program::hash::hashv;
 use common::BridgeError;
 
 use crate::instructions::VaaBody;
@@ -11,6 +12,8 @@ pub struct WormholeGlobal {
     pub bump: u8,
     pub admin: Pubkey,
     pub paused: bool,
+    pub chain_id: u32,
+    pub message_nonce: u64,
     pub receive_lut: Option<Pubkey>,
     pub pending_admin: Option<Pubkey>,
     pub peers: Vec<Peer>,
@@ -30,6 +33,8 @@ impl WormholeGlobal {
         1 + // bump
         32 + // admin
         1 + // paused
+        4 + // chain_id
+        8 + // message_nonce
         1 + // receive_lut option
         32 + // receive_lut
         1 + // pending_admin option
@@ -77,5 +82,15 @@ impl WormholeGlobal {
         }
 
         peers
+    }
+
+    pub fn generate_message_id(&mut self) -> [u8; 32] {
+        self.message_nonce += 1;
+        hashv(&[
+            &self.chain_id.to_le_bytes(),
+            &crate::ID.to_bytes(),
+            &self.message_nonce.to_le_bytes(),
+        ])
+        .to_bytes()
     }
 }

@@ -8,7 +8,7 @@ pub mod set_peer;
 pub mod transfer_admin;
 
 use anchor_lang::prelude::*;
-use common::{BridgeError, Payload, TokenTransferPayload};
+use common::{BridgeError, Payload, PayloadData, PayloadHeader, TokenTransferPayload};
 pub use initialize::*;
 pub use pause::*;
 pub use receive_message::*;
@@ -45,7 +45,7 @@ impl VaaBody {
         // Transform legacy TransceiverMessage
         #[cfg(feature = "legacy-ntt")]
         let payload = if payload_bytes.starts_with(&[0x99, 0x45, 0xFF, 0x10]) {
-            let (_source_ntt_manager, rest) = payload_bytes[4..].split_at(32);
+            let (source_ntt_manager, rest) = payload_bytes[4..].split_at(32);
             let (_recipient_ntt_manager, rest) = rest.split_at(32);
             let (_ntt_manager_payload_len, rest) = rest.split_at(2);
 
@@ -65,21 +65,27 @@ impl VaaBody {
                 let (index, rest) = rest.split_at(8);
                 let (destination_token, _rest) = rest.split_at(32);
 
-                Payload::TokenTransfer(TokenTransferPayload {
-                    amount: u64::from_be_bytes(amount_bytes.try_into().unwrap()) as u128,
-                    destination_token: destination_token.try_into().unwrap(),
-                    recipient: to.try_into().unwrap(),
-                    index: u64::from_be_bytes(index.try_into().unwrap()) as u128,
-                    sender: [0u8; 32], // NTT does not provide sender info
-                    message_id: id.try_into().unwrap(),
-                    destination_chain_id: 1399811149, // M0 chain id for Solana
-                })
+                Payload {
+                    header: PayloadHeader {
+                        message_id: id.try_into().unwrap(),
+                        destination_chain_id: 1399811149, // M0 chain id for Solana
+                        destination_peer: source_ntt_manager.try_into().unwrap(),
+                        payload_type: PayloadData::TOKEN_TRANSFER_DISCRIMINANT,
+                    },
+                    data: PayloadData::TokenTransfer(TokenTransferPayload {
+                        amount: u64::from_be_bytes(amount_bytes.try_into().unwrap()) as u128,
+                        destination_token: destination_token.try_into().unwrap(),
+                        recipient: to.try_into().unwrap(),
+                        index: u64::from_be_bytes(index.try_into().unwrap()) as u128,
+                        sender: [0u8; 32], // NTT does not provide sender info
+                    }),
+                }
             } else {
                 return err!(BridgeError::InvalidVaa);
             }
         } else {
             // M0 message format
-            Payload::decode(&payload_bytes.to_vec())
+            Payload::decode(&payload_bytes.to_vec())?
         };
 
         #[cfg(not(feature = "legacy-ntt"))]
@@ -126,8 +132,8 @@ mod tests {
         assert_eq!(vaa.consistency_level, 1);
 
         // payload verification
-        match vaa.payload {
-            Payload::TokenTransfer(ref payload) => {
+        match vaa.payload.data {
+            PayloadData::TokenTransfer(ref payload) => {
                 assert_eq!(payload.amount, 2);
                 assert_eq!(payload.index, 1062794965833);
                 assert_eq!(

@@ -14,20 +14,20 @@ use crate::{
         constants::{MINT_AUTHORITY_SEED, M_VAULT_SEED},
     },
     wormhole_adapter::constants::EVENT_AUTHORITY_SEED,
-    BridgeError, Extension, Payload, AUTHORITY_SEED,
+    BridgeError, Extension, PayloadData, AUTHORITY_SEED,
 };
 
 /// Returns account metas required to process the given payload.
 /// Accounts will be passed as remaining accounts to the receive_message instruction on Portal.
 pub fn require_metas(
-    payload: &Payload,
+    payload: &PayloadData,
     payer: Pubkey,
     extensions: Option<Vec<Extension>>,
     m_mint: Option<Pubkey>,
     orderbook_token_in: Option<&AccountInfo>,
 ) -> Result<Vec<AccountMeta>> {
     match payload {
-        Payload::TokenTransfer(token_transfer) => {
+        PayloadData::TokenTransfer(token_transfer) => {
             let extensions = extensions.ok_or(BridgeError::MissingOptionalAccount)?;
             let m_mint = m_mint.ok_or(BridgeError::MissingOptionalAccount)?;
 
@@ -99,7 +99,7 @@ pub fn require_metas(
                 AccountMeta::new_readonly(ext_swap::ID, false),
             ])
         }
-        Payload::Index(_) | Payload::EarnerMerkleRoot(_) => {
+        PayloadData::Index(_) | PayloadData::EarnerMerkleRoot(_) => {
             let m_global = pda!(&[GLOBAL_SEED], &earn::ID);
             let m_mint = m_mint.ok_or(BridgeError::MissingOptionalAccount)?;
 
@@ -110,7 +110,7 @@ pub fn require_metas(
                 AccountMeta::new_readonly(token_2022::ID, false),
             ])
         }
-        Payload::FillReport(report) => {
+        PayloadData::FillReport(report) => {
             let token_in = Pubkey::from(report.token_in);
 
             let token_in_program = orderbook_token_in

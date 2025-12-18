@@ -6,7 +6,8 @@ use common::{
     pda,
     portal::constants::GLOBAL_SEED,
     wormhole_adapter::{self, constants::EMITTER_SEED},
-    HyperlaneRemainingAccounts, Payload, WormholeRemainingAccounts, AUTHORITY_SEED,
+    HyperlaneRemainingAccounts, Payload, PayloadData, PayloadHeader, WormholeRemainingAccounts,
+    AUTHORITY_SEED,
 };
 use portal::{accounts, instruction};
 use solana_sdk::{bs58, compute_budget::ComputeBudgetInstruction};
@@ -129,14 +130,14 @@ fn test_02_index_update_hyperlane() -> Result<()> {
     let message_account = accounts.dispatched_message;
     let account_data = rpc_client.get_account_data(&message_account)?;
 
-    let payload_size = 1 + 16 + 32 + 4;
+    let payload_size = PayloadHeader::SIZE + 16;
 
     // The last bytes of the account data contain the message body
     let len = account_data.len();
     let message_body = &account_data[len - payload_size..];
-    let message = Payload::decode(&message_body.to_vec());
+    let message = Payload::decode(&message_body.to_vec()).expect("failed to decode payload");
 
-    let Payload::Index(index) = message else {
+    let PayloadData::Index(index) = message.data else {
         panic!("Expected IndexPayload");
     };
 

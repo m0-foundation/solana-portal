@@ -28,8 +28,8 @@ pub mod wormhole_adapter {
 
     /// Admin Instructions
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        Initialize::handler(ctx)
+    pub fn initialize(ctx: Context<Initialize>, chain_id: u32) -> Result<()> {
+        Initialize::handler(ctx, chain_id)
     }
 
     pub fn set_lut(ctx: Context<SetLookupTable>, recent_slot: u64) -> Result<()> {
@@ -64,10 +64,11 @@ pub mod wormhole_adapter {
 
     pub fn send_message(
         ctx: Context<SendMessage>,
-        message: Vec<u8>,
         m0_destination_chain_id: u32,
+        payload: Vec<u8>,
+        payload_type: u8,
     ) -> Result<()> {
-        SendMessage::handler(ctx, message, m0_destination_chain_id)
+        SendMessage::handler(ctx, m0_destination_chain_id, payload, payload_type)
     }
 
     /// Inbound Instructions

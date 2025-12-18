@@ -38,4 +38,5 @@ pub enum BridgeError {
     InvalidMessageId,
     #[msg("Destination chain does not match")]
     InvalidDestinationChain,
+    InvalidPayload,
 }

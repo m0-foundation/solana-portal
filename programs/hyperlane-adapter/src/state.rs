@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use anchor_spl::associated_token::spl_associated_token_account::solana_program::hash::hashv;
 use common::{BridgeError, Extension};
 
 #[constant]
@@ -39,6 +40,8 @@ pub struct HyperlaneGlobal {
     pub bump: u8,
     pub admin: Pubkey,
     pub paused: bool,
+    pub chain_id: u32,
+    pub message_nonce: u64,
     pub igp_program_id: Pubkey,
     pub igp_gas_amount: u64,
     pub igp_account: Pubkey,
@@ -60,9 +63,10 @@ impl HyperlaneGlobal {
     pub fn size(peers: usize) -> usize {
         8 + // discriminator
         1 + // bump
-        8 + // nonce
         32 + // admin
         1 + // paused
+        4 + // chain_id
+        8 + // message_nonce
         32 + // igp program id
         8 + // igp gas amount
         32 + // igp account
@@ -104,6 +108,16 @@ impl HyperlaneGlobal {
         }
 
         peers
+    }
+
+    pub fn generate_message_id(&mut self) -> [u8; 32] {
+        self.message_nonce += 1;
+        hashv(&[
+            &self.chain_id.to_le_bytes(),
+            &crate::ID.to_bytes(),
+            &self.message_nonce.to_le_bytes(),
+        ])
+        .to_bytes()
     }
 }
 

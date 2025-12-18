@@ -1401,15 +1401,6 @@
                 32
               ]
             }
-          },
-          {
-            "name": "message_id",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
           }
         ]
       }
@@ -1620,15 +1611,6 @@
           {
             "name": "bridge_adapter",
             "type": "pubkey"
-          },
-          {
-            "name": "message_id",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
           }
         ]
       }

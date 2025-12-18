@@ -226,7 +226,12 @@
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "chain_id",
+          "type": "u32"
+        }
+      ]
     },
     {
       "name": "pause",
@@ -947,12 +952,16 @@
       ],
       "args": [
         {
-          "name": "message",
+          "name": "m0_destination_chain_id",
+          "type": "u32"
+        },
+        {
+          "name": "payload",
           "type": "bytes"
         },
         {
-          "name": "m0_destination_chain_id",
-          "type": "u32"
+          "name": "payload_type",
+          "type": "u8"
         }
       ]
     },
@@ -1426,6 +1435,14 @@
           {
             "name": "paused",
             "type": "bool"
+          },
+          {
+            "name": "chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "message_nonce",
+            "type": "u64"
           },
           {
             "name": "receive_lut",

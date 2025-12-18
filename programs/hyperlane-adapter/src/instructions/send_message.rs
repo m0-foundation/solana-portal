@@ -3,7 +3,7 @@ use anchor_lang::prelude::{
     program::{get_return_data, invoke_signed},
     *,
 };
-use common::{portal, BridgeError, AUTHORITY_SEED};
+use common::{portal, BridgeError, Payload, PayloadData, PayloadHeader, AUTHORITY_SEED};
 use std::vec;
 
 use crate::{
@@ -141,8 +141,9 @@ pub struct SendMessage<'info> {
 impl SendMessage<'_> {
     pub fn handler(
         ctx: Context<Self>,
-        message: Vec<u8>,
         m0_destination_chain_id: u32,
+        payload: Vec<u8>,
+        payload_type: u8,
     ) -> Result<()> {
         let peer = ctx
             .accounts
@@ -151,6 +152,17 @@ impl SendMessage<'_> {
 
         // Dispatch the message via the mailbox program
         let message_id = {
+            let message = Payload {
+                header: PayloadHeader {
+                    message_id: ctx.accounts.hyperlane_global.generate_message_id(),
+                    destination_chain_id: m0_destination_chain_id,
+                    destination_peer: peer.address,
+                    payload_type,
+                },
+                data: PayloadData::decode(payload_type, &payload)?,
+            }
+            .encode();
+
             // OutboxDispatch discriminant
             let mut instruction_data = vec![4u8];
 
