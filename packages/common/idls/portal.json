@@ -1421,7 +1421,7 @@
         "fields": [
           {
             "name": "index",
-            "type": "u64"
+            "type": "u128"
           },
           {
             "name": "message_id",
@@ -1560,7 +1560,7 @@
           },
           {
             "name": "index",
-            "type": "u64"
+            "type": "u128"
           },
           {
             "name": "message_id",
@@ -1615,7 +1615,7 @@
           },
           {
             "name": "index",
-            "type": "u64"
+            "type": "u128"
           },
           {
             "name": "bridge_adapter",

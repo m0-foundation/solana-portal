@@ -26,10 +26,12 @@ pub struct SetPeer<'info> {
 
 impl SetPeer<'_> {
     pub fn handler(ctx: Context<Self>, peer: Peer) -> Result<()> {
-        ctx.accounts.hyperlane_global.peers = ctx.accounts.hyperlane_global.updated_peers(peer.clone());
+        ctx.accounts.hyperlane_global.peers =
+            ctx.accounts.hyperlane_global.updated_peers(peer.clone());
 
         emit!(PeerSet {
-            chain_id: peer.chain_id,
+            m0_chain_id: peer.m0_chain_id,
+            hyperlane_chain_id: peer.hyperlane_chain_id,
             peer: peer.address,
         });
 
@@ -39,6 +41,7 @@ impl SetPeer<'_> {
 
 #[event]
 pub struct PeerSet {
-    pub chain_id: u32,
+    pub m0_chain_id: u32,
+    pub hyperlane_chain_id: u32,
     pub peer: [u8; 32],
 }

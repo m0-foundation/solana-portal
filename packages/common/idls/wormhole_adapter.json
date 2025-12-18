@@ -1262,7 +1262,11 @@
         "kind": "struct",
         "fields": [
           {
-            "name": "chain_id",
+            "name": "m0_chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "wormhole_chain_id",
             "type": "u32"
           },
           {

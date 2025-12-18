@@ -2080,7 +2080,11 @@
         "kind": "struct",
         "fields": [
           {
-            "name": "chain_id",
+            "name": "m0_chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "hyperlane_chain_id",
             "type": "u32"
           },
           {

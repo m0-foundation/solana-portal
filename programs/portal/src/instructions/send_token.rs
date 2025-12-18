@@ -207,7 +207,6 @@ impl SendToken<'_> {
         });
 
         Ok(())
-
     }
 }
 
@@ -219,7 +218,7 @@ pub struct TokenSent {
     pub sender: Pubkey,
     pub recipient: [u8; 32],
     pub amount: u128,
-    pub index: u64,
+    pub index: u128,
     pub bridge_adapter: Pubkey,
     pub message_id: [u8; 32],
 }

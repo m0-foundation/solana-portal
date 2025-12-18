@@ -276,7 +276,7 @@ pub struct TokenReceived {
     pub sender: [u8; 32],
     pub recipient: [u8; 32],
     pub amount: u128,
-    pub index: u64,
+    pub index: u128,
     pub message_id: [u8; 32],
 }
 
