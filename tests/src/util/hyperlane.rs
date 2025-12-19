@@ -17,8 +17,6 @@ pub fn decode_payload_from_message_account(account_data: &[u8]) -> Result<(Paylo
     // The payload starts 5 bytes before the destination_peer field
     let payload_start = peer_index - 5;
     let payload_bytes = &account_data[payload_start..];
-
-    println!("Payload bytes: {:?}", payload_bytes);
     let message = Payload::decode(&payload_bytes.to_vec())?;
 
     // Parse message recipient

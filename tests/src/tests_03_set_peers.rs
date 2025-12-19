@@ -81,3 +81,42 @@ fn test_03_remove_peer() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn test_04_update_peer() -> Result<()> {
+    let client = Client::new(Cluster::Localnet, get_signer());
+    let rpc_client = get_rpc_client();
+
+    let program = client.program(wormhole_adapter::ID)?;
+
+    // Update wormhole chain id
+    program
+        .request()
+        .accounts(accounts::SetPeer {
+            admin: program.payer(),
+            wormhole_global: pda!(&[GLOBAL_SEED], &wormhole_adapter::ID),
+            system_program: system_program::ID,
+        })
+        .args(instruction::SetPeer {
+            peer: Peer {
+                m0_chain_id: 8453,
+                address: [1; 32],
+                wormhole_chain_id: 420,
+            },
+        })
+        .send()?;
+
+    let data_wh = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &wormhole_adapter::ID))?;
+    let global_wh = WormholeGlobal::try_deserialize(&mut data_wh.as_slice())?;
+    assert!(
+        global_wh
+            .peers
+            .iter()
+            .find(|p| p.m0_chain_id == 8453)
+            .expect("did not find updated peer")
+            .wormhole_chain_id
+            == 420
+    );
+
+    Ok(())
+}

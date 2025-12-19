@@ -2,6 +2,7 @@ use anchor_client::{Client, Cluster};
 use anchor_lang::{system_program, AccountDeserialize};
 use anyhow::Result;
 use common::{
+    earn,
     hyperlane_adapter::{
         self,
         accounts::{HyperlaneGlobal, HyperlaneUserGlobal},
@@ -238,6 +239,58 @@ fn test_05_index_update_hyperlane_bad_dest() -> Result<()> {
     let s = err.to_string();
     assert!(s.contains("6008") || s.contains("custom program error: 0x1778"));
     assert!(s.contains("UnsupportedDestinationChain"));
+
+    Ok(())
+}
+
+#[test]
+fn test_06_missing_account() -> Result<()> {
+    let client = Client::new(Cluster::Localnet, get_signer());
+    let program = client.program(portal::ID)?;
+
+    let err = program
+        .request()
+        .accounts(accounts::SendIndex {
+            sender: program.payer(),
+            system_program: system_program::ID,
+            portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
+            portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
+            bridge_adapter: wormhole_adapter::ID,
+        })
+        .args(instruction::SendIndex {
+            destination_chain_id: 1,
+        })
+        .accounts(WormholeRemainingAccounts::account_metas()[1..].to_vec())
+        .send()
+        .unwrap_err();
+
+    let s = err.to_string();
+    assert!(s.contains("Error Code: InvalidRemainingAccounts"));
+
+    Ok(())
+}
+
+#[test]
+fn test_07_send_merkle_root() -> Result<()> {
+    let client = Client::new(Cluster::Localnet, get_signer());
+
+    let program = client.program(portal::ID)?;
+
+    program
+        .request()
+        .accounts(accounts::SendMerkleRoot {
+            sender: program.payer(),
+            system_program: system_program::ID,
+            portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
+            portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
+            bridge_adapter: wormhole_adapter::ID,
+            earn_global: pda!(&[GLOBAL_SEED], &earn::ID),
+        })
+        .args(instruction::SendMerkleRoot {
+            destination_chain_id: 1,
+        })
+        .accounts(WormholeRemainingAccounts::account_metas())
+        .send()?;
 
     Ok(())
 }
