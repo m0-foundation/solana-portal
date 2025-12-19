@@ -83,7 +83,7 @@ impl ReceiveMessage<'_> {
         #[cfg(feature = "skip-validation")]
         msg!("SKIPPING VALIDATION FEATURE ENABLED");
 
-        let peer = self.hyperlane_global.get_peer(origin)?;
+        let peer = self.hyperlane_global.peers.get_peer(origin)?;
 
         if &peer.address != sender {
             return err!(BridgeError::InvalidPeer);
@@ -117,7 +117,11 @@ impl ReceiveMessage<'_> {
             )
             .with_remaining_accounts(ctx.remaining_accounts.to_vec()),
             Payload::decode(&message)?.header.message_id,
-            ctx.accounts.hyperlane_global.get_peer(origin)?.m0_chain_id,
+            ctx.accounts
+                .hyperlane_global
+                .peers
+                .get_peer(origin)?
+                .m0_chain_id,
             message,
         )
     }

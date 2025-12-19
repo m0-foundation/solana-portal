@@ -90,9 +90,6 @@
     },
     {
       "name": "get_ism",
-      "docs": [
-        "Read-only Instructions"
-      ],
       "discriminator": [
         45,
         18,
@@ -773,6 +770,9 @@
     },
     {
       "name": "receive_message_metas",
+      "docs": [
+        "Read-only Instructions"
+      ],
       "discriminator": [
         194,
         141,
@@ -887,6 +887,9 @@
     },
     {
       "name": "send_message",
+      "docs": [
+        "Outbound Instructions"
+      ],
       "discriminator": [
         57,
         40,
@@ -1585,9 +1588,6 @@
     },
     {
       "name": "sync_extensions",
-      "docs": [
-        "Outbound Instructions"
-      ],
       "discriminator": [
         247,
         48,
@@ -2027,10 +2027,8 @@
           {
             "name": "peers",
             "type": {
-              "vec": {
-                "defined": {
-                  "name": "Peer"
-                }
+              "defined": {
+                "name": "Peers"
               }
             }
           },
@@ -2085,7 +2083,7 @@
             "type": "u32"
           },
           {
-            "name": "hyperlane_chain_id",
+            "name": "adapter_chain_id",
             "type": "u32"
           }
         ]
@@ -2111,6 +2109,21 @@
                 "u8",
                 32
               ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Peers",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "vec": {
+              "defined": {
+                "name": "Peer"
+              }
             }
           }
         ]

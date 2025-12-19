@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
+use common::Peer;
 
-use crate::state::{Peer, WormholeGlobal, GLOBAL_SEED};
+use crate::state::{WormholeGlobal, GLOBAL_SEED};
 
 #[derive(Accounts)]
 #[instruction(peer: Peer)]
@@ -14,7 +15,7 @@ pub struct SetPeer<'info> {
         bump = wormhole_global.bump,
         has_one = admin,
         realloc = WormholeGlobal::size(
-            wormhole_global.updated_peers(peer.clone()).len()
+            wormhole_global.peers.updated_peers(peer.clone()).len()
         ),
         realloc::payer = admin,
         realloc::zero = false,
@@ -26,12 +27,15 @@ pub struct SetPeer<'info> {
 
 impl SetPeer<'_> {
     pub fn handler(ctx: Context<Self>, peer: Peer) -> Result<()> {
-        ctx.accounts.wormhole_global.peers =
-            ctx.accounts.wormhole_global.updated_peers(peer.clone());
+        ctx.accounts.wormhole_global.peers = ctx
+            .accounts
+            .wormhole_global
+            .peers
+            .updated_peers(peer.clone());
 
         emit!(PeerSet {
             m0_chain_id: peer.m0_chain_id,
-            wormhole_chain_id: peer.wormhole_chain_id,
+            wormhole_chain_id: peer.adapter_chain_id,
             peer: peer.address,
         });
 

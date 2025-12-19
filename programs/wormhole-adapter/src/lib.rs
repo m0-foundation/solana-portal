@@ -4,8 +4,8 @@ pub mod consts;
 pub mod instructions;
 pub mod state;
 
-use crate::state::Peer;
 use anchor_lang::prelude::*;
+use common::Peer;
 use executor_account_resolver_svm::{InstructionGroups, Resolver, RESOLVER_EXECUTE_VAA_V1};
 use instructions::*;
 
