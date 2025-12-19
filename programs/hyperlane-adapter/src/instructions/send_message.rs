@@ -149,7 +149,9 @@ impl SendMessage<'_> {
         let peer = ctx
             .accounts
             .hyperlane_global
-            .get_m0_peer(m0_destination_chain_id)?;
+            .peers
+            .get_m0_peer(m0_destination_chain_id)?
+            .clone();
 
         // Dispatch the message via the mailbox program
         let message_id = {
@@ -169,7 +171,7 @@ impl SendMessage<'_> {
 
             // Serialize OutboxDispatch struct fields
             instruction_data.extend_from_slice(&crate::ID.to_bytes());
-            instruction_data.extend_from_slice(&peer.hyperlane_chain_id.to_le_bytes());
+            instruction_data.extend_from_slice(&peer.adapter_chain_id.to_le_bytes());
             instruction_data.extend_from_slice(&peer.address);
             instruction_data.extend_from_slice(&(message.len() as u32).to_le_bytes());
             instruction_data.extend_from_slice(&message);
@@ -231,7 +233,7 @@ impl SendMessage<'_> {
 
             // Serialize PayForGas struct fields
             instruction_data.extend_from_slice(message_id.as_bytes());
-            instruction_data.extend_from_slice(&peer.hyperlane_chain_id.to_le_bytes());
+            instruction_data.extend_from_slice(&peer.adapter_chain_id.to_le_bytes());
 
             let gas_amount = ctx.accounts.hyperlane_global.igp_gas_amount;
             instruction_data.extend_from_slice(&gas_amount.to_le_bytes());

@@ -1271,7 +1271,7 @@
             "type": "u32"
           },
           {
-            "name": "wormhole_chain_id",
+            "name": "adapter_chain_id",
             "type": "u32"
           }
         ]
@@ -1297,6 +1297,21 @@
                 "u8",
                 32
               ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Peers",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "vec": {
+              "defined": {
+                "name": "Peer"
+              }
             }
           }
         ]
@@ -1473,10 +1488,8 @@
           {
             "name": "peers",
             "type": {
-              "vec": {
-                "defined": {
-                  "name": "Peer"
-                }
+              "defined": {
+                "name": "Peers"
               }
             }
           },

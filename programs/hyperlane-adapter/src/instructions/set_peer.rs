@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
+use common::Peer;
 
-use crate::state::{HyperlaneGlobal, Peer, GLOBAL_SEED};
+use crate::state::{HyperlaneGlobal, GLOBAL_SEED};
 
 #[derive(Accounts)]
 #[instruction(peer: Peer)]
@@ -14,7 +15,7 @@ pub struct SetPeer<'info> {
         bump = hyperlane_global.bump,
         has_one = admin,
         realloc = HyperlaneGlobal::size(
-            hyperlane_global.updated_peers(peer.clone()).len()
+            hyperlane_global.peers.updated_peers(peer.clone()).len()
         ),
         realloc::payer = admin,
         realloc::zero = false,
@@ -26,12 +27,15 @@ pub struct SetPeer<'info> {
 
 impl SetPeer<'_> {
     pub fn handler(ctx: Context<Self>, peer: Peer) -> Result<()> {
-        ctx.accounts.hyperlane_global.peers =
-            ctx.accounts.hyperlane_global.updated_peers(peer.clone());
+        ctx.accounts.hyperlane_global.peers = ctx
+            .accounts
+            .hyperlane_global
+            .peers
+            .updated_peers(peer.clone());
 
         emit!(PeerSet {
             m0_chain_id: peer.m0_chain_id,
-            hyperlane_chain_id: peer.hyperlane_chain_id,
+            hyperlane_chain_id: peer.adapter_chain_id,
             peer: peer.address,
         });
 

@@ -1,4 +1,6 @@
 use anchor_lang::prelude::*;
+use anchor_spl::associated_token::spl_associated_token_account::solana_program::hash::hashv;
+use common::{Extension, Peers};
 use common::{BridgeError, Extension};
 
 #[constant]
@@ -46,15 +48,8 @@ pub struct HyperlaneGlobal {
     pub igp_overhead_account: Option<Pubkey>,
     pub ism: Option<Pubkey>,
     pub pending_admin: Option<Pubkey>,
-    pub peers: Vec<Peer>,
+    pub peers: Peers,
     pub padding: [u8; 128],
-}
-
-#[account]
-pub struct Peer {
-    pub address: [u8; 32],
-    pub m0_chain_id: u32,
-    pub hyperlane_chain_id: u32,
 }
 
 impl HyperlaneGlobal {
@@ -70,41 +65,8 @@ impl HyperlaneGlobal {
         1 + 32 + // igp overhead account option + pubkey
         1 + 32 + // ism option + ism pubkey
         1 + 32 + // pending admin
-        4 + // length of peers
-        peers * 40 + // each peer
+        Peers::size(peers) + // peers
         128 // padding
-    }
-
-    pub fn get_m0_peer(&self, m0_chain_id: u32) -> Result<Peer> {
-        self.peers
-            .iter()
-            .find(|peer| peer.m0_chain_id == m0_chain_id)
-            .cloned()
-            .ok_or_else(|| BridgeError::UnsupportedDestinationChain.into())
-    }
-
-    pub fn get_peer(&self, hyperlane_chain_id: u32) -> Result<Peer> {
-        self.peers
-            .iter()
-            .find(|peer| peer.hyperlane_chain_id == hyperlane_chain_id)
-            .cloned()
-            .ok_or_else(|| BridgeError::UnsupportedDestinationChain.into())
-    }
-
-    pub fn updated_peers(&self, peer: Peer) -> Vec<Peer> {
-        let mut peers = self.peers.clone();
-
-        // Remove any entries with matching m0_chain_id or hyperlane_chain_id
-        peers.retain(|p| {
-            p.m0_chain_id != peer.m0_chain_id && p.hyperlane_chain_id != peer.hyperlane_chain_id
-        });
-
-        // Only add the new peer if address is set
-        if peer.address != [0u8; 32] {
-            peers.push(peer);
-        }
-
-        peers
     }
 }
 

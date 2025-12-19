@@ -96,7 +96,9 @@ pub struct SendMessage<'info> {
 
 impl SendMessage<'_> {
     fn validate(&self, m0_destination_chain_id: u32) -> Result<()> {
-        self.wormhole_global.get_m0_peer(m0_destination_chain_id)?;
+        self.wormhole_global
+            .peers
+            .get_m0_peer(m0_destination_chain_id)?;
         Ok(())
     }
 
@@ -128,7 +130,9 @@ impl SendMessage<'_> {
         let peer = ctx
             .accounts
             .wormhole_global
-            .get_m0_peer(m0_destination_chain_id)?;
+            .peers
+            .get_m0_peer(m0_destination_chain_id)?
+            .clone();
 
         let message = Payload {
             header: PayloadHeader {

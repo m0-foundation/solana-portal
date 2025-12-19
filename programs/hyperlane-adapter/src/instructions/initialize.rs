@@ -1,5 +1,8 @@
 use anchor_lang::prelude::*;
-use common::earn::{self, accounts::EarnGlobal};
+use common::{
+    earn::{self, accounts::EarnGlobal},
+    Peers,
+};
 
 use crate::{
     consts::{
@@ -59,7 +62,7 @@ impl Initialize<'_> {
             chain_id,
             ism: None,
             paused: false,
-            peers: Vec::new(),
+            peers: Peers::default(),
             pending_admin: None,
             igp_program_id: DEFAULT_IGP_PROGRAM_ID,
             igp_account: DEFAULT_IGP_ACCOUNT,

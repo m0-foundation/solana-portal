@@ -104,8 +104,7 @@ fn test_02_index_update_wormhole_bad_dest() -> Result<()> {
         .unwrap_err();
 
     let s = err.to_string();
-    assert!(s.contains("6008") || s.contains("custom program error: 0x1778"));
-    assert!(s.contains("UnsupportedDestinationChain"));
+    assert!(s.contains("Error Code: InvalidPeer"));
 
     Ok(())
 }
@@ -237,8 +236,7 @@ fn test_05_index_update_hyperlane_bad_dest() -> Result<()> {
         .unwrap_err();
 
     let s = err.to_string();
-    assert!(s.contains("6008") || s.contains("custom program error: 0x1778"));
-    assert!(s.contains("UnsupportedDestinationChain"));
+    assert!(s.contains("Error Code: InvalidPeer"));
 
     Ok(())
 }

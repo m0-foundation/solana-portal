@@ -2,10 +2,10 @@
 
 mod consts;
 mod instructions;
-mod state;
+pub mod state;
 
-use crate::state::Peer;
 use anchor_lang::prelude::*;
+use common::Peer;
 use consts::{
     HANDLE_ACCOUNT_METAS_DISCRIMINATOR, HANDLE_DISCRIMINATOR, ISM_DISCRIMINATOR,
     ISM_METAS_DISCRIMINATOR,
