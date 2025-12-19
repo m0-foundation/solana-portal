@@ -148,14 +148,14 @@ pub fn run_surfpool_cmd(args: Vec<&str>) -> Result<String> {
     Ok(stdout)
 }
 
-// #[cfg(test)]
-// mod tests_01_health;
+#[cfg(test)]
+mod tests_01_health;
 
-// #[cfg(test)]
-// mod tests_02_initialize;
+#[cfg(test)]
+mod tests_02_initialize;
 
-// #[cfg(test)]
-// mod tests_03_set_peers;
+#[cfg(test)]
+mod tests_03_set_peers;
 
 // #[cfg(test)]
 // mod tests_04_index_update;
