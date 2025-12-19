@@ -63,7 +63,7 @@ impl ReceiveMessage<'_> {
         if message.header.destination_chain_id != self.portal_global.chain_id {
             return err!(BridgeError::InvalidDestinationChain);
         }
-        if message.header.destination_peer != crate::ID.to_bytes() {
+        if BridgeAdapter::valid_destination_peer(message.header.destination_peer) {
             return err!(BridgeError::InvalidDestinationPeer);
         }
 
