@@ -23,7 +23,9 @@ fn main() -> Result<()> {
         Commands::ResolveExecute { tx_hash } => {
             commands::resolve_execute(tx_hash)?;
         }
-        Commands::SendIndex { destination_chain_id } => {
+        Commands::SendIndex {
+            destination_chain_id,
+        } => {
             commands::send_index(destination_chain_id)?;
         }
     }

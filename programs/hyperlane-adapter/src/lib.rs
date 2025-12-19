@@ -71,11 +71,11 @@ pub mod hyperlane_adapter {
         SetIgpGasAmount::handler(ctx, igp_gas_amount)
     }
 
-    /// Outbound Instructions
-
     pub fn sync_extensions(ctx: Context<SyncExtensions>) -> Result<()> {
         SyncExtensions::handler(ctx)
     }
+
+    /// Outbound Instructions
 
     pub fn send_message(
         ctx: Context<SendMessage>,
@@ -98,6 +98,8 @@ pub mod hyperlane_adapter {
         ReceiveMessage::handler(ctx, origin, sender, message)
     }
 
+    /// Read-only Instructions
+
     #[instruction(discriminator = &HANDLE_ACCOUNT_METAS_DISCRIMINATOR)]
     pub fn receive_message_metas(
         ctx: Context<ReceiveMessageMetas>,
@@ -107,8 +109,6 @@ pub mod hyperlane_adapter {
     ) -> Result<()> {
         ReceiveMessageMetas::handler(ctx, origin, sender, message)
     }
-
-    /// Read-only Instructions
 
     #[instruction(discriminator = &ISM_DISCRIMINATOR)]
     pub fn get_ism(ctx: Context<GetIsm>) -> Result<()> {

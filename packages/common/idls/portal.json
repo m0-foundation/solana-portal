@@ -89,6 +89,48 @@
       "args": []
     },
     {
+      "name": "enable_cross_spoke_transfers",
+      "discriminator": [
+        14,
+        140,
+        28,
+        89,
+        160,
+        182,
+        179,
+        141
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": [
+            "portal_global"
+          ]
+        },
+        {
+          "name": "portal_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "initialize",
       "docs": [
         "Admin Instructions"
@@ -137,6 +179,12 @@
         {
           "name": "chain_id",
           "type": "u32"
+        },
+        {
+          "name": "isolated_hub_chain_id",
+          "type": {
+            "option": "u32"
+          }
         }
       ]
     },

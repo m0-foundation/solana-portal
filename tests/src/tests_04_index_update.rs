@@ -10,8 +10,7 @@ use common::{
     pda,
     portal::constants::GLOBAL_SEED,
     wormhole_adapter::{self, constants::EMITTER_SEED},
-    HyperlaneRemainingAccounts, Payload, PayloadData, PayloadHeader, WormholeRemainingAccounts,
-    AUTHORITY_SEED,
+    HyperlaneRemainingAccounts, PayloadData, WormholeRemainingAccounts, AUTHORITY_SEED,
 };
 use portal::{
     state::PortalGlobal,
@@ -20,7 +19,7 @@ use portal::{
 use solana_sdk::compute_budget::ComputeBudgetInstruction;
 use solana_transaction_status_client_types::UiTransactionEncoding;
 
-use crate::{get_rpc_client, get_signer};
+use crate::{get_rpc_client, get_signer, util};
 
 #[test]
 fn test_01_index_update_wormhole() -> Result<()> {
@@ -47,7 +46,7 @@ fn test_01_index_update_wormhole() -> Result<()> {
 
     let transaction = rpc_client.get_transaction(&signature, UiTransactionEncoding::Json)?;
 
-    let event_meta = crate::util::wormhole::find_message_event_in_tx(&transaction)
+    let event_meta = util::wormhole::find_message_event(&transaction)
         .expect("Wormhole post message event not found or invalid");
 
     let expected_emitter = pda!(&[EMITTER_SEED], &wormhole_adapter::ID).to_bytes();
@@ -65,14 +64,17 @@ fn test_01_index_update_wormhole() -> Result<()> {
         WormholeRemainingAccounts::new().emitter.to_bytes()
     );
 
-    let index_payload = crate::util::wormhole::find_index_payload_in_tx(&transaction)
-        .expect("Index payload not found");
+    let payload =
+        util::wormhole::find_post_message_payload(&transaction).expect("Index payload not found");
 
     // Index should match the program’s current m_index (you send current index)
     let global_bytes = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &portal::ID))?;
     let portal_global = PortalGlobal::try_deserialize(&mut global_bytes.as_slice())?;
 
-    assert_eq!(index_payload.index, portal_global.m_index);
+    match payload.data {
+        PayloadData::Index(index_payload) => assert_eq!(index_payload.index, portal_global.m_index),
+        _ => panic!("Expected IndexPayload"),
+    }
 
     Ok(())
 }
@@ -139,29 +141,19 @@ fn test_03_index_update_hyperlane() -> Result<()> {
     let message_account = accounts.dispatched_message;
     let account_data = rpc_client.get_account_data(&message_account)?;
 
-    let payload = crate::util::hyperlane::decode_message_account_index_payload(&account_data)
+    let (payload, recipient) = util::hyperlane::decode_payload_from_message_account(&account_data)
         .expect("Failed to decode index payload");
 
     // Index should match the program’s current m_index (you send current index)
     let global_bytes = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &portal::ID))?;
     let portal_global = PortalGlobal::try_deserialize(&mut global_bytes.as_slice())?;
-    let payload_size = PayloadHeader::SIZE + 16;
 
-    // The last bytes of the account data contain the message body
-    let len = account_data.len();
-    let message_body = &account_data[len - payload_size..];
-    let message = Payload::decode(&message_body.to_vec()).expect("failed to decode payload");
-
-    let PayloadData::Index(_) = message.data else {
-        panic!("Expected IndexPayload");
-    };
-
-    // Default index is 0
-    assert_eq!(payload.index, portal_global.m_index);
+    match payload.data {
+        PayloadData::Index(index_payload) => assert_eq!(index_payload.index, portal_global.m_index),
+        _ => panic!("Expected IndexPayload"),
+    }
 
     // Recipient should be registered peer
-    let len = account_data.len();
-    let recipient = &account_data[len - payload_size - 32..len - payload_size];
     assert_eq!(
         hex::encode(recipient),
         "0b6a86806a0354c82b8f049eb75d9c97e370a6f0c0cfa15f47909c3fe1c8f794"

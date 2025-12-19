@@ -4,7 +4,7 @@ use common::{
     hyperlane_adapter::{
         self,
         accounts::{AccountMetasData, HyperlaneGlobal},
-        constants::{DEFAULT_IGP_ACCOUNT, DEFAULT_OVERHEAD_IGP_ACCOUNT, DEFAULT_IGP_PROGRAM_ID}
+        constants::{DEFAULT_IGP_ACCOUNT, DEFAULT_IGP_PROGRAM_ID, DEFAULT_OVERHEAD_IGP_ACCOUNT},
     },
     pda,
     portal::{self, accounts::PortalGlobal},
@@ -52,7 +52,10 @@ fn test_03_check_globals() -> Result<()> {
     assert_eq!(global_hp.igp_program_id, DEFAULT_IGP_PROGRAM_ID);
     assert_eq!(global_hp.igp_gas_amount, 50000);
     assert_eq!(global_hp.igp_account, DEFAULT_IGP_ACCOUNT);
-    assert_eq!(global_hp.igp_overhead_account, Some(DEFAULT_OVERHEAD_IGP_ACCOUNT));
+    assert_eq!(
+        global_hp.igp_overhead_account,
+        Some(DEFAULT_OVERHEAD_IGP_ACCOUNT)
+    );
     assert_eq!(global_hp.ism, None);
     assert_eq!(global_hp.pending_admin, None);
     assert!(global_hp.peers.is_empty());

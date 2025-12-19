@@ -127,7 +127,7 @@ pub struct SendMessage<'info> {
     // CHECK: optional account only needed for overhead IGPs
     #[account(
         owner = igp_program_id.key(),
-        address = hyperlane_global.igp_overhead_account.unwrap() @ BridgeError::InvalidIgpAccount,
+        constraint = hyperlane_global.igp_overhead_account == Some(igp_overhead_account.key()) @ BridgeError::InvalidIgpAccount,
     )]
     pub igp_overhead_account: Option<AccountInfo<'info>>,
 
@@ -215,7 +215,10 @@ impl SendMessage<'_> {
             )?;
 
             let (returning_program_id, returned_data) = get_return_data().unwrap();
-            assert_eq!(returning_program_id, ctx.accounts.mailbox_program.key());
+            require!(
+                returning_program_id == ctx.accounts.mailbox_program.key(),
+                BridgeError::InvalidReturnData
+            );
 
             H256::try_from_slice(&returned_data)?
         };

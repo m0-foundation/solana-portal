@@ -1,11 +1,9 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    earn::constants::GLOBAL_SEED,
-    hyperlane_adapter::{self, accounts::HyperlaneGlobal},
+    hyperlane_adapter::{self},
     pda,
-    wormhole_adapter::{self, accounts::WormholeGlobal},
-    BridgeError,
+    wormhole_adapter::{self},
 };
 
 static IDS: [Pubkey; 2] = [wormhole_adapter::ID, hyperlane_adapter::ID];
@@ -48,43 +46,5 @@ impl BridgeAdapter {
         } else {
             None
         }
-    }
-
-    pub fn adapter_peer(
-        adapter: &Pubkey,
-        m0_destination_chain_id: u32,
-        remaining_accounts: &[AccountInfo],
-    ) -> Result<[u8; 32]> {
-        if adapter == &hyperlane_adapter::ID {
-            for account in remaining_accounts {
-                if account.key() == pda!(&[GLOBAL_SEED], &hyperlane_adapter::ID) {
-                    let data = account.data.borrow();
-
-                    return Ok(HyperlaneGlobal::try_from_slice(&data)
-                        .map_err(|_| BridgeError::InvalidBridgeAdapter)?
-                        .peers
-                        .iter()
-                        .find(|peer| peer.m0_chain_id == m0_destination_chain_id)
-                        .ok_or_else(|| BridgeError::InvalidBridgeAdapter)?
-                        .address);
-                }
-            }
-        } else if adapter == &wormhole_adapter::ID {
-            for account in remaining_accounts {
-                if account.key() == pda!(&[GLOBAL_SEED], &wormhole_adapter::ID) {
-                    let data = account.data.borrow();
-
-                    return Ok(WormholeGlobal::try_from_slice(&data)
-                        .map_err(|_| BridgeError::InvalidBridgeAdapter)?
-                        .peers
-                        .iter()
-                        .find(|peer| peer.m0_chain_id == m0_destination_chain_id)
-                        .ok_or_else(|| BridgeError::InvalidBridgeAdapter)?
-                        .address);
-                }
-            }
-        }
-
-        err!(BridgeError::InvalidBridgeAdapter)
     }
 }

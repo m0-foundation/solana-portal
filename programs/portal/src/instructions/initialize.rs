@@ -37,6 +37,13 @@ impl Initialize<'_> {
             padding: [0u8; 128],
         });
 
+        if let Some(isolated_hub_chain_id) = isolated_hub_chain_id {
+            msg!(
+                "Initialized as isolated spoke connected to chain {}",
+                isolated_hub_chain_id
+            );
+        }
+
         Ok(())
     }
 }

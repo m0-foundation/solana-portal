@@ -42,4 +42,5 @@ pub enum BridgeError {
     InvalidDestinationChain,
     InvalidDestinationPeer,
     InvalidPayload,
+    InvalidReturnData,
 }

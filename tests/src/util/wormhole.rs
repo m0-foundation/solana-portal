@@ -1,15 +1,12 @@
 use crate::util::constants::{WH_EVENT_DISCRIMINATOR, WH_SHIM_POST_MESSAGE_DISCRIMINATOR};
-use common::IndexPayload;
+use anyhow::Result;
 use common::Payload;
-use common::PayloadData;
 use solana_sdk::bs58;
 use solana_transaction_status_client_types::{
-    option_serializer::OptionSerializer, EncodedConfirmedTransactionWithStatusMeta,
-    UiInnerInstructions, UiInstruction,
+    option_serializer::OptionSerializer, EncodedConfirmedTransactionWithStatusMeta, UiInstruction,
 };
 
-// Matches the MessageEvent
-// see: https://github.com/wormhole-foundation/wormhole/blob/main/svm/wormhole-core-shims/programs/post-message/src/lib.rs#L211
+// Wormhole MessageEvent structure
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WormholeMessageEvent {
     pub emitter: [u8; 32],
@@ -17,7 +14,7 @@ pub struct WormholeMessageEvent {
     pub timestamp: u32,
 }
 
-pub fn decode_event_cpi(data: &[u8]) -> Option<WormholeMessageEvent> {
+pub fn decode_event_cpi(data: Vec<u8>) -> Option<WormholeMessageEvent> {
     if data.get(0..8)? != WH_EVENT_DISCRIMINATOR {
         return None;
     }
@@ -33,34 +30,30 @@ pub fn decode_event_cpi(data: &[u8]) -> Option<WormholeMessageEvent> {
     })
 }
 
-// Matches the Wormhole shim PostMessageData instruction data layout
-// see: https://github.com/wormhole-foundation/wormhole/blob/c113791abd5241bc7a23655e3a7475085d51dab7/svm/wormhole-core-shims/crates/shim/src/post_message.rs#L108
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ShimPostMessageData<'a> {
+// Wormhole shim PostMessageData instruction layout
+#[derive(Debug, Clone)]
+pub struct ShimPostMessageData {
     pub nonce: u32,
     pub finality_byte: u8,
-    pub payload: &'a [u8],
+    pub payload: Payload,
 }
 
-pub fn decode_shim_post_message<'a>(data: &'a [u8]) -> Option<ShimPostMessageData<'a>> {
-    if data.get(0..8)? != WH_SHIM_POST_MESSAGE_DISCRIMINATOR {
+pub fn decode_shim_post_message(data: Vec<u8>) -> Option<ShimPostMessageData> {
+    let (disc, data) = data.split_at(8);
+    if disc != WH_SHIM_POST_MESSAGE_DISCRIMINATOR || data.len() < 9 {
         return None;
     }
 
-    let shim = data.get(8..)?;
-    if shim.len() < 9 {
-        return None;
-    }
-    let nonce = u32::from_le_bytes(shim.get(0..4)?.try_into().ok()?);
-    let finality_byte = *shim.get(4)?;
-    let payload_len = u32::from_le_bytes(shim.get(5..9)?.try_into().ok()?) as usize;
-    let end = 9usize.checked_add(payload_len)?;
+    let (nonce_bytes, data) = data.split_at(4);
+    let (finality_byte_slice, data) = data.split_at(1);
+    let (payload_len_bytes, data) = data.split_at(4);
 
-    if shim.len() < end {
-        return None;
-    }
+    let nonce = u32::from_le_bytes(nonce_bytes.try_into().ok()?);
+    let finality_byte = finality_byte_slice[0];
+    let payload_len = u32::from_le_bytes(payload_len_bytes.try_into().ok()?) as usize;
+    let (payload_bytes, _) = data.split_at(payload_len);
+    let payload = Payload::decode(&payload_bytes.to_vec()).ok()?;
 
-    let payload = &shim[9..end];
     Some(ShimPostMessageData {
         nonce,
         finality_byte,
@@ -68,79 +61,45 @@ pub fn decode_shim_post_message<'a>(data: &'a [u8]) -> Option<ShimPostMessageDat
     })
 }
 
-pub fn decode_payload_from_shim_ix_data(data: &[u8]) -> Option<Payload> {
-    let shim = decode_shim_post_message(data)?;
-    Payload::decode(&shim.payload.to_vec()).ok()
+pub fn find_post_message_payload(
+    tx: &EncodedConfirmedTransactionWithStatusMeta,
+) -> Result<Payload> {
+    get_instructions_data(tx)?
+        .into_iter()
+        .find_map(decode_shim_post_message)
+        .map(|msg| msg.payload)
+        .ok_or_else(|| anyhow::anyhow!("Payload not found in inner instructions"))
 }
 
-pub fn decode_payload_from_shim_ix_data_full(data: &[u8]) -> Option<Payload> {
-    let shim = decode_shim_post_message(data)?;
-    Payload::decode(&shim.payload.to_vec()).ok()
+pub fn find_message_event(
+    tx: &EncodedConfirmedTransactionWithStatusMeta,
+) -> Result<WormholeMessageEvent> {
+    get_instructions_data(tx)?
+        .into_iter()
+        .find_map(decode_event_cpi)
+        .ok_or_else(|| anyhow::anyhow!("Event not found in inner instructions"))
 }
 
-/// Generic helper: scan inner instructions, decode compiled ix data, and run a decoder.
-/// Returns the first successful decode.
-pub fn find_in_inner_instructions<T>(
-    inner_instructions: &[UiInnerInstructions],
-    mut decode: impl FnMut(&[u8]) -> Option<T>,
-) -> Option<T> {
-    for inner in inner_instructions {
-        for ix in &inner.instructions {
-            let UiInstruction::Compiled(compiled_ix) = ix else {
-                continue;
-            };
+pub fn get_instructions_data(
+    tx: &EncodedConfirmedTransactionWithStatusMeta,
+) -> Result<Vec<Vec<u8>>> {
+    let inner = &tx.transaction.meta.as_ref().unwrap().inner_instructions;
 
-            let bytes: Vec<u8> = match bs58::decode(&compiled_ix.data).into_vec() {
-                Ok(b) => b,
-                Err(_) => continue,
-            };
+    let instructions = match inner {
+        OptionSerializer::Some(v) => v.as_slice(),
+        OptionSerializer::None | OptionSerializer::Skip => {
+            return Err(anyhow::anyhow!("No inner instructions found"))
+        }
+    };
 
-            if let Some(found) = decode(&bytes) {
-                return Some(found);
+    Ok(instructions
+        .iter()
+        .flat_map(|inner| &inner.instructions)
+        .filter_map(|ix| match ix {
+            UiInstruction::Compiled(compiled) => {
+                Some(bs58::decode(&compiled.data).into_vec().unwrap())
             }
-        }
-    }
-    None
-}
-
-pub fn find_message_event_in_tx(
-    tx: &EncodedConfirmedTransactionWithStatusMeta,
-) -> Option<WormholeMessageEvent> {
-    find_in_tx_inner_instructions(tx, decode_event_cpi)
-}
-
-pub fn find_index_payload_in_tx(
-    tx: &EncodedConfirmedTransactionWithStatusMeta,
-) -> Option<IndexPayload> {
-    find_in_tx_inner_instructions(tx, |bytes| {
-        let payload = decode_payload_from_shim_ix_data_full(bytes);
-        if payload.is_none() {
-            return None;
-        }
-
-        match payload.unwrap().data {
-            PayloadData::Index(idx) => Some(idx),
             _ => None,
-        }
-    })
-}
-
-pub fn inner_instructions_from_tx(
-    tx: &EncodedConfirmedTransactionWithStatusMeta,
-) -> Option<&[UiInnerInstructions]> {
-    let meta = tx.transaction.meta.as_ref()?;
-
-    match meta.inner_instructions.as_ref() {
-        OptionSerializer::Some(v) => Some(v.as_slice()),
-        OptionSerializer::None | OptionSerializer::Skip => None,
-    }
-}
-
-/// Transaction-level wrapper
-pub fn find_in_tx_inner_instructions<T>(
-    tx: &EncodedConfirmedTransactionWithStatusMeta,
-    decode: impl FnMut(&[u8]) -> Option<T>,
-) -> Option<T> {
-    let inner = inner_instructions_from_tx(tx)?;
-    find_in_inner_instructions(inner, decode)
+        })
+        .collect())
 }

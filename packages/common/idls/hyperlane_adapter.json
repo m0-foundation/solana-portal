@@ -2152,6 +2152,12 @@
             }
           },
           {
+            "name": "isolated_hub_chain_id",
+            "type": {
+              "option": "u32"
+            }
+          },
+          {
             "name": "padding",
             "type": {
               "array": [
