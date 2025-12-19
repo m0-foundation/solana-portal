@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-use anchor_spl::associated_token::spl_associated_token_account::solana_program::hash::hashv;
 use common::{BridgeError, Peers};
 
 use crate::instructions::VaaBody;
