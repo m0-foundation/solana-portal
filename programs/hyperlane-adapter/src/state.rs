@@ -1,7 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::associated_token::spl_associated_token_account::solana_program::hash::hashv;
 use common::{Extension, Peers};
-use common::{BridgeError, Extension};
 
 #[constant]
 pub const GLOBAL_SEED: &[u8] = b"global";

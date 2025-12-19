@@ -1,5 +1,5 @@
 use anchor_client::{Client, Cluster};
-use anchor_lang::{pubkey, system_program, InstructionData, ToAccountMetas};
+use anchor_lang::{system_program, InstructionData, ToAccountMetas};
 use anyhow::Result;
 use common::{
     hyperlane_adapter::constants::PAYER_SEED, pda, portal::constants::GLOBAL_SEED, require_metas,
