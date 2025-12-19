@@ -956,6 +956,15 @@
           "type": "u32"
         },
         {
+          "name": "message_id",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
           "name": "payload",
           "type": "bytes"
         },
@@ -979,9 +988,12 @@
       ],
       "accounts": [
         {
-          "name": "payer",
+          "name": "admin",
           "writable": true,
-          "signer": true
+          "signer": true,
+          "relations": [
+            "wormhole_global"
+          ]
         },
         {
           "name": "wormhole_global",
@@ -1445,10 +1457,6 @@
           {
             "name": "chain_id",
             "type": "u32"
-          },
-          {
-            "name": "message_nonce",
-            "type": "u64"
           },
           {
             "name": "receive_lut",

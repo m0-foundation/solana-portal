@@ -1,6 +1,7 @@
 use std::cmp::max;
 
 use anchor_lang::prelude::*;
+use anchor_spl::associated_token::spl_associated_token_account::solana_program::hash::hashv;
 
 #[constant]
 pub const GLOBAL_SEED: &[u8] = b"global";
@@ -35,6 +36,19 @@ impl PortalGlobal {
             index: new_index,
             message_id,
         });
+    }
+
+    pub fn generate_message_id(&mut self, destination_chain_id: u32) -> [u8; 32] {
+        self.message_nonce += 1;
+        let mut nonce_bytes = [0u8; 32]; // 256-bit nonce
+        nonce_bytes[24..32].copy_from_slice(&self.message_nonce.to_be_bytes());
+
+        hashv(&[
+            &self.chain_id.to_be_bytes(),
+            &destination_chain_id.to_be_bytes(),
+            &nonce_bytes,
+        ])
+        .to_bytes()
     }
 }
 

@@ -90,9 +90,6 @@
     },
     {
       "name": "get_ism",
-      "docs": [
-        "Read-only Instructions"
-      ],
       "discriminator": [
         45,
         18,
@@ -773,6 +770,9 @@
     },
     {
       "name": "receive_message_metas",
+      "docs": [
+        "Read-only Instructions"
+      ],
       "discriminator": [
         194,
         141,
@@ -887,6 +887,9 @@
     },
     {
       "name": "send_message",
+      "docs": [
+        "Outbound Instructions"
+      ],
       "discriminator": [
         57,
         40,
@@ -1370,6 +1373,15 @@
           "type": "u32"
         },
         {
+          "name": "message_id",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
           "name": "payload",
           "type": "bytes"
         },
@@ -1585,9 +1597,6 @@
     },
     {
       "name": "sync_extensions",
-      "docs": [
-        "Outbound Instructions"
-      ],
       "discriminator": [
         247,
         48,
@@ -1989,10 +1998,6 @@
           {
             "name": "chain_id",
             "type": "u32"
-          },
-          {
-            "name": "message_nonce",
-            "type": "u64"
           },
           {
             "name": "igp_program_id",

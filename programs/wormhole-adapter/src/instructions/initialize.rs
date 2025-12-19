@@ -54,7 +54,6 @@ impl Initialize<'_> {
             admin: ctx.accounts.admin.key(),
             paused: false,
             chain_id,
-            message_nonce: 0,
             peers: Vec::new(),
             pending_admin: None,
             receive_lut: None,

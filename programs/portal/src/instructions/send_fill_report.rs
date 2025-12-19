@@ -66,6 +66,9 @@ impl SendFillReport<'_> {
             ctx.accounts.system_program.to_account_info(),
             ctx.remaining_accounts.to_vec(),
             origin_chain_id,
+            ctx.accounts
+                .portal_global
+                .generate_message_id(origin_chain_id),
             payload,
             PayloadData::FILL_REPORT_DISCRIMINANT,
         )?;
