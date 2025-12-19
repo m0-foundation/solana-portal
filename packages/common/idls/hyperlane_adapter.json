@@ -1373,6 +1373,15 @@
           "type": "u32"
         },
         {
+          "name": "message_id",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
           "name": "payload",
           "type": "bytes"
         },
@@ -1989,10 +1998,6 @@
           {
             "name": "chain_id",
             "type": "u32"
-          },
-          {
-            "name": "message_nonce",
-            "type": "u64"
           },
           {
             "name": "igp_program_id",

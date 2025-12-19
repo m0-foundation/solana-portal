@@ -60,7 +60,6 @@ impl Initialize<'_> {
             bump: ctx.bumps.hyperlane_global,
             admin: ctx.accounts.admin.key(),
             chain_id,
-            message_nonce: 0,
             ism: None,
             paused: false,
             peers: Peers::default(),

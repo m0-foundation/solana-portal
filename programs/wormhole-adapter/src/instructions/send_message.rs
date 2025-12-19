@@ -106,6 +106,7 @@ impl SendMessage<'_> {
     pub fn handler(
         ctx: Context<Self>,
         m0_destination_chain_id: u32,
+        message_id: [u8; 32],
         payload: Vec<u8>,
         payload_type: u8,
     ) -> Result<()> {
@@ -135,7 +136,7 @@ impl SendMessage<'_> {
 
         let message = Payload {
             header: PayloadHeader {
-                message_id: ctx.accounts.wormhole_global.generate_message_id(),
+                message_id,
                 destination_chain_id: m0_destination_chain_id,
                 destination_peer: peer.address,
                 payload_type,
