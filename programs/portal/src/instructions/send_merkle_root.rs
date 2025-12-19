@@ -59,6 +59,9 @@ impl SendMerkleRoot<'_> {
             ctx.accounts.system_program.to_account_info(),
             ctx.remaining_accounts.to_vec(),
             destination_chain_id,
+            ctx.accounts
+                .portal_global
+                .generate_message_id(destination_chain_id),
             payload,
             PayloadData::EARNER_MERKLE_ROOT_DISCRIMINANT,
         )

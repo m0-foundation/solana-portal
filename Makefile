@@ -4,6 +4,9 @@ test:
 	anchor build -- --features skip-validation
 	cargo test --package tests -- --test-threads=1
 
+unit-tests:
+	cargo test --workspace --exclude tests
+
 test-verbose:
 	cargo test --package tests -- --test-threads=1 --nocapture
 

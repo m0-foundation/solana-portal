@@ -31,6 +31,7 @@ pub fn send_message<'info>(
     system_program: AccountInfo<'info>,
     remaining_accounts: Vec<AccountInfo<'info>>,
     destination_chain_id: u32,
+    message_id: [u8; 32],
     payload: PayloadData,
     payload_type: u8,
 ) -> Result<()> {
@@ -73,6 +74,7 @@ pub fn send_message<'info>(
                 &[&[AUTHORITY_SEED, &[portal_authority_bump]]],
             ),
             destination_chain_id,
+            message_id,
             payload.encode(),
             payload_type,
         )
@@ -122,6 +124,7 @@ pub fn send_message<'info>(
                 &[&[AUTHORITY_SEED, &[portal_authority_bump]]],
             ),
             destination_chain_id,
+            message_id,
             payload.encode(),
             payload_type,
         )

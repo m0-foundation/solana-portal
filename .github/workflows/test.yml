@@ -74,3 +74,6 @@ jobs:
 
       - name: Run tests
         run: make test-verbose
+
+      - name: Run unit tests
+        run: make unit-tests
