@@ -7,23 +7,3 @@ signer "authority" "svm::secret_key" {
     description = "Can upgrade programs and manage critical ops"
     secret_key = input.local_signer
 }
-
-action "hyperlane_global_account" "std::send_http_request" {
-  url = input.rpc_api_url
-  method = "POST"
-  body = {
-    "jsonrpc": "2.0",
-    "id": 1,
-    "method": "surfnet_setAccount",
-    "params": [
-    "",
-    {
-      "data": "0x123456",
-      "executable": false,
-      "lamports": 1000000000,
-      "owner": "11111111111111111111111111111111",
-      "rentEpoch": 0
-    }
-  ]
-  }
-}

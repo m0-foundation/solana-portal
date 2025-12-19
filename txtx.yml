@@ -20,6 +20,9 @@ runbooks:
   - name: fund_receive_payer
     description: Fund the Hyperlane receive payer account
     location: runbooks/fund_receive_payer
+  - name: authorize_unwrapper
+    description: Authorize the unwrapper program to manage the swap global account
+    location: runbooks/authorize_unwrapper
 environments:
   localnet:
     network_id: localnet
