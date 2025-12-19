@@ -30,7 +30,7 @@ impl Peers {
     pub fn updated_peers(&self, peer: Peer) -> Peers {
         let mut peers = self.clone();
 
-        // Remove any entries with matching m0_chain_id or hyperlane_chain_id
+        // Remove any entries with matching m0_chain_id or adapter_chain_id
         peers.0.retain(|p| {
             p.m0_chain_id != peer.m0_chain_id && p.adapter_chain_id != peer.adapter_chain_id
         });
