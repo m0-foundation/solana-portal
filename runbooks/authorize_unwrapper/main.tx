@@ -7,6 +7,10 @@ variable "swap_global" {
     value = svm::find_pda("MSwapi3WhNKMUGm9YrxGhypgUEt7wYQH3ZgG32XoWzH", ["global"])
 }
 
+variable "m_ext_global" {
+    value = svm::find_pda("wMXX1K1nca5W4pZr1piETe78gcAVVrEFi9f4g46uXko", ["global"])
+}
+
 signer "payer" "svm::secret_key" {
     description = "Pays fees for program deployments and operations"
     secret_key = input.local_signer
@@ -37,6 +41,26 @@ action "set_swap_global" "std::send_http_request" {
   }
 }
 
+action "set_m_ext_global" "std::send_http_request" {
+  url = input.rpc_api_url
+  method = "POST"
+  body = {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "surfnet_setAccount",
+    "params": [
+      variable.m_ext_global.pda,
+    {
+      "data": "74d1db53468f377f0d3b72feead9928540668b0cc280f48ee1ecf91230b1cfae78190f21390d0e9a000b86be66bc1f98b47d20a3be615a4905a825b826864e2a0f4c948467d33ee7090b86be66d11ddb9a79bc0e63110aeb60efe0ced1e52d97a87417bc9afc6290a2a96d97b526fb27974306e2c59143b9c1b1be8964fd5ea32a8a660bf892221f74fffefc0201166e29b5330d947310f8b7b45840a198e17d2032ccd59d445a2539f88a00f403e282abf800000003e282abf80000006650456900000000040000007cf745c6a541144a79ffb7f47f3ec0dd992ad304405eabf705874833fe6078df513924b3e024ea178bad1edf3c5d1a1785306266ee9d0558445e01e2dd6b7d4122052ffbfbd77b21a6c7e2d12cf41a3cb565811ffb9befadd97ea777bbb595f2848dccba408bb7d6cd6517a8646f721d4f8155c7859d2f4b207d3eefe739e05a0000000000000000000000000000000000000000000000000000000000000000",
+      "executable": false,
+      "lamports": 1000000000,
+      "owner": "wMXX1K1nca5W4pZr1piETe78gcAVVrEFi9f4g46uXko",
+      "rentEpoch": 0
+    }
+  ]
+  }
+}
+
 output "status" {
   value = action.set_swap_global.status_code
 }
@@ -45,7 +69,7 @@ output "response_body" {
   value = action.set_swap_global.response_body
 }
 
-action "get_swap_global" "std::send_http_request" {
+action "get_m_ext_global" "std::send_http_request" {
   url = input.rpc_api_url
   method = "POST"
   body = {
@@ -53,13 +77,13 @@ action "get_swap_global" "std::send_http_request" {
     "id": 1,
     "method": "getAccountInfo",
     "params": [
-      variable.swap_global.pda,
+      variable.m_ext_global.pda,
       { "encoding": "base64" }
     ]
   }
 }
 
-output "swap_global_account_info" {
-  value = action.get_swap_global.response_body
+output "m_ext_global_account_info" {
+  value = action.get_m_ext_global.response_body
 }
 

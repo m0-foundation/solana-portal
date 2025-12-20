@@ -157,17 +157,17 @@ mod tests_02_initialize;
 #[cfg(test)]
 mod tests_03_set_peers;
 
-// #[cfg(test)]
-// mod tests_04_index_update;
+#[cfg(test)]
+mod tests_04_index_update;
 
-// #[cfg(test)]
-// mod tests_05_pausing;
+#[cfg(test)]
+mod tests_05_pausing;
 
-// #[cfg(test)]
-// mod tests_06_set_lut;
+#[cfg(test)]
+mod tests_06_set_lut;
 
 #[cfg(test)]
 mod tests_07_send_token;
 
-// #[cfg(test)]
-// mod tests_08_receive_message;
+#[cfg(test)]
+mod tests_08_receive_message;
