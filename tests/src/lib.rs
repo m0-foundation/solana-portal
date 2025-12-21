@@ -1,3 +1,4 @@
+use anchor_spl::token_2022;
 use anyhow::{Context, Result};
 use once_cell::sync::OnceCell;
 use solana_client::rpc_client::RpcClient;
@@ -175,6 +176,42 @@ pub fn set_account(pubkey: &Pubkey, account: &Account) -> Result<()> {
         .json(&request)
         .send()
         .context("Failed to send RPC request")?;
+
+    let rpc_response: util::rpc::JsonRpcResponse =
+        response.json().context("Failed to parse RPC response")?;
+
+    if let Some(error) = rpc_response.error {
+        anyhow::bail!("RPC error: {:?}", error);
+    }
+
+    Ok(())
+}
+
+pub fn set_token_account(
+    owner: &Pubkey,
+    mint: &Pubkey,
+    update: serde_json::Value,
+) -> Result<()> {
+    let rpc_url = get_rpc_client().url();
+
+    let request = util::rpc::JsonRpcRequest {
+        jsonrpc: "2.0".to_string(),
+        id: 1,
+        method: "surfnet_setTokenAccount".to_string(),
+        params: (
+            owner.to_string(),
+            mint.to_string(),
+            update,
+            token_2022::ID.to_string(),
+        ),
+    };
+
+    let client = reqwest::blocking::Client::new();
+    let response = client
+        .post(rpc_url)
+        .json(&request)
+        .send()
+        .context("Failed to send surfnet_setTokenAccount RPC request")?;
 
     let rpc_response: util::rpc::JsonRpcResponse =
         response.json().context("Failed to parse RPC response")?;

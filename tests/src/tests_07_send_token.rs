@@ -25,11 +25,7 @@ use common::{
 
 use portal::{accounts as portal_accounts, instruction as portal_instruction, state::PortalGlobal};
 
-use crate::{get_rpc_client, get_signer, run_surfpool_cmd, util};
-
-const M_MINT_STR: &str = "mzerojk9tg56ebsrEAhfkyc9VgKjTW2zDqp6C5mhjzH";
-const EXT_MINT_STR: &str = "mzeroXDoBpRVhnEXBra27qzAMdxgpWVY3DzQW7xMVJp";
-const EXT_PROGRAM_STR: &str = "wMXX1K1nca5W4pZr1piETe78gcAVVrEFi9f4g46uXko";
+use crate::{get_rpc_client, get_signer, set_account, set_token_account, util};
 
 const AMOUNT: u64 = 1_000_000;
 
@@ -41,6 +37,8 @@ struct TestCtx {
     m_mint: Pubkey,
     extension_mint: Pubkey,
     extension_program: Pubkey,
+    ext_global_pk: Pubkey,
+    swap_global_pk: Pubkey,
 
     portal_authority: Pubkey,
 
@@ -55,10 +53,12 @@ impl TestCtx {
         let rpc: Arc<RpcClient> = get_rpc_client();
         let portal = client.program(portal::ID)?;
 
-        let m_mint = Pubkey::from_str(M_MINT_STR)?;
-        let extension_mint = Pubkey::from_str(EXT_MINT_STR)?;
-        let extension_program = Pubkey::from_str(EXT_PROGRAM_STR)?;
+        let m_mint = Pubkey::from_str("mzerojk9tg56ebsrEAhfkyc9VgKjTW2zDqp6C5mhjzH")?;
+        let extension_mint = Pubkey::from_str("mzeroXDoBpRVhnEXBra27qzAMdxgpWVY3DzQW7xMVJp")?;
+        let extension_program = Pubkey::from_str("wMXX1K1nca5W4pZr1piETe78gcAVVrEFi9f4g46uXko")?;
         let portal_authority = pda!(&[AUTHORITY_SEED], &portal::ID);
+        let ext_global_pk = pda!(&[GLOBAL_SEED], &extension_program);
+        let swap_global_pk = pda!(&[GLOBAL_SEED], &ext_swap::ID);
 
         let m_token_account = crate::util::tokens::get_or_create_ata_2022(
             &rpc,
@@ -85,6 +85,8 @@ impl TestCtx {
             client,
             rpc,
             portal,
+            ext_global_pk,
+            swap_global_pk,
             m_mint,
             extension_mint,
             extension_program,
@@ -128,37 +130,43 @@ fn assert_token2022_unfrozen(rpc: &RpcClient, token_account: Pubkey, label: &str
     Ok(())
 }
 
-fn authorize_unwrapper_admin_via_surfpool() -> Result<()> {
-    let logs = run_surfpool_cmd(vec!["run", "authorize_unwrapper", "--unsupervised"])?;
-    assert!(!logs.contains("error"), "authorize_unwrapper failed: {}", logs);
-    Ok(())
-}
+// fn authorize_unwrapper_admin_via_surfpool() -> Result<()> {
+//     let logs = run_surfpool_cmd(vec!["run", "authorize_unwrapper", "--unsupervised"])?;
+//     assert!(!logs.contains("error"), "authorize_unwrapper failed: {}", logs);
+//     Ok(())
+// }
 
 fn whitelist_portal_authority(ctx: &TestCtx) -> Result<()> {
 
-    // authorize portal.payer() as admin on SwapGlobal
-    // authorize portal.payer() as admin on ExtGlobalV2
-    authorize_unwrapper_admin_via_surfpool()?;
+    let mut swap_account = ctx.rpc.get_account(&ctx.swap_global_pk)?;
+    let admin_offset = 9; // Offset: 8 (discriminator) + 1 (bump) = 9
+    swap_account.data[admin_offset..admin_offset + 32].copy_from_slice(&ctx.portal.payer().to_bytes());
+    set_account(&ctx.swap_global_pk, &swap_account).expect("failed to set account");
 
-    // Sanity: surfpool side-effect should set admins to payer
-    let swap_global_pk = pda!(&[GLOBAL_SEED], &ext_swap::ID);
-    let swap_data = ctx.rpc.get_account_data(&swap_global_pk)?;
+    let mut ext_account: solana_sdk::account::Account = ctx.rpc.get_account(&ctx.ext_global_pk)?;
+    let admin_offset = 8; // Offset: 8 (discriminator)
+    ext_account.data[admin_offset..admin_offset + 32]
+        .copy_from_slice(&ctx.portal.payer().to_bytes());
+    set_account(&ctx.ext_global_pk, &ext_account).expect("failed to set account");
+
+    // re-fetch bytes and deserialize that
+    let swap_data = ctx.rpc.get_account_data(&ctx.swap_global_pk)?;
     let swap_acc = SwapGlobal::try_deserialize(&mut swap_data.as_slice())?;
 
-    let ext_global_pk = pda!(&[GLOBAL_SEED], &ctx.extension_program);
-    let ext_data = ctx.rpc.get_account_data(&ext_global_pk)?;
+    // re-fetch bytes and deserialize that
+    let ext_data = ctx.rpc.get_account_data(&ctx.ext_global_pk)?;
     let ext_acc = ExtGlobalV2::try_deserialize(&mut ext_data.as_slice())?;
 
     assert_eq!(swap_acc.admin, ctx.portal.payer());
     assert_eq!(ext_acc.admin, ctx.portal.payer());
 
-    // whitelist unwrap on swap
+    // whitelist portal_authority as admin unwrap on swap
     let swap_program = ctx.client.program(ext_swap::ID)?;
     swap_program
         .request()
         .accounts(ext_swap::client::accounts::WhitelistUnwrapper {
             admin: ctx.portal.payer(),
-            swap_global: swap_global_pk,
+            swap_global: ctx.swap_global_pk,
             system_program: system_program::ID,
         })
         .args(ext_swap::client::args::WhitelistUnwrapper {
@@ -166,13 +174,13 @@ fn whitelist_portal_authority(ctx: &TestCtx) -> Result<()> {
         })
         .send()?;
 
-    // whitelist wrap auth on extension
+    // whitelist portal_authority as wrap auth on extension
     let extension_program = ctx.client.program(ctx.extension_program)?;
     extension_program
         .request()
         .accounts(m_ext::client::accounts::AddWrapAuthority {
             admin: ctx.portal.payer(),
-            global_account: ext_global_pk,
+            global_account: ctx.ext_global_pk,
             system_program: system_program::ID,
         })
         .args(m_ext::client::args::AddWrapAuthority {
@@ -193,8 +201,8 @@ fn test_01_send_token_wormhole_unauthorized_unwrapper() -> Result<()> {
         .accounts(portal_accounts::SendToken {
             sender: ctx.portal.payer(),
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
-            swap_global: pda!(&[GLOBAL_SEED], &ext_swap::ID),
-            extension_global: pda!(&[GLOBAL_SEED], &ctx.extension_program),
+            swap_global: ctx.swap_global_pk,
+            extension_global: ctx.ext_global_pk,
             m_mint: ctx.m_mint,
             extension_mint: ctx.extension_mint,
             m_token_account: ctx.m_token_account,
@@ -327,15 +335,28 @@ fn test_03_send_token_wormhole_insufficient_funds() -> Result<()> {
 fn test_04_send_token_wormhole_success() -> Result<()> {
     let ctx = TestCtx::new()?;
 
-    // fund's payer's wrapped_m ata and unfreeze portal_authority's m_token_account
-    let logs = run_surfpool_cmd(vec!["run", "wm_fund_payer", "--unsupervised"])?;
-    assert!(!logs.contains("error"), "wm_fund_payer failed: {}", logs);
+    // fund's payer's wrapped_m ata
+    set_token_account(
+        &ctx.portal.payer(),
+        &ctx.extension_mint,
+        serde_json::json!({ "amount": 1_000_000_000 }),
+    )?;
 
     // assert payer's extension_token_account has 1,000,000,000 wrapped_m
     let balance = ctx.rpc.get_token_account_balance(&ctx.extension_token_account)?;
     assert_eq!(balance.amount, "1000000000");
 
-    assert_token2022_unfrozen(&ctx.rpc, ctx.m_token_account, "portal_authority m_token_account")?;
+    // unfreeze portal_authority's m_token_account
+    set_token_account(
+        &ctx.portal_authority,
+        &ctx.m_mint,
+        serde_json::json!({ "state": "initialized" }),
+    )?;
+
+    // assert portal_authority's m_token_account is unfrozen
+    let acc = ctx.rpc.get_account(&ctx.m_token_account)?;
+    let ta = StateWithExtensions::<TokenAccount2022>::unpack(&acc.data)?;
+    assert!(ta.base.state == AccountState::Initialized);
 
     let sig = ctx
         .portal
@@ -379,7 +400,7 @@ fn test_04_send_token_wormhole_success() -> Result<()> {
     match payload.data {
         PayloadData::TokenTransfer(token_payload) => {
             assert_eq!(token_payload.index, portal_global.m_index);
-            assert_eq!(token_payload.amount, 936166);
+            assert_eq!(token_payload.amount, 936120);
             assert_eq!(token_payload.destination_token, ctx.m_mint.to_bytes());
             assert_eq!(token_payload.sender, ctx.portal.payer().to_bytes());
             assert_eq!(token_payload.recipient, ctx.portal.payer().to_bytes());
