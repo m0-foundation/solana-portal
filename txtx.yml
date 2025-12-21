@@ -23,6 +23,9 @@ runbooks:
   - name: authorize_unwrapper
     description: Authorize the unwrapper program to manage the swap global account
     location: runbooks/authorize_unwrapper
+  - name: wm_fund_payer
+    description: Fund the program.payer() with wrapped M
+    location: runbooks/wm_fund_payer
 environments:
   localnet:
     network_id: localnet
