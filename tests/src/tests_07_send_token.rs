@@ -130,12 +130,6 @@ fn assert_token2022_unfrozen(rpc: &RpcClient, token_account: Pubkey, label: &str
     Ok(())
 }
 
-// fn authorize_unwrapper_admin_via_surfpool() -> Result<()> {
-//     let logs = run_surfpool_cmd(vec!["run", "authorize_unwrapper", "--unsupervised"])?;
-//     assert!(!logs.contains("error"), "authorize_unwrapper failed: {}", logs);
-//     Ok(())
-// }
-
 fn whitelist_portal_authority(ctx: &TestCtx) -> Result<()> {
 
     let mut swap_account = ctx.rpc.get_account(&ctx.swap_global_pk)?;
