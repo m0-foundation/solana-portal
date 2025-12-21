@@ -1,0 +1,50 @@
+addon "svm" {
+    rpc_api_url = input.rpc_api_url
+    network_id = input.network_id
+}
+
+variable "m_ext_global" {
+    value = svm::find_pda("wMXX1K1nca5W4pZr1piETe78gcAVVrEFi9f4g46uXko", ["global"])
+}
+
+action "wm_fund_payer" "std::send_http_request" {
+  url = input.rpc_api_url
+  method = "POST"
+  body = {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "surfnet_setTokenAccount",
+    "params": [
+        "test4MzZzYk2NAP1222FSuKqq83GuXY5tHakqREDHPo", // owner (program.payer)
+        "mzeroXDoBpRVhnEXBra27qzAMdxgpWVY3DzQW7xMVJp", // wrapped_m
+        {
+        "amount": 1000000000,
+        },
+        "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb" // token-2022 program
+    ]
+  }
+}
+
+output "status" {
+  value = action.wm_fund_payer.status_code
+}
+
+output "response_body" {
+  value = action.wm_fund_payer.response_body
+}
+
+action "unfreeze_m_token_acc" "std::send_http_request" {
+  url = input.rpc_api_url
+  method = "POST"
+  body = {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "surfnet_setTokenAccount",
+    "params": [
+      "5qRSth9bauYSDcSF6rduiLciDAfCNWWd8EiHhgX1w5Tb", // owner (portal authority)
+      "mzerojk9tg56ebsrEAhfkyc9VgKjTW2zDqp6C5mhjzH", // m_mint
+      { "state": "initialized" },                    // <-- unfreeze
+      "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"  // token-2022 program
+    ]
+  }
+}
