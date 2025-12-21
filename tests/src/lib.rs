@@ -1,6 +1,8 @@
 use anyhow::{Context, Result};
 use once_cell::sync::OnceCell;
 use solana_client::rpc_client::RpcClient;
+use solana_sdk::account::Account;
+use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signature::Keypair;
 use solana_sdk::signer::Signer;
 use std::io::{BufRead, BufReader};
@@ -146,6 +148,42 @@ pub fn run_surfpool_cmd(args: Vec<&str>) -> Result<String> {
         );
     }
     Ok(stdout)
+}
+
+pub fn set_account(pubkey: &Pubkey, account: &Account) -> Result<()> {
+    let rpc_url = get_rpc_client().url();
+    let data_hex = hex::encode(&account.data);
+
+    let account_params = util::rpc::SetAccountParams {
+        data: data_hex,
+        executable: account.executable,
+        lamports: account.lamports,
+        owner: account.owner.to_string(),
+        rent_epoch: account.rent_epoch,
+    };
+
+    let request = util::rpc::JsonRpcRequest {
+        jsonrpc: "2.0".to_string(),
+        id: 1,
+        method: "surfnet_setAccount".to_string(),
+        params: (pubkey.to_string(), account_params),
+    };
+
+    let client = reqwest::blocking::Client::new();
+    let response = client
+        .post(rpc_url)
+        .json(&request)
+        .send()
+        .context("Failed to send RPC request")?;
+
+    let rpc_response: util::rpc::JsonRpcResponse =
+        response.json().context("Failed to parse RPC response")?;
+
+    if let Some(error) = rpc_response.error {
+        anyhow::bail!("RPC error: {:?}", error);
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]

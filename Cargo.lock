@@ -7655,6 +7655,8 @@ dependencies = [
  "hyperlane-adapter",
  "once_cell",
  "portal",
+ "reqwest",
+ "serde",
  "serde_json",
  "solana-client",
  "solana-sdk",
