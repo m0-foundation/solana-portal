@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     hyperlane_adapter::{self},
-    pda,
+    pda, portal,
     wormhole_adapter::{self},
 };
 
@@ -46,5 +46,11 @@ impl BridgeAdapter {
         } else {
             None
         }
+    }
+
+    pub fn valid_destination_peer(address: [u8; 32]) -> bool {
+        [wormhole_adapter::ID, hyperlane_adapter::ID, portal::ID]
+            .iter()
+            .any(|id| id.to_bytes() == address)
     }
 }

@@ -142,19 +142,22 @@ impl SendMessage<'_> {
     pub fn handler(
         ctx: Context<Self>,
         m0_destination_chain_id: u32,
+        message_id: [u8; 32],
         payload: Vec<u8>,
         payload_type: u8,
     ) -> Result<()> {
         let peer = ctx
             .accounts
             .hyperlane_global
-            .get_m0_peer(m0_destination_chain_id)?;
+            .peers
+            .get_m0_peer(m0_destination_chain_id)?
+            .clone();
 
         // Dispatch the message via the mailbox program
         let message_id = {
             let message = Payload {
                 header: PayloadHeader {
-                    message_id: ctx.accounts.hyperlane_global.generate_message_id(),
+                    message_id,
                     destination_chain_id: m0_destination_chain_id,
                     destination_peer: peer.address,
                     payload_type,
@@ -168,7 +171,7 @@ impl SendMessage<'_> {
 
             // Serialize OutboxDispatch struct fields
             instruction_data.extend_from_slice(&crate::ID.to_bytes());
-            instruction_data.extend_from_slice(&peer.hyperlane_chain_id.to_le_bytes());
+            instruction_data.extend_from_slice(&peer.adapter_chain_id.to_le_bytes());
             instruction_data.extend_from_slice(&peer.address);
             instruction_data.extend_from_slice(&(message.len() as u32).to_le_bytes());
             instruction_data.extend_from_slice(&message);
@@ -230,7 +233,7 @@ impl SendMessage<'_> {
 
             // Serialize PayForGas struct fields
             instruction_data.extend_from_slice(message_id.as_bytes());
-            instruction_data.extend_from_slice(&peer.hyperlane_chain_id.to_le_bytes());
+            instruction_data.extend_from_slice(&peer.adapter_chain_id.to_le_bytes());
 
             let gas_amount = ctx.accounts.hyperlane_global.igp_gas_amount;
             instruction_data.extend_from_slice(&gas_amount.to_le_bytes());

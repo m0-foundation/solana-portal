@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::associated_token::spl_associated_token_account::solana_program::hash::hashv;
-use common::BridgeError;
+use common::{BridgeError, Peers};
 
 use crate::instructions::VaaBody;
 
@@ -13,18 +12,10 @@ pub struct WormholeGlobal {
     pub admin: Pubkey,
     pub paused: bool,
     pub chain_id: u32,
-    pub message_nonce: u64,
     pub receive_lut: Option<Pubkey>,
     pub pending_admin: Option<Pubkey>,
-    pub peers: Vec<Peer>,
+    pub peers: Peers,
     pub padding: [u8; 128],
-}
-
-#[account]
-pub struct Peer {
-    pub address: [u8; 32],
-    pub m0_chain_id: u32,
-    pub wormhole_chain_id: u32,
 }
 
 impl WormholeGlobal {
@@ -34,71 +25,20 @@ impl WormholeGlobal {
         32 + // admin
         1 + // paused
         4 + // chain_id
-        8 + // message_nonce
         1 + // receive_lut option
         32 + // receive_lut
         1 + // pending_admin option
         32 + // pending_admin pubkey
-        4 + // length of peers
-        peers * 40 + // each peer
+        Peers::size(peers) +
         128 // padding
     }
 
     pub fn validate(&self, vaa: &VaaBody) -> Result<()> {
-        if self
-            .peers
-            .iter()
-            .find(|p| {
-                p.wormhole_chain_id == (vaa.emitter_chain as u32)
-                    && p.address == vaa.emitter_address
-            })
-            .is_none()
-        {
+        let peer = self.peers.get_peer(vaa.emitter_chain as u32)?;
+        if peer.address != vaa.emitter_address {
             return err!(BridgeError::InvalidPeer);
         }
 
         Ok(())
-    }
-
-    pub fn get_m0_peer(&self, m0_chain_id: u32) -> Result<Peer> {
-        self.peers
-            .iter()
-            .find(|peer| peer.m0_chain_id == m0_chain_id)
-            .cloned()
-            .ok_or_else(|| BridgeError::UnsupportedDestinationChain.into())
-    }
-
-    pub fn get_peer(&self, wormhole_chain_id: u16) -> Result<Peer> {
-        self.peers
-            .iter()
-            .find(|peer| peer.wormhole_chain_id == wormhole_chain_id as u32)
-            .cloned()
-            .ok_or_else(|| BridgeError::UnsupportedDestinationChain.into())
-    }
-
-    pub fn updated_peers(&self, peer: Peer) -> Vec<Peer> {
-        let mut peers = self.peers.clone();
-
-        // Remove any entries with matching m0_chain_id or wormhole_chain_id
-        peers.retain(|p| {
-            p.m0_chain_id != peer.m0_chain_id && p.wormhole_chain_id != peer.wormhole_chain_id
-        });
-
-        // Only add the new peer if address is set
-        if peer.address != [0u8; 32] {
-            peers.push(peer);
-        }
-
-        peers
-    }
-
-    pub fn generate_message_id(&mut self) -> [u8; 32] {
-        self.message_nonce += 1;
-        hashv(&[
-            &self.chain_id.to_le_bytes(),
-            &crate::ID.to_bytes(),
-            &self.message_nonce.to_le_bytes(),
-        ])
-        .to_bytes()
     }
 }

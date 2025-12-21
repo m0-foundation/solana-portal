@@ -1,16 +1,11 @@
 use anchor_client::{Client, Cluster};
 use anchor_lang::{system_program, AccountDeserialize};
 use anyhow::Result;
-use common::{
-    hyperlane_adapter::{self, accounts::HyperlaneGlobal},
-    pda,
-};
+use common::{pda, Peer};
+use hyperlane_adapter::state::HyperlaneGlobal;
 use portal::state::GLOBAL_SEED;
 use std::vec;
-use wormhole_adapter::{
-    accounts, instruction,
-    state::{Peer, WormholeGlobal},
-};
+use wormhole_adapter::{accounts, instruction, state::WormholeGlobal};
 
 use crate::{get_rpc_client, get_signer, run_surfpool_cmd};
 
@@ -35,18 +30,18 @@ fn test_02_check_globals() -> Result<()> {
     assert!(global_hp.peers.len() > 0);
 
     assert_eq!(
-        global_wh.peers[0].address,
+        global_wh.peers.0[0].address,
         [
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 99, 25, 106, 9, 21, 117, 173, 249, 158, 35, 6,
             229, 233, 14, 11, 229, 21, 72, 65
         ]
     );
 
-    assert_eq!(global_wh.peers[0].m0_chain_id, 1);
-    assert_eq!(global_hp.peers[0].m0_chain_id, 1);
-    assert_eq!(global_wh.peers[1].m0_chain_id, 42161);
-    assert_eq!(global_wh.peers[2].m0_chain_id, 10);
-    assert_eq!(global_wh.peers[3].m0_chain_id, 8453);
+    assert_eq!(global_wh.peers.0[0].m0_chain_id, 1);
+    assert_eq!(global_hp.peers.0[0].m0_chain_id, 1);
+    assert_eq!(global_wh.peers.0[1].m0_chain_id, 42161);
+    assert_eq!(global_wh.peers.0[2].m0_chain_id, 10);
+    assert_eq!(global_wh.peers.0[3].m0_chain_id, 8453);
 
     Ok(())
 }
@@ -70,14 +65,14 @@ fn test_03_remove_peer() -> Result<()> {
             peer: Peer {
                 m0_chain_id: 10,
                 address: [0; 32],
-                wormhole_chain_id: 24,
+                adapter_chain_id: 24,
             },
         })
         .send()?;
 
     let data_wh = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &wormhole_adapter::ID))?;
     let global_wh = WormholeGlobal::try_deserialize(&mut data_wh.as_slice())?;
-    assert!(global_wh.peers.iter().all(|p| p.m0_chain_id != 10));
+    assert!(global_wh.peers.0.iter().all(|p| p.m0_chain_id != 10));
 
     Ok(())
 }
@@ -101,7 +96,7 @@ fn test_04_update_peer() -> Result<()> {
             peer: Peer {
                 m0_chain_id: 8453,
                 address: [1; 32],
-                wormhole_chain_id: 420,
+                adapter_chain_id: 420,
             },
         })
         .send()?;
@@ -111,10 +106,11 @@ fn test_04_update_peer() -> Result<()> {
     assert!(
         global_wh
             .peers
+            .0
             .iter()
             .find(|p| p.m0_chain_id == 8453)
             .expect("did not find updated peer")
-            .wormhole_chain_id
+            .adapter_chain_id
             == 420
     );
 

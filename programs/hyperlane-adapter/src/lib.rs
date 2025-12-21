@@ -2,10 +2,10 @@
 
 mod consts;
 mod instructions;
-mod state;
+pub mod state;
 
-use crate::state::Peer;
 use anchor_lang::prelude::*;
+use common::Peer;
 use consts::{
     HANDLE_ACCOUNT_METAS_DISCRIMINATOR, HANDLE_DISCRIMINATOR, ISM_DISCRIMINATOR,
     ISM_METAS_DISCRIMINATOR,
@@ -80,10 +80,17 @@ pub mod hyperlane_adapter {
     pub fn send_message(
         ctx: Context<SendMessage>,
         m0_destination_chain_id: u32,
+        message_id: [u8; 32],
         payload: Vec<u8>,
         payload_type: u8,
     ) -> Result<()> {
-        SendMessage::handler(ctx, m0_destination_chain_id, payload, payload_type)
+        SendMessage::handler(
+            ctx,
+            m0_destination_chain_id,
+            message_id,
+            payload,
+            payload_type,
+        )
     }
 
     /// Inbound Instructions

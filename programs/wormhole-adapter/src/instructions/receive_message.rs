@@ -124,7 +124,8 @@ impl ReceiveMessage<'_> {
             payload.header.message_id,
             ctx.accounts
                 .wormhole_global
-                .get_peer(vm.emitter_chain)?
+                .peers
+                .get_peer(vm.emitter_chain as u32)?
                 .m0_chain_id,
             payload.encode(),
         )

@@ -1,26 +1,35 @@
 use anchor_client::{Client, Cluster};
-use anchor_lang::{pubkey, system_program, InstructionData, ToAccountMetas};
+use anchor_lang::{system_program, InstructionData, ToAccountMetas};
 use anyhow::Result;
+use common::{earn, IndexPayload, PayloadData, PayloadHeader};
 use common::{
     hyperlane_adapter::constants::PAYER_SEED, pda, portal::constants::GLOBAL_SEED, require_metas,
     wormhole_adapter::constants::GUARDIAN_SET_SEED, wormhole_verify_vaa_shim, Payload,
     AUTHORITY_SEED,
 };
-use common::{IndexPayload, PayloadData, PayloadHeader};
 use hyperlane_adapter::{accounts as hyperlane_accounts, instruction as hyperlane_instruction};
 use portal::state::MESSAGE_SEED;
 use solana_sdk::transaction::Transaction;
 use solana_sdk::{instruction::Instruction, pubkey::Pubkey, signer::Signer};
+use solana_transaction_status_client_types::UiTransactionEncoding;
 use wormhole_adapter::{
     accounts as wormhole_accounts, consts::CORE_BRIDGE_PROGRAM_ID,
     instruction as wormhole_instruction, instructions::VaaBody,
 };
 
 use crate::util::constants::{ETHEREUM_WORMHOLE_TRANSCEIVER, M_MINT, SOLANA_CHAIN_ID};
-use crate::{get_rpc_client, get_signer};
+use crate::{get_rpc_client, get_signer, set_account};
 
 #[test]
 fn test_01_receive_index_wormhole() -> Result<()> {
+    let rpc_client = get_rpc_client();
+    let earn_global = pda!(&[GLOBAL_SEED], &earn::ID);
+    let mut account = rpc_client.get_account(&earn_global)?;
+
+    // Update old portal authority to the new authority
+    account.data[72..72 + 32].copy_from_slice(&pda!(&[AUTHORITY_SEED], &portal::ID).to_bytes());
+    set_account(&earn_global, &account).expect("failed to set account");
+
     let signer = get_signer();
     let client = Client::new(Cluster::Localnet, signer.clone());
     let program = client.program(wormhole_adapter::ID)?;
@@ -31,7 +40,7 @@ fn test_01_receive_index_wormhole() -> Result<()> {
     let metas = require_metas(&payload.data, signer.pubkey(), None, Some(M_MINT), None)?;
 
     // Relay message - Bridge validation is skipped with skip-validation feature flag
-    let result = program
+    let signature = program
         .request()
         .accounts(create_receive_message_accounts(signer.pubkey(), message_id))
         .args(wormhole_instruction::ReceiveMessage {
@@ -39,13 +48,23 @@ fn test_01_receive_index_wormhole() -> Result<()> {
             guardian_set_index: 0,
         })
         .accounts(metas)
-        .send();
+        .send()?;
 
-    // Expect to fail on Earn CPI until its portal authority is updated
-    assert!(result.is_err());
-    assert!(format!("{:?}", result.err().unwrap()).contains(
-        "\"Program mz2vDzjbQDUDXBH6FPF5s4odCJ4y8YLE5QWaZ8XdZ9Z invoke [3]\", \"Program log: Instruction: PropagateIndex\", \"Program log: AnchorError caused by account: signer. Error Code: NotAuthorized. Error Number: 6002. Error Message: Invalid signer."
-    ));
+    // Verify that the index was propagated
+    let transaction = rpc_client.get_transaction(&signature, UiTransactionEncoding::Json)?;
+    let logs = transaction
+        .transaction
+        .meta
+        .unwrap()
+        .log_messages
+        .unwrap()
+        .join(". ");
+
+    assert!(
+        logs.contains("Program mz2vDzjbQDUDXBH6FPF5s4odCJ4y8YLE5QWaZ8XdZ9Z invoke [3]. Program log: Instruction: PropagateIndex."),
+        "Missing PropagateIndex log: {:?}",
+        logs
+    );
 
     Ok(())
 }
@@ -106,14 +125,24 @@ fn test_02_receive_index_hyperlane() -> Result<()> {
         get_rpc_client().get_latest_blockhash()?,
     );
 
-    let result = get_rpc_client().send_and_confirm_transaction(&transaction);
+    let client = get_rpc_client();
+    let signature = client.send_and_confirm_transaction(&transaction)?;
 
-    // Expect to fail on Earn CPI until its portal authority is updated
-    assert!(result.is_err());
-    assert!(format!("{:?}", result.err().unwrap()).contains(
-        "\"Program mz2vDzjbQDUDXBH6FPF5s4odCJ4y8YLE5QWaZ8XdZ9Z invoke [3]\", \"Program log: Instruction: PropagateIndex\", \"Program log: AnchorError caused by account: signer. Error Code: NotAuthorized. Error Number: 6002. Error Message: Invalid signer."
-    ));
+    // Verify that the index was propagated
+    let transaction = client.get_transaction(&signature, UiTransactionEncoding::Json)?;
+    let logs = transaction
+        .transaction
+        .meta
+        .unwrap()
+        .log_messages
+        .unwrap()
+        .join(". ");
 
+    assert!(
+        logs.contains("Program mz2vDzjbQDUDXBH6FPF5s4odCJ4y8YLE5QWaZ8XdZ9Z invoke [3]. Program log: Instruction: PropagateIndex."),
+        "Missing PropagateIndex log: {:?}",
+        logs
+    );
     Ok(())
 }
 

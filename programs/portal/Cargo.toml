@@ -27,3 +27,6 @@ anchor-lang.workspace = true
 anchor-spl.workspace = true
 common = { path = "../../packages/common" }
 solana-security-txt.workspace = true
+
+[dev-dependencies]
+alloy-sol-types = "0.8"

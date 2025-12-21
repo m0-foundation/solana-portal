@@ -194,6 +194,9 @@ impl SendToken<'_> {
             ctx.accounts.system_program.to_account_info(),
             ctx.remaining_accounts.to_vec(),
             destination_chain_id,
+            ctx.accounts
+                .portal_global
+                .generate_message_id(destination_chain_id),
             payload,
             PayloadData::TOKEN_TRANSFER_DISCRIMINANT,
         )?;

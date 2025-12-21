@@ -956,6 +956,15 @@
           "type": "u32"
         },
         {
+          "name": "message_id",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
           "name": "payload",
           "type": "bytes"
         },
@@ -979,9 +988,12 @@
       ],
       "accounts": [
         {
-          "name": "payer",
+          "name": "admin",
           "writable": true,
-          "signer": true
+          "signer": true,
+          "relations": [
+            "wormhole_global"
+          ]
         },
         {
           "name": "wormhole_global",
@@ -1259,7 +1271,7 @@
             "type": "u32"
           },
           {
-            "name": "wormhole_chain_id",
+            "name": "adapter_chain_id",
             "type": "u32"
           }
         ]
@@ -1285,6 +1297,21 @@
                 "u8",
                 32
               ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Peers",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "vec": {
+              "defined": {
+                "name": "Peer"
+              }
             }
           }
         ]
@@ -1447,10 +1474,6 @@
             "type": "u32"
           },
           {
-            "name": "message_nonce",
-            "type": "u64"
-          },
-          {
             "name": "receive_lut",
             "type": {
               "option": "pubkey"
@@ -1465,10 +1488,8 @@
           {
             "name": "peers",
             "type": {
-              "vec": {
-                "defined": {
-                  "name": "Peer"
-                }
+              "defined": {
+                "name": "Peers"
               }
             }
           },

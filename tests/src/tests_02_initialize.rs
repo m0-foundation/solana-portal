@@ -2,15 +2,15 @@ use anchor_lang::AccountDeserialize;
 use anyhow::Result;
 use common::{
     hyperlane_adapter::{
-        self,
-        accounts::{AccountMetasData, HyperlaneGlobal},
+        accounts::AccountMetasData,
         constants::{DEFAULT_IGP_ACCOUNT, DEFAULT_IGP_PROGRAM_ID, DEFAULT_OVERHEAD_IGP_ACCOUNT},
     },
     pda,
     portal::{self, accounts::PortalGlobal},
-    wormhole_adapter::{self, accounts::WormholeGlobal},
 };
+use hyperlane_adapter::state::HyperlaneGlobal;
 use std::vec;
+use wormhole_adapter::state::WormholeGlobal;
 
 use crate::run_surfpool_cmd;
 
@@ -58,14 +58,14 @@ fn test_03_check_globals() -> Result<()> {
     );
     assert_eq!(global_hp.ism, None);
     assert_eq!(global_hp.pending_admin, None);
-    assert!(global_hp.peers.is_empty());
+    assert!(global_hp.peers.len() == 0);
     assert_eq!(global_hp.padding, [0u8; 128]);
     assert!(!global_hp.paused);
 
     // Assert all fields of global_wh
     assert_eq!(global_wh.receive_lut, None);
     assert_eq!(global_wh.pending_admin, None);
-    assert!(global_wh.peers.is_empty());
+    assert!(global_wh.peers.len() == 0);
     assert_eq!(global_wh.padding, [0u8; 128]);
     assert_eq!(global_wh.receive_lut, None);
     assert!(!global_wh.paused);
