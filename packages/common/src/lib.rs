@@ -22,6 +22,7 @@ declare_program!(portal);
 declare_program!(wormhole_verify_vaa_shim);
 declare_program!(earn);
 declare_program!(ext_swap);
+declare_program!(m_ext);
 declare_program!(order_book);
 declare_program!(wormhole_adapter);
 declare_program!(hyperlane_adapter);
