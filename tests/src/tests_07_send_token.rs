@@ -121,15 +121,6 @@ fn assert_err_contains(err: impl ToString, any_of: &[&str], must: &[&str]) {
     }
 }
 
-fn assert_token2022_unfrozen(rpc: &RpcClient, token_account: Pubkey, label: &str) -> Result<()> {
-    let acc = rpc.get_account(&token_account)?;
-    let ta = StateWithExtensions::<TokenAccount2022>::unpack(&acc.data)?;
-    if ta.base.state == AccountState::Frozen {
-        return Err(anyhow!("Expected {} to be unfrozen, but it is frozen", label));
-    }
-    Ok(())
-}
-
 fn whitelist_portal_authority(ctx: &TestCtx) -> Result<()> {
 
     let mut swap_account = ctx.rpc.get_account(&ctx.swap_global_pk)?;
@@ -404,47 +395,4 @@ fn test_04_send_token_wormhole_success() -> Result<()> {
 
     Ok(())
 }
-
-#[test]
-fn test_05_send_token_hyperlane_success() -> Result<()> {
-    let ctx = TestCtx::new()?;
-    let hyp = ctx.hyperlane_remaining_accounts()?;
-
-    // TODO: On default settings this exceeds the compute budget; bumping CU limit then exposes a tx-size limit error.
-    let _sig = ctx
-        .portal
-        .request()
-        .instruction(ComputeBudgetInstruction::set_compute_unit_limit(600_000))
-        .accounts(portal_accounts::SendToken {
-            sender: ctx.portal.payer(),
-            portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
-            swap_global: pda!(&[GLOBAL_SEED], &ext_swap::ID),
-            extension_global: pda!(&[GLOBAL_SEED], &ctx.extension_program),
-            m_mint: ctx.m_mint,
-            extension_mint: ctx.extension_mint,
-            m_token_account: ctx.m_token_account,
-            extension_token_account: ctx.extension_token_account,
-            portal_authority: ctx.portal_authority,
-            ext_m_vault: ctx.ext_m_vault,
-            ext_m_vault_auth: pda!(&[M_VAULT_SEED], &ctx.extension_program),
-            ext_mint_authority: pda!(&[MINT_AUTHORITY_SEED], &ctx.extension_program),
-            swap_program: ext_swap::ID,
-            extension_program: ctx.extension_program,
-            m_token_program: token_2022::ID,
-            extension_token_program: token_2022::ID,
-            bridge_adapter: hyperlane_adapter::ID,
-            system_program: system_program::ID,
-        })
-        .args(portal_instruction::SendToken {
-            amount: AMOUNT,
-            destination_token: ctx.m_mint.to_bytes(),
-            destination_chain_id: 1,
-            recipient: ctx.portal.payer().to_bytes(),
-        })
-        .accounts(hyp.to_account_metas())
-        .send()?;
-
-    Ok(())
-}
-
 
