@@ -4,8 +4,8 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use common_macros::ExtractAccounts;
 
 use crate::{
-    earn, ext_swap, order_book, BridgeError, EarnerMerkleRootPayload, FillReportPayload,
-    IndexPayload, TokenTransferPayload,
+    earn, ext_swap, order_book, BridgeError, CancelReportPayload, EarnerMerkleRootPayload,
+    FillReportPayload, IndexPayload, TokenTransferPayload,
 };
 
 #[derive(ExtractAccounts)]
@@ -118,6 +118,36 @@ impl FillReportPayload {
     ) -> Result<FillReportPayloadAccounts<'info>> {
         let accounts =
             FillReportPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
+
+        if accounts.orderbook_program.key != &order_book::ID {
+            return err!(BridgeError::InvalidRemainingAccount);
+        }
+
+        Ok(accounts)
+    }
+}
+
+#[derive(ExtractAccounts)]
+pub struct CancelReportPayloadAccounts<'info> {
+    pub orderbook_global_account: AccountInfo<'info>,
+    pub order: AccountInfo<'info>,
+    pub token_in_mint: AccountInfo<'info>,
+    pub order_sender: AccountInfo<'info>,
+    pub sender_token_in_ata: AccountInfo<'info>,
+    pub order_token_in_ata: AccountInfo<'info>,
+    pub token_in_program: AccountInfo<'info>,
+    pub associated_token_program: AccountInfo<'info>,
+    pub event_authority: AccountInfo<'info>,
+    pub orderbook_program: AccountInfo<'info>,
+}
+
+impl CancelReportPayload {
+    pub fn parse_and_validate_accounts<'info>(
+        &self,
+        remaining_accounts: Vec<AccountInfo<'info>>,
+    ) -> Result<CancelReportPayloadAccounts<'info>> {
+        let accounts =
+            CancelReportPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
 
         if accounts.orderbook_program.key != &order_book::ID {
             return err!(BridgeError::InvalidRemainingAccount);
