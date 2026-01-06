@@ -1,7 +1,7 @@
 use anchor_client::{Client, Cluster};
 use anchor_lang::{system_program, InstructionData, ToAccountMetas};
 use anyhow::Result;
-use common::{earn, IndexPayload, PayloadData, PayloadHeader};
+use common::{earn, CancelReportPayload, IndexPayload, PayloadData, PayloadHeader};
 use common::{
     hyperlane_adapter::constants::PAYER_SEED, pda, portal::constants::GLOBAL_SEED, require_metas,
     wormhole_adapter::constants::GUARDIAN_SET_SEED, wormhole_verify_vaa_shim, Payload,
@@ -270,6 +270,53 @@ fn test_06_receive_invalid_destination_peer() -> Result<()> {
         "Invalid error: {}",
         err
     );
+
+    Ok(())
+}
+
+#[test]
+fn test_07_receive_cancel_wormhole() -> Result<()> {
+    let rpc_client = get_rpc_client();
+    let signer = get_signer();
+    let client = Client::new(Cluster::Localnet, signer.clone());
+    let program = client.program(wormhole_adapter::ID)?;
+
+    let message_id = [44u8; 32];
+    let mut payload = create_default_payload(message_id, SOLANA_CHAIN_ID, portal::ID.to_bytes());
+
+    payload.header.payload_type = 6; // CancelReport
+    payload.data = PayloadData::CancelReport(CancelReportPayload {
+        order_id: [0; 32],
+        order_sender: [0; 32],
+        token_in: [0; 32],
+    });
+
+    let vaa = create_default_vaa(2, ETHEREUM_WORMHOLE_TRANSCEIVER, payload.clone());
+    let metas = require_metas(&payload.data, signer.pubkey(), None, Some(M_MINT), None)?;
+
+    let signature = program
+        .request()
+        .accounts(create_receive_message_accounts(signer.pubkey(), message_id))
+        .args(wormhole_instruction::ReceiveMessage {
+            vaa_body: vaa.to_bytes(),
+            guardian_set_index: 0,
+        })
+        .accounts(metas)
+        .send()?;
+
+    let transaction = rpc_client.get_transaction(&signature, UiTransactionEncoding::Json)?;
+    let logs = transaction
+        .transaction
+        .meta
+        .unwrap()
+        .log_messages
+        .unwrap()
+        .join(". ");
+
+    // order_book not deployed
+    assert!(logs.contains(
+        "Program MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce failed: Unsupported program id"
+    ),);
 
     Ok(())
 }

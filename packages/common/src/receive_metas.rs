@@ -129,6 +129,7 @@ pub fn require_metas(
             // PDAs
             let order = pda!(&[ORDER_SEED_PREFIX, &report.order_id], &order_book::ID);
             let event_auth = pda!(&[EVENT_AUTHORITY_SEED], &order_book::ID);
+            let orderbook_global = pda!(&[GLOBAL_SEED], &order_book::ID);
 
             // Token accounts
             let recipient_token_account = get_associated_token_address_with_program_id(
@@ -140,7 +141,7 @@ pub fn require_metas(
                 get_associated_token_address_with_program_id(&order, &token_in, &token_in_program);
 
             let mut accounts = vec![
-                AccountMeta::new(payer, false),
+                AccountMeta::new_readonly(orderbook_global, false),
                 AccountMeta::new(order, false),
                 AccountMeta::new_readonly(token_in, false),
                 AccountMeta::new_readonly(report.origin_recipient.into(), false),
@@ -148,8 +149,8 @@ pub fn require_metas(
                 AccountMeta::new(order_token_account, false),
                 AccountMeta::new_readonly(token_in_program, false),
                 AccountMeta::new_readonly(associated_token::ID, false),
-                AccountMeta::new_readonly(order_book::ID, false),
                 AccountMeta::new_readonly(event_auth, false),
+                AccountMeta::new_readonly(order_book::ID, false),
             ];
 
             // Append token accounts in case token program guess was wrong
@@ -192,6 +193,7 @@ pub fn require_metas(
             // PDAs
             let order = pda!(&[ORDER_SEED_PREFIX, &report.order_id], &order_book::ID);
             let event_auth = pda!(&[EVENT_AUTHORITY_SEED], &order_book::ID);
+            let orderbook_global = pda!(&[GLOBAL_SEED], &order_book::ID);
 
             // Token accounts
             let sender_token_account = get_associated_token_address_with_program_id(
@@ -203,7 +205,7 @@ pub fn require_metas(
                 get_associated_token_address_with_program_id(&order, &token_in, &token_in_program);
 
             let mut accounts = vec![
-                AccountMeta::new(payer, false),
+                AccountMeta::new_readonly(orderbook_global, false),
                 AccountMeta::new(order, false),
                 AccountMeta::new_readonly(token_in, false),
                 AccountMeta::new_readonly(report.order_sender.into(), false),
@@ -211,8 +213,8 @@ pub fn require_metas(
                 AccountMeta::new(order_token_account, false),
                 AccountMeta::new_readonly(token_in_program, false),
                 AccountMeta::new_readonly(associated_token::ID, false),
-                AccountMeta::new_readonly(order_book::ID, false),
                 AccountMeta::new_readonly(event_auth, false),
+                AccountMeta::new_readonly(order_book::ID, false),
             ];
 
             // Append token accounts in case token program guess was wrong
