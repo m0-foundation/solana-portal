@@ -385,7 +385,7 @@ fn test_04_send_token_wormhole_success() -> Result<()> {
     match payload.data {
         PayloadData::TokenTransfer(token_payload) => {
             assert_eq!(token_payload.index, portal_global.m_index);
-            assert_eq!(token_payload.amount, 936120);
+            assert!(token_payload.amount < AMOUNT as u128 && token_payload.amount > 0); // will change depending on current index value
             assert_eq!(token_payload.destination_token, ctx.m_mint.to_bytes());
             assert_eq!(token_payload.sender, ctx.portal.payer().to_bytes());
             assert_eq!(token_payload.recipient, ctx.portal.payer().to_bytes());
