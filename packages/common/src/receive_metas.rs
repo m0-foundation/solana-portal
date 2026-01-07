@@ -112,8 +112,12 @@ pub fn require_metas(
         PayloadData::FillReport(_) | PayloadData::CancelReport(_) => {
             // Extract common fields and determine recipient based on report type
             let (token_in, order_id, recipient) = match payload {
-                PayloadData::FillReport(r) => (r.token_in, r.order_id, r.origin_recipient),
-                PayloadData::CancelReport(r) => (r.token_in, r.order_id, r.order_sender),
+                PayloadData::FillReport(r) => {
+                    (r.token_in.into(), r.order_id, r.origin_recipient.into())
+                }
+                PayloadData::CancelReport(r) => {
+                    (r.token_in.into(), r.order_id, r.order_sender.into())
+                }
                 _ => unreachable!(),
             };
 
@@ -137,7 +141,7 @@ pub fn require_metas(
 
             // Token accounts
             let recipient_token_account = get_associated_token_address_with_program_id(
-                &recipient.into(),
+                &recipient,
                 &token_in,
                 &token_in_program,
             );
@@ -148,7 +152,7 @@ pub fn require_metas(
                 AccountMeta::new_readonly(orderbook_global, false),
                 AccountMeta::new(order, false),
                 AccountMeta::new_readonly(token_in, false),
-                AccountMeta::new_readonly(recipient.into(), false),
+                AccountMeta::new_readonly(recipient, false),
                 AccountMeta::new(recipient_token_account, false),
                 AccountMeta::new(order_token_account, false),
                 AccountMeta::new_readonly(token_in_program, false),
@@ -160,7 +164,7 @@ pub fn require_metas(
             // Append token accounts in case token program guess was wrong
             if orderbook_token_in.is_none() {
                 let recipient_token_account = get_associated_token_address_with_program_id(
-                    &recipient.into(),
+                    &recipient,
                     &token_in,
                     &token_2022::ID,
                 );
