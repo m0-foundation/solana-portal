@@ -209,7 +209,6 @@ impl ResolveExecuteVaa {
 
         let required_remaining = require_metas(
             &vaa.payload.data,
-            RESOLVER_PUBKEY_PAYER,
             whitelisted_extensions,
             m_mint,
             orderbook_token_in,

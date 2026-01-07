@@ -53,6 +53,7 @@ pub enum PayloadData {
     Index(IndexPayload),
     FillReport(FillReportPayload),
     EarnerMerkleRoot(EarnerMerkleRootPayload),
+    CancelReport(CancelReportPayload),
 }
 
 impl PayloadData {
@@ -60,6 +61,7 @@ impl PayloadData {
     pub const INDEX_DISCRIMINANT: u8 = 1;
     pub const FILL_REPORT_DISCRIMINANT: u8 = 4;
     pub const EARNER_MERKLE_ROOT_DISCRIMINANT: u8 = 5;
+    pub const CANCEL_REPORT_DISCRIMINANT: u8 = 6;
 
     pub fn encode(&self) -> Vec<u8> {
         match &self {
@@ -85,6 +87,13 @@ impl PayloadData {
                 data.extend_from_slice(&payload.amount_in_to_release.to_be_bytes());
                 data.extend_from_slice(&payload.amount_out_filled.to_be_bytes());
                 data.extend_from_slice(&payload.origin_recipient);
+                data.extend_from_slice(&payload.token_in);
+                data
+            }
+            PayloadData::CancelReport(payload) => {
+                let mut data = vec![];
+                data.extend_from_slice(&payload.order_id);
+                data.extend_from_slice(&payload.order_sender);
                 data.extend_from_slice(&payload.token_in);
                 data
             }
@@ -139,6 +148,17 @@ impl PayloadData {
                     merkle_root: merkle_root_bytes.try_into().unwrap(),
                 }))
             }
+            Self::CANCEL_REPORT_DISCRIMINANT => {
+                let (order_id_bytes, data) = data.split_at(32);
+                let (order_sender_bytes, data) = data.split_at(32);
+                let (token_in_bytes, _) = data.split_at(32);
+
+                Ok(PayloadData::CancelReport(CancelReportPayload {
+                    order_id: order_id_bytes.try_into().unwrap(),
+                    order_sender: order_sender_bytes.try_into().unwrap(),
+                    token_in: token_in_bytes.try_into().unwrap(),
+                }))
+            }
             _ => err!(BridgeError::InvalidPayload),
         }
     }
@@ -187,6 +207,13 @@ pub struct FillReportPayload {
     pub amount_in_to_release: u128,
     pub amount_out_filled: u128,
     pub origin_recipient: [u8; 32],
+    pub token_in: [u8; 32],
+}
+
+#[derive(Debug, Clone)]
+pub struct CancelReportPayload {
+    pub order_id: [u8; 32],
+    pub order_sender: [u8; 32],
     pub token_in: [u8; 32],
 }
 
@@ -355,6 +382,39 @@ mod tests {
                 assert_eq!(decoded.header.payload_type, 5);
             }
             _ => panic!("Expected EarnerMerkleRoot payload"),
+        }
+    }
+
+    #[test]
+    fn test_cancel_report_encode_decode() {
+        let header = PayloadHeader {
+            payload_type: 6,
+            destination_chain_id: 56,
+            destination_peer: [14u8; 32],
+            message_id: [13u8; 32],
+        };
+        let payload_data = CancelReportPayload {
+            order_id: [15u8; 32],
+            order_sender: [16u8; 32],
+            token_in: [17u8; 32],
+        };
+        let payload = Payload {
+            header: header.clone(),
+            data: PayloadData::CancelReport(payload_data),
+        };
+        let encoded = payload.encode();
+        let decoded = Payload::decode(&encoded).unwrap();
+        match decoded.data {
+            PayloadData::CancelReport(decoded_payload) => {
+                assert_eq!(decoded_payload.order_id, [15u8; 32]);
+                assert_eq!(decoded_payload.order_sender, [16u8; 32]);
+                assert_eq!(decoded_payload.token_in, [17u8; 32]);
+                assert_eq!(decoded.header.message_id, [13u8; 32]);
+                assert_eq!(decoded.header.destination_chain_id, 56);
+                assert_eq!(decoded.header.destination_peer, [14u8; 32]);
+                assert_eq!(decoded.header.payload_type, 6);
+            }
+            _ => panic!("Expected CancelReport payload"),
         }
     }
 }

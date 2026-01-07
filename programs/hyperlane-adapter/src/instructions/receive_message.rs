@@ -172,7 +172,6 @@ impl<'info> ReceiveMessageMetas<'info> {
 
         let required_remaining = require_metas(
             &payload.data,
-            ctx.accounts.account_metas_data.key(),
             Some(ctx.accounts.account_metas_data.extensions.clone()),
             Some(ctx.accounts.account_metas_data.m_mint),
             None,

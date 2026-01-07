@@ -3,9 +3,12 @@ use anchor_spl::token_interface;
 use common::{
     earn::{self, cpi::accounts::PropagateIndex},
     ext_swap,
-    order_book::{self, types::FillReport},
-    BridgeAdapter, BridgeError, EarnerMerkleRootPayload, FillReportPayload, Payload, PayloadData,
-    TokenTransferPayload,
+    order_book::{
+        self,
+        types::{CancelReport, FillReport},
+    },
+    BridgeAdapter, BridgeError, CancelReportPayload, EarnerMerkleRootPayload, FillReportPayload,
+    Payload, PayloadData, TokenTransferPayload,
 };
 
 use crate::state::{BridgeMessage, PortalGlobal, AUTHORITY_SEED, GLOBAL_SEED, MESSAGE_SEED};
@@ -117,6 +120,14 @@ impl ReceiveMessage<'_> {
                     ctx,
                     source_chain_id,
                     fill_report,
+                    message.header.message_id,
+                );
+            }
+            PayloadData::CancelReport(cancel_report) => {
+                return Self::handle_cancel_report_payload(
+                    ctx,
+                    source_chain_id,
+                    cancel_report,
                     message.header.message_id,
                 );
             }
@@ -289,6 +300,54 @@ impl ReceiveMessage<'_> {
 
         Ok(())
     }
+
+    fn handle_cancel_report_payload<'info>(
+        ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
+        source_chain_id: u32,
+        payload: CancelReportPayload,
+        message_id: [u8; 32],
+    ) -> Result<()> {
+        // Get payload specific accounts
+        let accounts = payload.parse_and_validate_accounts(ctx.remaining_accounts.to_vec())?;
+
+        order_book::cpi::report_order_cancel(
+            CpiContext::new_with_signer(
+                accounts.orderbook_program.clone(),
+                order_book::cpi::accounts::ReportOrderCancel {
+                    relayer: ctx.accounts.payer.to_account_info(), // Relayer pays for ATA initialization
+                    messenger_authority: ctx.accounts.portal_authority.to_account_info(),
+                    global_account: accounts.orderbook_global_account,
+                    order: accounts.order,
+                    token_in_mint: accounts.token_in_mint,
+                    order_sender: accounts.order_sender,
+                    sender_token_in_ata: accounts.sender_token_in_ata,
+                    order_token_in_ata: accounts.order_token_in_ata,
+                    token_in_program: accounts.token_in_program,
+                    associated_token_program: accounts.associated_token_program,
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                    event_authority: accounts.event_authority,
+                    program: accounts.orderbook_program,
+                },
+                &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
+            ),
+            CancelReport {
+                order_id: payload.order_id,
+                order_sender: payload.order_sender,
+                token_in: payload.token_in,
+            },
+        )?;
+
+        emit!(CancelReportReceived {
+            source_chain_id: source_chain_id,
+            bridge_adapter: *ctx.accounts.adapter_authority.as_ref().owner,
+            order_id: payload.order_id,
+            order_sender: payload.order_sender,
+            token_in: payload.token_in,
+            message_id: message_id,
+        });
+
+        Ok(())
+    }
 }
 
 #[event]
@@ -311,6 +370,16 @@ pub struct FillReportReceived {
     pub amount_in_to_release: u128,
     pub amount_out_filled: u128,
     pub origin_recipient: [u8; 32],
+    pub token_in: [u8; 32],
+    pub message_id: [u8; 32],
+}
+
+#[event]
+pub struct CancelReportReceived {
+    pub source_chain_id: u32,
+    pub bridge_adapter: Pubkey,
+    pub order_id: [u8; 32],
+    pub order_sender: [u8; 32],
     pub token_in: [u8; 32],
     pub message_id: [u8; 32],
 }

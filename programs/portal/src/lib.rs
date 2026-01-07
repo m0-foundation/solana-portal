@@ -90,7 +90,7 @@ pub mod portal {
     }
 
     pub fn send_fill_report<'info>(
-        ctx: Context<'_, '_, '_, 'info, SendFillReport<'info>>,
+        ctx: Context<'_, '_, '_, 'info, SendReport<'info>>,
         order_id: [u8; 32],
         token_in: [u8; 32],
         amount_in_to_release: u128,
@@ -98,13 +98,29 @@ pub mod portal {
         origin_recipient: [u8; 32],
         origin_chain_id: u32,
     ) -> Result<()> {
-        SendFillReport::handler(
+        SendReport::send_fill_report_handler(
             ctx,
             order_id,
             token_in,
             amount_in_to_release,
             amount_out_filled,
             origin_recipient,
+            origin_chain_id,
+        )
+    }
+
+    pub fn send_cancel_report<'info>(
+        ctx: Context<'_, '_, '_, 'info, SendReport<'info>>,
+        order_id: [u8; 32],
+        order_sender: [u8; 32],
+        token_in: [u8; 32],
+        origin_chain_id: u32,
+    ) -> Result<()> {
+        SendReport::send_cancel_report_handler(
+            ctx,
+            order_id,
+            order_sender,
+            token_in,
             origin_chain_id,
         )
     }
