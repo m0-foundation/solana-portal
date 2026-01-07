@@ -2,17 +2,25 @@ use anchor_client::{Client, Cluster};
 use anchor_lang::{system_program, AccountDeserialize};
 use anyhow::Result;
 use common::{
-    hyperlane_adapter::{self, accounts::HyperlaneGlobal},
+    earn,
+    hyperlane_adapter::{
+        self,
+        accounts::{HyperlaneGlobal, HyperlaneUserGlobal},
+        constants::DASH_SEED,
+    },
     pda,
     portal::constants::GLOBAL_SEED,
     wormhole_adapter::{self, constants::EMITTER_SEED},
-    HyperlaneRemainingAccounts, Payload, WormholeRemainingAccounts, AUTHORITY_SEED,
+    HyperlaneRemainingAccounts, PayloadData, WormholeRemainingAccounts, AUTHORITY_SEED,
 };
-use portal::{accounts, instruction};
-use solana_sdk::{bs58, compute_budget::ComputeBudgetInstruction};
-use solana_transaction_status_client_types::{UiInstruction, UiTransactionEncoding};
+use portal::{
+    state::PortalGlobal,
+    {accounts, instruction},
+};
+use solana_sdk::compute_budget::ComputeBudgetInstruction;
+use solana_transaction_status_client_types::UiTransactionEncoding;
 
-use crate::{get_rpc_client, get_signer};
+use crate::{get_rpc_client, get_signer, util};
 
 #[test]
 fn test_01_index_update_wormhole() -> Result<()> {
@@ -32,57 +40,20 @@ fn test_01_index_update_wormhole() -> Result<()> {
             bridge_adapter: wormhole_adapter::ID,
         })
         .args(instruction::SendIndex {
-            destination_chain_id: 2,
+            destination_chain_id: 1,
         })
         .accounts(WormholeRemainingAccounts::account_metas())
         .send()?;
 
     let transaction = rpc_client.get_transaction(&signature, UiTransactionEncoding::Json)?;
 
-    // Find and verify the wormhole post message event
-    let meta = transaction
-        .transaction
-        .meta
-        .as_ref()
-        .expect("Transaction meta missing");
+    let event_meta = util::wormhole::find_message_event(&transaction)
+        .expect("Wormhole post message event not found or invalid");
 
-    let inner_instructions = meta
-        .inner_instructions
-        .as_ref()
-        .expect("Inner instructions missing");
-
-    let found_event = inner_instructions
-        .iter()
-        .flat_map(|inner| &inner.instructions)
-        .find_map(|ix| {
-            let UiInstruction::Compiled(compiled_ix) = ix else {
-                return None;
-            };
-
-            let data = bs58::decode(&compiled_ix.data).into_vec().ok()?;
-
-            // Verify Event CPI discriminator and extract data
-            if data.get(0..8)? != [228, 69, 165, 46, 81, 203, 154, 29] {
-                return None;
-            }
-
-            let emitter = data.get(16..48)?;
-            let sequence = u64::from_le_bytes(data.get(48..56)?.try_into().ok()?);
-            let timestamp = u32::from_le_bytes(data.get(56..60)?.try_into().ok()?);
-
-            // Verify all conditions
-            let expected_emitter = pda!(&[EMITTER_SEED], &wormhole_adapter::ID).to_bytes();
-            if emitter == expected_emitter && sequence > 50 && timestamp > 0 {
-                return Some(());
-            }
-
-            None
-        });
-
-    assert!(
-        found_event.is_some(),
-        "Wormhole post message event not found or invalid"
-    );
+    let expected_emitter = pda!(&[EMITTER_SEED], &wormhole_adapter::ID).to_bytes();
+    assert_eq!(event_meta.emitter, expected_emitter);
+    assert!(event_meta.sequence > 50);
+    assert!(event_meta.timestamp > 0);
 
     let message_account = WormholeRemainingAccounts::new().message_account;
     let account_data = rpc_client.get_account_data(&message_account)?;
@@ -94,11 +65,52 @@ fn test_01_index_update_wormhole() -> Result<()> {
         WormholeRemainingAccounts::new().emitter.to_bytes()
     );
 
+    let payload =
+        util::wormhole::find_post_message_payload(&transaction).expect("Index payload not found");
+
+    // Index should match the program’s current m_index (you send current index)
+    let global_bytes = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &portal::ID))?;
+    let portal_global = PortalGlobal::try_deserialize(&mut global_bytes.as_slice())?;
+
+    match payload.data {
+        PayloadData::Index(index_payload) => assert_eq!(index_payload.index, portal_global.m_index),
+        _ => panic!("Expected IndexPayload"),
+    }
+
     Ok(())
 }
 
 #[test]
-fn test_02_index_update_hyperlane() -> Result<()> {
+fn test_02_index_update_wormhole_bad_dest() -> Result<()> {
+    let client = Client::new(Cluster::Localnet, get_signer());
+
+    let program = client.program(portal::ID)?;
+
+    // Send index update to unsupported chain
+    let err = program
+        .request()
+        .accounts(accounts::SendIndex {
+            sender: program.payer(),
+            system_program: system_program::ID,
+            portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
+            portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
+            bridge_adapter: wormhole_adapter::ID,
+        })
+        .args(instruction::SendIndex {
+            destination_chain_id: 5,
+        })
+        .accounts(WormholeRemainingAccounts::account_metas())
+        .send()
+        .unwrap_err();
+
+    let s = err.to_string();
+    assert!(s.contains("Error Code: InvalidPeer"));
+
+    Ok(())
+}
+
+#[test]
+fn test_03_index_update_hyperlane() -> Result<()> {
     let client = Client::new(Cluster::Localnet, get_signer());
     let rpc_client = get_rpc_client();
     let program = client.program(portal::ID)?;
@@ -129,24 +141,154 @@ fn test_02_index_update_hyperlane() -> Result<()> {
     let message_account = accounts.dispatched_message;
     let account_data = rpc_client.get_account_data(&message_account)?;
 
-    // The last 40 bytes of the account data contain the message body
-    let len = account_data.len();
-    let message_body = &account_data[len - 41..];
-    let message = Payload::decode(&message_body.to_vec());
+    let (payload, recipient) = util::hyperlane::decode_payload_from_message_account(&account_data)
+        .expect("Failed to decode index payload");
 
-    let Payload::Index(index) = message else {
-        panic!("Expected IndexPayload");
-    };
+    // Index should match the program’s current m_index (you send current index)
+    let global_bytes = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &portal::ID))?;
+    let portal_global = PortalGlobal::try_deserialize(&mut global_bytes.as_slice())?;
 
-    // Default index is 0
-    assert_eq!(index.index, 0);
+    match payload.data {
+        PayloadData::Index(index_payload) => assert_eq!(index_payload.index, portal_global.m_index),
+        _ => panic!("Expected IndexPayload"),
+    }
 
     // Recipient should be registered peer
-    let recipient = &account_data[len - 73..len - 41];
     assert_eq!(
         hex::encode(recipient),
         "0b6a86806a0354c82b8f049eb75d9c97e370a6f0c0cfa15f47909c3fe1c8f794"
     );
+
+    Ok(())
+}
+
+#[test]
+fn test_04_index_update_hyperlane_repeat_msgid() -> Result<()> {
+    let client = Client::new(Cluster::Localnet, get_signer());
+    let rpc_client = get_rpc_client();
+    let program = client.program(portal::ID)?;
+
+    // Fetch global
+    let data_hyp = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &hyperlane_adapter::ID))?;
+    let global_hp = HyperlaneGlobal::try_deserialize(&mut data_hyp.as_slice())?;
+
+    // user_global already exists, so message ID will be repeated
+    let accounts = HyperlaneRemainingAccounts::new(&program.payer(), &global_hp, None);
+
+    // Send index update
+    let err = program
+        .request()
+        .accounts(accounts::SendIndex {
+            sender: program.payer(),
+            system_program: system_program::ID,
+            portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
+            portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
+            bridge_adapter: hyperlane_adapter::ID,
+        })
+        .args(instruction::SendIndex {
+            destination_chain_id: 1,
+        })
+        .accounts(accounts.to_account_metas())
+        .instruction(ComputeBudgetInstruction::set_compute_unit_limit(500_000))
+        .send()
+        .unwrap_err();
+
+    let s = err.to_string();
+    assert!(s.contains("2006") || s.contains("custom program error: 0x07d6"));
+    assert!(s.contains("ConstraintSeeds"));
+
+    Ok(())
+}
+
+#[test]
+fn test_05_index_update_hyperlane_bad_dest() -> Result<()> {
+    let client = Client::new(Cluster::Localnet, get_signer());
+    let rpc_client = get_rpc_client();
+    let program = client.program(portal::ID)?;
+
+    // Fetch global
+    let data_hyp = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &hyperlane_adapter::ID))?;
+    let global_hp = HyperlaneGlobal::try_deserialize(&mut data_hyp.as_slice())?;
+    let user_data_hyp = rpc_client.get_account_data(&pda!(
+        &[GLOBAL_SEED, DASH_SEED, program.payer().as_ref()],
+        &hyperlane_adapter::ID
+    ))?;
+    let user_hp = HyperlaneUserGlobal::try_deserialize(&mut user_data_hyp.as_slice())?;
+
+    let accounts = HyperlaneRemainingAccounts::new(&program.payer(), &global_hp, Some(&user_hp));
+
+    // Send index update
+    let err = program
+        .request()
+        .accounts(accounts::SendIndex {
+            sender: program.payer(),
+            system_program: system_program::ID,
+            portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
+            portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
+            bridge_adapter: hyperlane_adapter::ID,
+        })
+        .args(instruction::SendIndex {
+            destination_chain_id: 5,
+        })
+        .accounts(accounts.to_account_metas())
+        .instruction(ComputeBudgetInstruction::set_compute_unit_limit(500_000))
+        .send()
+        .unwrap_err();
+
+    let s = err.to_string();
+    assert!(s.contains("Error Code: InvalidPeer"));
+
+    Ok(())
+}
+
+#[test]
+fn test_06_missing_account() -> Result<()> {
+    let client = Client::new(Cluster::Localnet, get_signer());
+    let program = client.program(portal::ID)?;
+
+    let err = program
+        .request()
+        .accounts(accounts::SendIndex {
+            sender: program.payer(),
+            system_program: system_program::ID,
+            portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
+            portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
+            bridge_adapter: wormhole_adapter::ID,
+        })
+        .args(instruction::SendIndex {
+            destination_chain_id: 1,
+        })
+        .accounts(WormholeRemainingAccounts::account_metas()[1..].to_vec())
+        .send()
+        .unwrap_err();
+
+    let s = err.to_string();
+    assert!(s.contains("Error Code: InvalidRemainingAccounts"));
+
+    Ok(())
+}
+
+#[test]
+fn test_07_send_merkle_root() -> Result<()> {
+    let client = Client::new(Cluster::Localnet, get_signer());
+
+    let program = client.program(portal::ID)?;
+
+    program
+        .request()
+        .accounts(accounts::SendMerkleRoot {
+            sender: program.payer(),
+            system_program: system_program::ID,
+            portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
+            portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
+            bridge_adapter: wormhole_adapter::ID,
+            earn_global: pda!(&[GLOBAL_SEED], &earn::ID),
+        })
+        .args(instruction::SendMerkleRoot {
+            destination_chain_id: 1,
+        })
+        .accounts(WormholeRemainingAccounts::account_metas())
+        .send()?;
 
     Ok(())
 }

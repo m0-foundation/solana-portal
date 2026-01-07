@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
+use common::Peer;
 
-use crate::state::{Peer, WormholeGlobal, GLOBAL_SEED};
+use crate::state::{WormholeGlobal, GLOBAL_SEED};
 
 #[derive(Accounts)]
 #[instruction(peer: Peer)]
@@ -14,8 +15,7 @@ pub struct SetPeer<'info> {
         bump = wormhole_global.bump,
         has_one = admin,
         realloc = WormholeGlobal::size(
-            wormhole_global.peers.len() +
-            wormhole_global.get_peer(peer.chain_id).is_err() as usize
+            wormhole_global.peers.updated_peers(peer.clone()).len()
         ),
         realloc::payer = admin,
         realloc::zero = false,
@@ -27,18 +27,25 @@ pub struct SetPeer<'info> {
 
 impl SetPeer<'_> {
     pub fn handler(ctx: Context<Self>, peer: Peer) -> Result<()> {
-        // Insert or overwrite peer
-        match ctx
+        ctx.accounts.wormhole_global.peers = ctx
             .accounts
             .wormhole_global
             .peers
-            .iter_mut()
-            .find(|p| p.chain_id == peer.chain_id)
-        {
-            Some(existing_peer) => *existing_peer = peer,
-            None => ctx.accounts.wormhole_global.peers.push(peer),
-        }
+            .updated_peers(peer.clone());
+
+        emit!(PeerSet {
+            m0_chain_id: peer.m0_chain_id,
+            wormhole_chain_id: peer.adapter_chain_id,
+            peer: peer.address,
+        });
 
         Ok(())
     }
+}
+
+#[event]
+pub struct PeerSet {
+    pub m0_chain_id: u32,
+    pub wormhole_chain_id: u32,
+    pub peer: [u8; 32],
 }

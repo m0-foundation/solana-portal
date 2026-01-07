@@ -85,6 +85,10 @@ impl TokenTransferPayload {
             return err!(BridgeError::InvalidRemainingAccount);
         }
 
+        if accounts.earn_program.key != &earn::ID {
+            return err!(BridgeError::InvalidRemainingAccount);
+        }
+
         if accounts.swap_program.key != &ext_swap::ID {
             return err!(BridgeError::InvalidRemainingAccount);
         }

@@ -20,7 +20,11 @@ pub struct Initialize<'info> {
 }
 
 impl Initialize<'_> {
-    pub fn handler(ctx: Context<Self>, chain_id: u32) -> Result<()> {
+    pub fn handler(
+        ctx: Context<Self>,
+        chain_id: u32,
+        isolated_hub_chain_id: Option<u32>,
+    ) -> Result<()> {
         ctx.accounts.portal_global.set_inner(PortalGlobal {
             admin: ctx.accounts.admin.key(),
             bump: ctx.bumps.portal_global,
@@ -29,8 +33,16 @@ impl Initialize<'_> {
             chain_id,
             message_nonce: 0,
             pending_admin: None,
+            isolated_hub_chain_id,
             padding: [0u8; 128],
         });
+
+        if let Some(isolated_hub_chain_id) = isolated_hub_chain_id {
+            msg!(
+                "Initialized as isolated spoke connected to chain {}",
+                isolated_hub_chain_id
+            );
+        }
 
         Ok(())
     }

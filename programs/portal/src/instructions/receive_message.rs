@@ -4,7 +4,7 @@ use common::{
     earn::{self, cpi::accounts::PropagateIndex},
     ext_swap,
     order_book::{self, types::FillReport},
-    BridgeAdapter, BridgeError, EarnerMerkleRootPayload, FillReportPayload, Payload,
+    BridgeAdapter, BridgeError, EarnerMerkleRootPayload, FillReportPayload, Payload, PayloadData,
     TokenTransferPayload,
 };
 
@@ -46,17 +46,25 @@ pub struct ReceiveMessage<'info> {
 
 impl ReceiveMessage<'_> {
     fn validate(&self, message_id: [u8; 32], payload: &Vec<u8>) -> Result<()> {
-        let message = Payload::decode(&payload);
+        let message = Payload::decode(&payload)?;
 
         // Verify the message_id matches the decoded payload
         require!(
-            message_id == message.message_id(),
+            message_id == message.header.message_id,
             BridgeError::InvalidMessageId
         );
 
         // Check that one of the supported adapters signed the message
-        if !BridgeAdapter::is_authority(&self.adapter_authority.key()) {
+        if BridgeAdapter::from_authority(&self.adapter_authority.key()).is_none() {
             return err!(BridgeError::InvalidAdapterAuthority);
+        }
+
+        // Make sure the message is intended for this chain
+        if message.header.destination_chain_id != self.portal_global.chain_id {
+            return err!(BridgeError::InvalidDestinationChain);
+        }
+        if !BridgeAdapter::valid_destination_peer(message.header.destination_peer) {
+            return err!(BridgeError::InvalidDestinationPeer);
         }
 
         Ok(())
@@ -66,34 +74,51 @@ impl ReceiveMessage<'_> {
     pub fn handler<'info>(
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
         message_id: [u8; 32],
+        source_chain_id: u32,
         payload: Vec<u8>,
     ) -> Result<()> {
-        let message = Payload::decode(&payload);
+        let message = Payload::decode(&payload)?;
 
         // Protect against replays in case the adapter is not
         ctx.accounts
             .message_account
             .set_inner(BridgeMessage { consumed: true });
 
-        match message {
-            Payload::TokenTransfer(payload) => {
-                msg!("Received Token Transfer Payload: {}", payload.amount);
-                ctx.accounts.portal_global.update_index(payload.index);
-                return Self::handle_token_transfer_payload(ctx, payload);
+        match message.data {
+            PayloadData::TokenTransfer(payload) => {
+                ctx.accounts
+                    .portal_global
+                    .update_index(message_id, payload.index);
+
+                return Self::handle_token_transfer_payload(
+                    ctx,
+                    source_chain_id,
+                    payload,
+                    message.header.message_id,
+                );
             }
-            Payload::Index(payload) => {
-                msg!("Received Index Payload: {}", payload.index);
-                ctx.accounts.portal_global.update_index(payload.index);
+            PayloadData::Index(payload) => {
+                ctx.accounts
+                    .portal_global
+                    .update_index(message_id, payload.index);
+
                 return Self::handle_index_payload(&ctx, payload.into());
             }
-            Payload::EarnerMerkleRoot(payload) => {
-                msg!("Received EarnerMerkleRoot Payload");
-                ctx.accounts.portal_global.update_index(payload.index);
+            PayloadData::EarnerMerkleRoot(payload) => {
+                ctx.accounts
+                    .portal_global
+                    .update_index(message_id, payload.index);
+
                 return Self::handle_index_payload(&ctx, payload);
             }
-            Payload::FillReport(fill_report) => {
-                msg!("Received Fill Report Payload");
-                return Self::handle_fill_report_payload(ctx, fill_report);
+
+            PayloadData::FillReport(fill_report) => {
+                return Self::handle_fill_report_payload(
+                    ctx,
+                    source_chain_id,
+                    fill_report,
+                    message.header.message_id,
+                );
             }
         }
     }
@@ -116,14 +141,35 @@ impl ReceiveMessage<'_> {
             authority_seed,
         );
 
-        msg!("Index update: {}", payload.index);
-        earn::cpi::propagate_index(propogate_ctx, payload.index, payload.merkle_root)
+        msg!(
+            "Index update: {}, Merkle update: {}",
+            payload.index,
+            !payload.merkle_root.is_empty()
+        );
+
+        earn::cpi::propagate_index(
+            propogate_ctx,
+            payload
+                .index
+                .try_into()
+                .expect("could not cast index to u64"),
+            payload.merkle_root,
+        )
     }
 
     fn handle_token_transfer_payload<'info>(
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
+        source_chain_id: u32,
         payload: TokenTransferPayload,
+        message_id: [u8; 32],
     ) -> Result<()> {
+        // Tokens can only come from the hub if the spoke is isolated
+        if let Some(chain_id) = ctx.accounts.portal_global.isolated_hub_chain_id {
+            if chain_id != source_chain_id {
+                return err!(BridgeError::InvalidTransfer);
+            }
+        }
+
         if payload.index > 0 {
             Self::handle_index_payload(&ctx, payload.clone().into())?;
         }
@@ -178,12 +224,25 @@ impl ReceiveMessage<'_> {
             principal.try_into().unwrap(),
         )?;
 
+        emit!(TokenReceived {
+            source_chain_id,
+            bridge_adapter: *ctx.accounts.adapter_authority.as_ref().owner,
+            destination_token: payload.destination_token,
+            sender: payload.sender,
+            recipient: payload.recipient,
+            amount: payload.amount,
+            index: payload.index,
+            message_id: message_id,
+        });
+
         Ok(())
     }
 
     fn handle_fill_report_payload<'info>(
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
+        source_chain_id: u32,
         payload: FillReportPayload,
+        message_id: [u8; 32],
     ) -> Result<()> {
         // Get payload specific accounts
         let accounts = payload.parse_and_validate_accounts(ctx.remaining_accounts.to_vec())?;
@@ -215,6 +274,43 @@ impl ReceiveMessage<'_> {
                 origin_recipient: payload.origin_recipient,
                 token_in: payload.token_in,
             },
-        )
+        )?;
+
+        emit!(FillReportReceived {
+            source_chain_id: source_chain_id,
+            bridge_adapter: *ctx.accounts.adapter_authority.as_ref().owner,
+            order_id: payload.order_id,
+            amount_in_to_release: payload.amount_in_to_release,
+            amount_out_filled: payload.amount_out_filled,
+            origin_recipient: payload.origin_recipient,
+            token_in: payload.token_in,
+            message_id: message_id,
+        });
+
+        Ok(())
     }
+}
+
+#[event]
+pub struct TokenReceived {
+    pub source_chain_id: u32,
+    pub bridge_adapter: Pubkey,
+    pub destination_token: [u8; 32],
+    pub sender: [u8; 32],
+    pub recipient: [u8; 32],
+    pub amount: u128,
+    pub index: u128,
+    pub message_id: [u8; 32],
+}
+
+#[event]
+pub struct FillReportReceived {
+    pub source_chain_id: u32,
+    pub bridge_adapter: Pubkey,
+    pub order_id: [u8; 32],
+    pub amount_in_to_release: u128,
+    pub amount_out_filled: u128,
+    pub origin_recipient: [u8; 32],
+    pub token_in: [u8; 32],
+    pub message_id: [u8; 32],
 }

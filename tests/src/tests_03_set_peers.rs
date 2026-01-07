@@ -1,13 +1,13 @@
-use anchor_lang::AccountDeserialize;
+use anchor_client::{Client, Cluster};
+use anchor_lang::{system_program, AccountDeserialize};
 use anyhow::Result;
-use common::{
-    hyperlane_adapter::{self, accounts::HyperlaneGlobal},
-    pda,
-    wormhole_adapter::{self, accounts::WormholeGlobal},
-};
+use common::{pda, Peer};
+use hyperlane_adapter::state::HyperlaneGlobal;
+use portal::state::GLOBAL_SEED;
 use std::vec;
+use wormhole_adapter::{accounts, instruction, state::WormholeGlobal};
 
-use crate::run_surfpool_cmd;
+use crate::{get_rpc_client, get_signer, run_surfpool_cmd};
 
 #[test]
 fn test_01_set_peers() -> Result<()> {
@@ -18,10 +18,10 @@ fn test_01_set_peers() -> Result<()> {
 
 #[test]
 fn test_02_check_globals() -> Result<()> {
-    let client = crate::get_rpc_client();
+    let client = get_rpc_client();
 
-    let data_wh = client.get_account_data(&pda!(&[b"global"], &wormhole_adapter::ID))?;
-    let data_hyp = client.get_account_data(&pda!(&[b"global"], &hyperlane_adapter::ID))?;
+    let data_wh = client.get_account_data(&pda!(&[GLOBAL_SEED], &wormhole_adapter::ID))?;
+    let data_hyp = client.get_account_data(&pda!(&[GLOBAL_SEED], &hyperlane_adapter::ID))?;
 
     let global_wh = WormholeGlobal::try_deserialize(&mut data_wh.as_slice())?;
     let global_hp = HyperlaneGlobal::try_deserialize(&mut data_hyp.as_slice())?;
@@ -30,17 +30,89 @@ fn test_02_check_globals() -> Result<()> {
     assert!(global_hp.peers.len() > 0);
 
     assert_eq!(
-        global_wh.peers[0].address,
+        global_wh.peers.0[0].address,
         [
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 99, 25, 106, 9, 21, 117, 173, 249, 158, 35, 6,
             229, 233, 14, 11, 229, 21, 72, 65
         ]
     );
 
-    assert_eq!(global_wh.peers[0].chain_id, 2);
-    assert_eq!(global_wh.peers[1].chain_id, 23);
-    assert_eq!(global_wh.peers[2].chain_id, 24);
-    assert_eq!(global_wh.peers[3].chain_id, 30);
+    assert_eq!(global_wh.peers.0[0].m0_chain_id, 1);
+    assert_eq!(global_hp.peers.0[0].m0_chain_id, 1);
+    assert_eq!(global_wh.peers.0[1].m0_chain_id, 42161);
+    assert_eq!(global_wh.peers.0[2].m0_chain_id, 10);
+    assert_eq!(global_wh.peers.0[3].m0_chain_id, 8453);
+
+    Ok(())
+}
+
+#[test]
+fn test_03_remove_peer() -> Result<()> {
+    let client = Client::new(Cluster::Localnet, get_signer());
+    let rpc_client = get_rpc_client();
+
+    let program = client.program(wormhole_adapter::ID)?;
+
+    // Remove Optimism
+    program
+        .request()
+        .accounts(accounts::SetPeer {
+            admin: program.payer(),
+            wormhole_global: pda!(&[GLOBAL_SEED], &wormhole_adapter::ID),
+            system_program: system_program::ID,
+        })
+        .args(instruction::SetPeer {
+            peer: Peer {
+                m0_chain_id: 10,
+                address: [0; 32],
+                adapter_chain_id: 24,
+            },
+        })
+        .send()?;
+
+    let data_wh = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &wormhole_adapter::ID))?;
+    let global_wh = WormholeGlobal::try_deserialize(&mut data_wh.as_slice())?;
+    assert!(global_wh.peers.0.iter().all(|p| p.m0_chain_id != 10));
+
+    Ok(())
+}
+
+#[test]
+fn test_04_update_peer() -> Result<()> {
+    let client = Client::new(Cluster::Localnet, get_signer());
+    let rpc_client = get_rpc_client();
+
+    let program = client.program(wormhole_adapter::ID)?;
+
+    // Update wormhole chain id
+    program
+        .request()
+        .accounts(accounts::SetPeer {
+            admin: program.payer(),
+            wormhole_global: pda!(&[GLOBAL_SEED], &wormhole_adapter::ID),
+            system_program: system_program::ID,
+        })
+        .args(instruction::SetPeer {
+            peer: Peer {
+                m0_chain_id: 8453,
+                address: [1; 32],
+                adapter_chain_id: 420,
+            },
+        })
+        .send()?;
+
+    let data_wh = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &wormhole_adapter::ID))?;
+    let global_wh = WormholeGlobal::try_deserialize(&mut data_wh.as_slice())?;
+    assert!(
+        global_wh
+            .peers
+            .0
+            .iter()
+            .find(|p| p.m0_chain_id == 8453)
+            .expect("did not find updated peer")
+            .adapter_chain_id
+            == 420
+    );
 
     Ok(())
 }

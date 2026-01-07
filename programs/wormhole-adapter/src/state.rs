@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::BridgeError;
+use common::{BridgeError, Peers};
 
 use crate::instructions::VaaBody;
 
@@ -11,16 +11,11 @@ pub struct WormholeGlobal {
     pub bump: u8,
     pub admin: Pubkey,
     pub paused: bool,
+    pub chain_id: u32,
     pub receive_lut: Option<Pubkey>,
     pub pending_admin: Option<Pubkey>,
-    pub peers: Vec<Peer>,
+    pub peers: Peers,
     pub padding: [u8; 128],
-}
-
-#[account]
-pub struct Peer {
-    pub address: [u8; 32],
-    pub chain_id: u32,
 }
 
 impl WormholeGlobal {
@@ -29,33 +24,21 @@ impl WormholeGlobal {
         1 + // bump
         32 + // admin
         1 + // paused
+        4 + // chain_id
         1 + // receive_lut option
         32 + // receive_lut
         1 + // pending_admin option
         32 + // pending_admin pubkey
-        4 + // length of peers
-        peers * 36 + // each peer
+        Peers::size(peers) +
         128 // padding
     }
 
     pub fn validate(&self, vaa: &VaaBody) -> Result<()> {
-        if self
-            .peers
-            .iter()
-            .find(|p| p.chain_id == (vaa.emitter_chain as u32) && p.address == vaa.emitter_address)
-            .is_none()
-        {
+        let peer = self.peers.get_peer(vaa.emitter_chain as u32)?;
+        if peer.address != vaa.emitter_address {
             return err!(BridgeError::InvalidPeer);
         }
 
         Ok(())
-    }
-
-    pub fn get_peer(&self, chain_id: u32) -> Result<Peer> {
-        self.peers
-            .iter()
-            .find(|peer| peer.chain_id == chain_id)
-            .cloned()
-            .ok_or_else(|| BridgeError::UnsupportedDestinationChain.into())
     }
 }

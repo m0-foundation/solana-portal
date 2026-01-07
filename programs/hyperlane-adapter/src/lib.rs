@@ -2,10 +2,10 @@
 
 mod consts;
 mod instructions;
-mod state;
+pub mod state;
 
-use crate::state::Peer;
 use anchor_lang::prelude::*;
+use common::Peer;
 use consts::{
     HANDLE_ACCOUNT_METAS_DISCRIMINATOR, HANDLE_DISCRIMINATOR, ISM_DISCRIMINATOR,
     ISM_METAS_DISCRIMINATOR,
@@ -29,8 +29,10 @@ declare_id!("mZhPGteS36G7FhMTcRofLQU8ocBNAsGq7u8SKSHfL2X");
 pub mod hyperlane_adapter {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        Initialize::handler(ctx)
+    /// Admin Instructions
+
+    pub fn initialize(ctx: Context<Initialize>, chain_id: u32) -> Result<()> {
+        Initialize::handler(ctx, chain_id)
     }
 
     pub fn pause(ctx: Context<Pause>) -> Result<()> {
@@ -57,10 +59,6 @@ pub mod hyperlane_adapter {
         SetPeer::handler(ctx, peer)
     }
 
-    pub fn sync_extensions(ctx: Context<SyncExtensions>) -> Result<()> {
-        SyncExtensions::handler(ctx)
-    }
-
     pub fn set_ism(ctx: Context<SetIsm>, ism: Option<Pubkey>) -> Result<()> {
         SetIsm::handler(ctx, ism)
     }
@@ -73,13 +71,29 @@ pub mod hyperlane_adapter {
         SetIgpGasAmount::handler(ctx, igp_gas_amount)
     }
 
+    pub fn sync_extensions(ctx: Context<SyncExtensions>) -> Result<()> {
+        SyncExtensions::handler(ctx)
+    }
+
+    /// Outbound Instructions
+
     pub fn send_message(
         ctx: Context<SendMessage>,
-        message: Vec<u8>,
-        destination_chain_id: u32,
+        m0_destination_chain_id: u32,
+        message_id: [u8; 32],
+        payload: Vec<u8>,
+        payload_type: u8,
     ) -> Result<()> {
-        SendMessage::handler(ctx, message, destination_chain_id)
+        SendMessage::handler(
+            ctx,
+            m0_destination_chain_id,
+            message_id,
+            payload,
+            payload_type,
+        )
     }
+
+    /// Inbound Instructions
 
     #[instruction(discriminator = &HANDLE_DISCRIMINATOR)]
     pub fn receive_message<'info>(
@@ -90,6 +104,8 @@ pub mod hyperlane_adapter {
     ) -> Result<()> {
         ReceiveMessage::handler(ctx, origin, sender, message)
     }
+
+    /// Read-only Instructions
 
     #[instruction(discriminator = &HANDLE_ACCOUNT_METAS_DISCRIMINATOR)]
     pub fn receive_message_metas(

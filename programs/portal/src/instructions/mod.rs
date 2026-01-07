@@ -1,3 +1,4 @@
+pub mod enable_cross_spoke_transfers;
 pub mod initialize;
 pub mod pause;
 pub mod receive_message;
@@ -8,7 +9,9 @@ pub mod send_token;
 pub mod transfer_admin;
 
 use anchor_lang::prelude::*;
-use common::{hyperlane_adapter, wormhole_adapter, BridgeError};
+use common::{hyperlane_adapter, wormhole_adapter, BridgeError, PayloadData};
+
+pub use enable_cross_spoke_transfers::*;
 pub use initialize::*;
 pub use pause::*;
 pub use receive_message::*;
@@ -27,8 +30,10 @@ pub fn send_message<'info>(
     portal_authority_bump: u8,
     system_program: AccountInfo<'info>,
     remaining_accounts: Vec<AccountInfo<'info>>,
-    message: Vec<u8>,
     destination_chain_id: u32,
+    message_id: [u8; 32],
+    payload: PayloadData,
+    payload_type: u8,
 ) -> Result<()> {
     // Send the bridge message based on provided adapter
     if bridge_adapter.key() == wormhole_adapter::ID {
@@ -68,11 +73,13 @@ pub fn send_message<'info>(
                 },
                 &[&[AUTHORITY_SEED, &[portal_authority_bump]]],
             ),
-            message,
             destination_chain_id,
+            message_id,
+            payload.encode(),
+            payload_type,
         )
     } else if bridge_adapter.key() == common::hyperlane_adapter::ID {
-        if remaining_accounts.len() < 11 {
+        if remaining_accounts.len() < 12 {
             return err!(BridgeError::InvalidRemainingAccounts);
         }
 
@@ -116,8 +123,10 @@ pub fn send_message<'info>(
                 },
                 &[&[AUTHORITY_SEED, &[portal_authority_bump]]],
             ),
-            message,
             destination_chain_id,
+            message_id,
+            payload.encode(),
+            payload_type,
         )
     } else {
         err!(BridgeError::InvalidBridgeAdapter)

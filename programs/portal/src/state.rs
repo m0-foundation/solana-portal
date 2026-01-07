@@ -1,7 +1,7 @@
 use std::cmp::max;
 
 use anchor_lang::prelude::*;
-use anchor_spl::associated_token::spl_associated_token_account::solana_program::keccak::hashv;
+use anchor_spl::associated_token::spl_associated_token_account::solana_program::keccak;
 
 #[constant]
 pub const GLOBAL_SEED: &[u8] = b"global";
@@ -21,24 +21,34 @@ pub struct PortalGlobal {
     pub chain_id: u32,
     pub admin: Pubkey,
     pub paused: bool,
-    pub m_index: u64,
+    pub m_index: u128,
     pub message_nonce: u64,
     pub pending_admin: Option<Pubkey>,
+    pub isolated_hub_chain_id: Option<u32>,
     pub padding: [u8; 128],
 }
 
 impl PortalGlobal {
-    pub fn update_index(&mut self, new_index: u64) {
+    pub fn update_index(&mut self, message_id: [u8; 32], new_index: u128) {
         self.m_index = max(new_index, self.m_index);
+
+        emit!(MTokenIndexReceived {
+            index: new_index,
+            message_id,
+        });
     }
 
-    pub fn generate_message_id(&mut self) -> [u8; 32] {
+    pub fn generate_message_id(&mut self, destination_chain_id: u32) -> [u8; 32] {
         self.message_nonce += 1;
-        hashv(&[
-            &self.chain_id.to_le_bytes(),
-            &self.message_nonce.to_le_bytes(),
-        ])
-        .to_bytes()
+
+        let mut encoded = [0u8; 96];
+
+        // ABI encode: each value is padded to 32 bytes (left-padded for integers)
+        encoded[28..32].copy_from_slice(&self.chain_id.to_be_bytes());
+        encoded[60..64].copy_from_slice(&destination_chain_id.to_be_bytes());
+        encoded[88..96].copy_from_slice(&self.message_nonce.to_be_bytes());
+
+        keccak::hash(&encoded).to_bytes()
     }
 }
 
@@ -54,4 +64,88 @@ pub struct BridgeMessage {
 
 impl BridgeMessage {
     pub const SIZE: usize = BridgeMessage::INIT_SPACE + BridgeMessage::DISCRIMINATOR.len();
+}
+
+#[event]
+pub struct MTokenIndexReceived {
+    pub index: u128,
+    pub message_id: [u8; 32],
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloy_sol_types::{sol, SolType};
+
+    #[test]
+    fn test_generate_message_id_matches_solidity() {
+        let chain_id: u32 = 1;
+        let destination_chain_id: u32 = 2;
+        let nonce_value: u64 = 1;
+
+        // Create a mock PortalGlobal instance
+        let mut portal_global = PortalGlobal {
+            bump: 0,
+            chain_id,
+            admin: Pubkey::default(),
+            paused: false,
+            m_index: 0,
+            message_nonce: nonce_value - 1, // Will be incremented
+            pending_admin: None,
+            isolated_hub_chain_id: None,
+            padding: [0u8; 128],
+        };
+
+        // Generate message ID using Rust function
+        let rust_message_id = portal_global.generate_message_id(destination_chain_id);
+
+        // Generate expected hash using Solidity-like encoding
+        type SolidityTypes = (sol! { uint32 }, sol! { uint32 }, sol! { uint256 });
+        let nonce_u256 = alloy_sol_types::private::U256::from(nonce_value);
+        let encoded = SolidityTypes::abi_encode(&(chain_id, destination_chain_id, nonce_u256));
+        let expected_hash = alloy_sol_types::private::keccak256(&encoded);
+
+        assert_eq!(
+            rust_message_id, expected_hash.0,
+            "Rust generate_message_id output doesn't match Solidity keccak256(abi.encode(...))"
+        );
+    }
+
+    #[test]
+    fn test_generate_message_id_multiple() {
+        let test_cases = vec![
+            (1u32, 2u32, 1u64),
+            (1u32, 137u32, 5u64),
+            (42u32, 100u32, 1000u64),
+            (u32::MAX, u32::MAX, u64::MAX),
+        ];
+
+        for (chain_id, dest_chain_id, nonce) in test_cases {
+            let mut portal_global = PortalGlobal {
+                bump: 0,
+                chain_id,
+                admin: Pubkey::default(),
+                paused: false,
+                m_index: 0,
+                message_nonce: nonce - 1,
+                pending_admin: None,
+                isolated_hub_chain_id: None,
+                padding: [0u8; 128],
+            };
+
+            let rust_message_id = portal_global.generate_message_id(dest_chain_id);
+
+            // Generate expected hash
+            type SolidityTypes = (sol! { uint32 }, sol! { uint32 }, sol! { uint256 });
+            let nonce_u256 = alloy_sol_types::private::U256::from(nonce);
+            let encoded = SolidityTypes::abi_encode(&(chain_id, dest_chain_id, nonce_u256));
+            let expected_hash = alloy_sol_types::private::keccak256(&encoded);
+
+            assert_eq!(
+                rust_message_id, expected_hash.0,
+                "Mismatch for chain_id={}, dest_chain_id={}, nonce={}",
+                chain_id, dest_chain_id, nonce
+            );
+        }
+    }
 }

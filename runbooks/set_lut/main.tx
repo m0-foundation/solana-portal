@@ -28,7 +28,7 @@ action "set_lut" "svm::process_instructions" {
     instruction {
         program_idl = variable.wormhole_adapter_program.idl
         instruction_name = "set_lut"
-        payer {
+        admin {
             public_key = signer.caller.public_key
         }
         instruction_args = [variable.recent_slot]

@@ -1,6 +1,9 @@
+use anchor_spl::token_2022;
 use anyhow::{Context, Result};
-use once_cell::sync::Lazy;
+use once_cell::sync::OnceCell;
 use solana_client::rpc_client::RpcClient;
+use solana_sdk::account::Account;
+use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signature::Keypair;
 use solana_sdk::signer::Signer;
 use std::io::{BufRead, BufReader};
@@ -9,9 +12,11 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{thread, time};
 
+// Test utilities available to all test modules
+pub mod util;
+
 // Global validator instance that starts once and is shared across all tests
-static VALIDATOR: Lazy<Mutex<SurfnetValidator>> =
-    Lazy::new(|| Mutex::new(SurfnetValidator::start().expect("Failed to start global validator")));
+static VALIDATOR: OnceCell<Mutex<SurfnetValidator>> = OnceCell::new();
 
 pub struct SurfnetValidator {
     process: Child,
@@ -104,17 +109,27 @@ impl SurfnetValidator {
 // Ensure validator cleanup happens when tests complete
 #[ctor::dtor]
 fn cleanup() {
-    let mut validator = VALIDATOR.lock().unwrap();
-    validator.stop();
+    if let Some(validator) = VALIDATOR.get() {
+        let mut validator = validator.lock().unwrap();
+        validator.stop();
+    }
 }
 
 pub fn get_rpc_client() -> Arc<RpcClient> {
-    let validator = VALIDATOR.lock().unwrap();
+    let validator = VALIDATOR
+        .get_or_try_init(|| SurfnetValidator::start().map(Mutex::new))
+        .expect("Failed to initialize validator")
+        .lock()
+        .unwrap();
     Arc::clone(&validator.client)
 }
 
 pub fn get_signer() -> Arc<Keypair> {
-    let validator = VALIDATOR.lock().unwrap();
+    let validator = VALIDATOR
+        .get_or_try_init(|| SurfnetValidator::start().map(Mutex::new))
+        .expect("Failed to initialize validator")
+        .lock()
+        .unwrap();
     Arc::clone(&validator.keypair)
 }
 
@@ -136,6 +151,78 @@ pub fn run_surfpool_cmd(args: Vec<&str>) -> Result<String> {
     Ok(stdout)
 }
 
+pub fn set_account(pubkey: &Pubkey, account: &Account) -> Result<()> {
+    let rpc_url = get_rpc_client().url();
+    let data_hex = hex::encode(&account.data);
+
+    let account_params = util::rpc::SetAccountParams {
+        data: data_hex,
+        executable: account.executable,
+        lamports: account.lamports,
+        owner: account.owner.to_string(),
+        rent_epoch: account.rent_epoch,
+    };
+
+    let request = util::rpc::JsonRpcRequest {
+        jsonrpc: "2.0".to_string(),
+        id: 1,
+        method: "surfnet_setAccount".to_string(),
+        params: (pubkey.to_string(), account_params),
+    };
+
+    let client = reqwest::blocking::Client::new();
+    let response = client
+        .post(rpc_url)
+        .json(&request)
+        .send()
+        .context("Failed to send RPC request")?;
+
+    let rpc_response: util::rpc::JsonRpcResponse =
+        response.json().context("Failed to parse RPC response")?;
+
+    if let Some(error) = rpc_response.error {
+        anyhow::bail!("RPC error: {:?}", error);
+    }
+
+    Ok(())
+}
+
+pub fn set_token_account(
+    owner: &Pubkey,
+    mint: &Pubkey,
+    update: serde_json::Value,
+) -> Result<()> {
+    let rpc_url = get_rpc_client().url();
+
+    let request = util::rpc::JsonRpcRequest {
+        jsonrpc: "2.0".to_string(),
+        id: 1,
+        method: "surfnet_setTokenAccount".to_string(),
+        params: (
+            owner.to_string(),
+            mint.to_string(),
+            update,
+            token_2022::ID.to_string(),
+        ),
+    };
+
+    let client = reqwest::blocking::Client::new();
+    let response = client
+        .post(rpc_url)
+        .json(&request)
+        .send()
+        .context("Failed to send surfnet_setTokenAccount RPC request")?;
+
+    let rpc_response: util::rpc::JsonRpcResponse =
+        response.json().context("Failed to parse RPC response")?;
+
+    if let Some(error) = rpc_response.error {
+        anyhow::bail!("RPC error: {:?}", error);
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests_01_health;
 
@@ -153,3 +240,9 @@ mod tests_05_pausing;
 
 #[cfg(test)]
 mod tests_06_set_lut;
+
+#[cfg(test)]
+mod tests_07_send_token;
+
+#[cfg(test)]
+mod tests_08_receive_message;

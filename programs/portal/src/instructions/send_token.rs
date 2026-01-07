@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use common::{
     ext_swap::{self, accounts::SwapGlobal, program::ExtSwap},
-    BridgeAdapter, BridgeError, Payload, TokenTransferPayload,
+    BridgeAdapter, BridgeError, PayloadData, TokenTransferPayload,
 };
 
 use crate::{
@@ -11,7 +11,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-pub struct SendTokens<'info> {
+pub struct SendToken<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
 
@@ -104,10 +104,17 @@ pub struct SendTokens<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl SendTokens<'_> {
-    fn validate(&self, amount: u64) -> Result<()> {
+impl SendToken<'_> {
+    fn validate(&self, amount: u64, destination_chain_id: u32) -> Result<()> {
         if self.portal_global.paused {
             return err!(BridgeError::Paused);
+        }
+
+        // Only allow sending to hub if spoke is isolated
+        if let Some(chain_id) = self.portal_global.isolated_hub_chain_id {
+            if chain_id != destination_chain_id {
+                return err!(BridgeError::InvalidTransfer);
+            }
         }
 
         if self
@@ -130,9 +137,9 @@ impl SendTokens<'_> {
         Ok(())
     }
 
-    #[access_control(ctx.accounts.validate(amount))]
+    #[access_control(ctx.accounts.validate(amount, destination_chain_id))]
     pub fn handler<'info>(
-        ctx: Context<'_, '_, '_, 'info, SendTokens<'info>>,
+        ctx: Context<'_, '_, '_, 'info, SendToken<'info>>,
         amount: u64,
         destination_token: [u8; 32],
         destination_chain_id: u32,
@@ -170,13 +177,12 @@ impl SendTokens<'_> {
         ctx.accounts.m_token_account.reload()?;
         let m_amount = ctx.accounts.m_token_account.amount - m_pre_balance;
 
-        let message = Payload::TokenTransfer(TokenTransferPayload {
+        let payload = PayloadData::TokenTransfer(TokenTransferPayload {
             amount: m_amount as u128,
             destination_token,
             sender: ctx.accounts.sender.key().to_bytes(),
             recipient,
             index: ctx.accounts.portal_global.m_index,
-            message_id: ctx.accounts.portal_global.generate_message_id(),
         });
 
         // Send message to bridge adapter
@@ -187,8 +193,37 @@ impl SendTokens<'_> {
             ctx.bumps.portal_authority,
             ctx.accounts.system_program.to_account_info(),
             ctx.remaining_accounts.to_vec(),
-            message.encode(),
             destination_chain_id,
-        )
+            ctx.accounts
+                .portal_global
+                .generate_message_id(destination_chain_id),
+            payload,
+            PayloadData::TOKEN_TRANSFER_DISCRIMINANT,
+        )?;
+
+        emit!(TokenSent {
+            source_token: ctx.accounts.extension_mint.key(),
+            destination_chain_id,
+            destination_token,
+            sender: ctx.accounts.sender.key(),
+            recipient,
+            amount: m_amount as u128,
+            index: ctx.accounts.portal_global.m_index,
+            bridge_adapter: ctx.accounts.bridge_adapter.key(),
+        });
+
+        Ok(())
     }
+}
+
+#[event]
+pub struct TokenSent {
+    pub source_token: Pubkey,
+    pub destination_chain_id: u32,
+    pub destination_token: [u8; 32],
+    pub sender: Pubkey,
+    pub recipient: [u8; 32],
+    pub amount: u128,
+    pub index: u128,
+    pub bridge_adapter: Pubkey,
 }

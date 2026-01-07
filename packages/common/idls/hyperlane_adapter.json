@@ -139,6 +139,9 @@
     },
     {
       "name": "initialize",
+      "docs": [
+        "Admin Instructions"
+      ],
       "discriminator": [
         175,
         175,
@@ -315,7 +318,12 @@
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "chain_id",
+          "type": "u32"
+        }
+      ]
     },
     {
       "name": "pause",
@@ -408,6 +416,9 @@
     },
     {
       "name": "receive_message",
+      "docs": [
+        "Inbound Instructions"
+      ],
       "discriminator": [
         33,
         210,
@@ -759,6 +770,9 @@
     },
     {
       "name": "receive_message_metas",
+      "docs": [
+        "Read-only Instructions"
+      ],
       "discriminator": [
         194,
         141,
@@ -873,6 +887,9 @@
     },
     {
       "name": "send_message",
+      "docs": [
+        "Outbound Instructions"
+      ],
       "discriminator": [
         57,
         40,
@@ -1352,12 +1369,25 @@
       ],
       "args": [
         {
-          "name": "message",
+          "name": "m0_destination_chain_id",
+          "type": "u32"
+        },
+        {
+          "name": "message_id",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "payload",
           "type": "bytes"
         },
         {
-          "name": "destination_chain_id",
-          "type": "u32"
+          "name": "payload_type",
+          "type": "u8"
         }
       ]
     },
@@ -1849,6 +1879,21 @@
       ]
     }
   ],
+  "events": [
+    {
+      "name": "PeerSet",
+      "discriminator": [
+        27,
+        114,
+        255,
+        165,
+        25,
+        240,
+        245,
+        93
+      ]
+    }
+  ],
   "types": [
     {
       "name": "AccountMetasData",
@@ -1951,6 +1996,10 @@
             "type": "bool"
           },
           {
+            "name": "chain_id",
+            "type": "u32"
+          },
+          {
             "name": "igp_program_id",
             "type": "pubkey"
           },
@@ -1983,10 +2032,8 @@
           {
             "name": "peers",
             "type": {
-              "vec": {
-                "defined": {
-                  "name": "Peer"
-                }
+              "defined": {
+                "name": "Peers"
               }
             }
           },
@@ -2037,8 +2084,52 @@
             }
           },
           {
-            "name": "chain_id",
+            "name": "m0_chain_id",
             "type": "u32"
+          },
+          {
+            "name": "adapter_chain_id",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PeerSet",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "m0_chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "hyperlane_chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "peer",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Peers",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "vec": {
+              "defined": {
+                "name": "Peer"
+              }
+            }
           }
         ]
       }
@@ -2066,7 +2157,7 @@
           },
           {
             "name": "m_index",
-            "type": "u64"
+            "type": "u128"
           },
           {
             "name": "message_nonce",
@@ -2076,6 +2167,12 @@
             "name": "pending_admin",
             "type": {
               "option": "pubkey"
+            }
+          },
+          {
+            "name": "isolated_hub_chain_id",
+            "type": {
+              "option": "u32"
             }
           },
           {

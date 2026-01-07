@@ -4,6 +4,7 @@ pub mod conversions;
 pub mod errors;
 pub mod interfaces;
 pub mod payloads;
+pub mod peers;
 pub mod receive_metas;
 
 pub use accounts::*;
@@ -13,6 +14,7 @@ pub use conversions::*;
 pub use errors::*;
 pub use interfaces::*;
 pub use payloads::*;
+pub use peers::*;
 pub use receive_metas::*;
 
 declare_program!(wormhole_post_message_shim);
@@ -20,6 +22,7 @@ declare_program!(portal);
 declare_program!(wormhole_verify_vaa_shim);
 declare_program!(earn);
 declare_program!(ext_swap);
+declare_program!(m_ext);
 declare_program!(order_book);
 declare_program!(wormhole_adapter);
 declare_program!(hyperlane_adapter);

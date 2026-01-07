@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::{order_book, BridgeAdapter, BridgeError, FillReportPayload, Payload};
+use common::{order_book, BridgeAdapter, BridgeError, FillReportPayload, PayloadData};
 
 use crate::{
     instructions::send_message,
@@ -50,13 +50,12 @@ impl SendFillReport<'_> {
         origin_recipient: [u8; 32],
         origin_chain_id: u32,
     ) -> Result<()> {
-        let message = Payload::FillReport(FillReportPayload {
+        let payload = PayloadData::FillReport(FillReportPayload {
             order_id,
             amount_in_to_release,
             amount_out_filled,
             origin_recipient,
             token_in,
-            message_id: ctx.accounts.portal_global.generate_message_id(),
         });
 
         send_message(
@@ -66,8 +65,35 @@ impl SendFillReport<'_> {
             ctx.bumps.portal_authority,
             ctx.accounts.system_program.to_account_info(),
             ctx.remaining_accounts.to_vec(),
-            message.encode(),
             origin_chain_id,
-        )
+            ctx.accounts
+                .portal_global
+                .generate_message_id(origin_chain_id),
+            payload,
+            PayloadData::FILL_REPORT_DISCRIMINANT,
+        )?;
+
+        emit!(FillReportSent {
+            destination_chain_id: origin_chain_id,
+            bridge_adapter: ctx.accounts.bridge_adapter.key(),
+            order_id,
+            amount_in_to_release,
+            amount_out_filled,
+            origin_recipient,
+            token_in,
+        });
+
+        Ok(())
     }
+}
+
+#[event]
+pub struct FillReportSent {
+    pub destination_chain_id: u32,
+    pub bridge_adapter: Pubkey,
+    pub order_id: [u8; 32],
+    pub amount_in_to_release: u128,
+    pub amount_out_filled: u128,
+    pub origin_recipient: [u8; 32],
+    pub token_in: [u8; 32],
 }

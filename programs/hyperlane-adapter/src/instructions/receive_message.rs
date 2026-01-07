@@ -16,6 +16,7 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct ReceiveMessage<'info> {
+    #[cfg(not(feature = "skip-validation"))]
     #[account(
         mut,
         seeds = [
@@ -79,7 +80,10 @@ pub struct ReceiveMessage<'info> {
 
 impl ReceiveMessage<'_> {
     fn validate(&self, origin: u32, sender: &[u8; 32]) -> Result<()> {
-        let peer = self.hyperlane_global.get_peer(origin)?;
+        #[cfg(feature = "skip-validation")]
+        msg!("SKIPPING VALIDATION FEATURE ENABLED");
+
+        let peer = self.hyperlane_global.peers.get_peer(origin)?;
 
         if &peer.address != sender {
             return err!(BridgeError::InvalidPeer);
@@ -106,10 +110,18 @@ impl ReceiveMessage<'_> {
                     system_program: ctx.accounts.system_program.to_account_info(),
                     portal_global: ctx.accounts.portal_global.to_account_info(),
                 },
-                &[&[AUTHORITY_SEED, &[ctx.bumps.hyperlane_adapter_authority]]],
+                &[
+                    &[AUTHORITY_SEED, &[ctx.bumps.hyperlane_adapter_authority]],
+                    &[PAYER_SEED, &[ctx.bumps.receive_payer]],
+                ],
             )
             .with_remaining_accounts(ctx.remaining_accounts.to_vec()),
-            Payload::decode(&message).message_id(),
+            Payload::decode(&message)?.header.message_id,
+            ctx.accounts
+                .hyperlane_global
+                .peers
+                .get_peer(origin)?
+                .m0_chain_id,
             message,
         )
     }
@@ -137,14 +149,14 @@ impl<'info> ReceiveMessageMetas<'info> {
         _sender: [u8; 32],
         message: Vec<u8>,
     ) -> Result<()> {
-        let payload = Payload::decode(&message);
+        let payload = Payload::decode(&message)?;
 
         let hyperlane_adapter_authority = pda!(&[AUTHORITY_SEED], &crate::ID);
         let hyperlane_global = pda!(&[GLOBAL_SEED], &crate::ID);
         let portal_global = pda!(&[GLOBAL_SEED], &portal::ID);
         let payer = pda!(&[PAYER_SEED], &crate::ID);
         let portal_authority = pda!(&[AUTHORITY_SEED], &portal::ID);
-        let message_account = pda!(&[MESSAGE_SEED, &payload.message_id()], &portal::ID);
+        let message_account = pda!(&[MESSAGE_SEED, &payload.header.message_id], &portal::ID);
 
         // Accounts needed by all payload types
         let mut account_metas: Vec<SerializableAccountMeta> = vec![
@@ -159,7 +171,7 @@ impl<'info> ReceiveMessageMetas<'info> {
         ];
 
         let required_remaining = require_metas(
-            &payload,
+            &payload.data,
             ctx.accounts.account_metas_data.key(),
             Some(ctx.accounts.account_metas_data.extensions.clone()),
             Some(ctx.accounts.account_metas_data.m_mint),

@@ -70,11 +70,15 @@ pub struct ReceiveMessage<'info> {
 
 impl ReceiveMessage<'_> {
     fn validate(&self, guardian_set_bump: u8, vaa_body: &Vec<u8>) -> Result<()> {
-        // Compute the message hash.
+        #[cfg(feature = "skip-validation")]
+        msg!("SKIPPING VALIDATION FEATURE ENABLED");
+
+        // Compute the message hash
         let message_hash = &keccak::hashv(&[&vaa_body]).to_bytes();
         let digest = keccak::hash(message_hash.as_slice()).to_bytes();
 
-        // Verify the hash against the signatures.
+        // Verify the hash against the signatures
+        #[cfg(not(feature = "skip-validation"))]
         wormhole_verify_vaa_shim::cpi::verify_hash(
             CpiContext::new(
                 self.wormhole_verify_vaa_shim.to_account_info(),
@@ -100,7 +104,8 @@ impl ReceiveMessage<'_> {
         #[allow(unused_variables)] guardian_set_index: u32,
         vaa_body: Vec<u8>,
     ) -> Result<()> {
-        let payload = VaaBody::from_bytes(&vaa_body)?.payload;
+        let vm = VaaBody::from_bytes(&vaa_body)?;
+        let payload = vm.payload;
 
         portal::cpi::receive_message(
             CpiContext::new_with_signer(
@@ -116,7 +121,12 @@ impl ReceiveMessage<'_> {
                 &[&[AUTHORITY_SEED, &[ctx.bumps.wormhole_adapter_authority]]],
             )
             .with_remaining_accounts(ctx.remaining_accounts.to_vec()),
-            payload.message_id(),
+            payload.header.message_id,
+            ctx.accounts
+                .wormhole_global
+                .peers
+                .get_peer(vm.emitter_chain as u32)?
+                .m0_chain_id,
             payload.encode(),
         )
     }

@@ -4,8 +4,8 @@ pub mod consts;
 pub mod instructions;
 pub mod state;
 
-use crate::state::Peer;
 use anchor_lang::prelude::*;
+use common::Peer;
 use executor_account_resolver_svm::{InstructionGroups, Resolver, RESOLVER_EXECUTE_VAA_V1};
 use instructions::*;
 
@@ -26,8 +26,10 @@ declare_id!("mzp1q2j5Hr1QuLC3KFBCAUz5aUckT6qyuZKZ3WJnMmY");
 pub mod wormhole_adapter {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        Initialize::handler(ctx)
+    /// Admin Instructions
+
+    pub fn initialize(ctx: Context<Initialize>, chain_id: u32) -> Result<()> {
+        Initialize::handler(ctx, chain_id)
     }
 
     pub fn set_lut(ctx: Context<SetLookupTable>, recent_slot: u64) -> Result<()> {
@@ -58,13 +60,25 @@ pub mod wormhole_adapter {
         SetPeer::handler(ctx, peer)
     }
 
+    /// Outbound Instructions
+
     pub fn send_message(
         ctx: Context<SendMessage>,
-        message: Vec<u8>,
-        destination_chain_id: u32,
+        m0_destination_chain_id: u32,
+        message_id: [u8; 32],
+        payload: Vec<u8>,
+        payload_type: u8,
     ) -> Result<()> {
-        SendMessage::handler(ctx, message, destination_chain_id)
+        SendMessage::handler(
+            ctx,
+            m0_destination_chain_id,
+            message_id,
+            payload,
+            payload_type,
+        )
     }
+
+    /// Inbound Instructions
 
     pub fn receive_message<'info>(
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,

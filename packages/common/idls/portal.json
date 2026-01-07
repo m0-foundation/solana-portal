@@ -89,6 +89,48 @@
       "args": []
     },
     {
+      "name": "enable_cross_spoke_transfers",
+      "discriminator": [
+        14,
+        140,
+        28,
+        89,
+        160,
+        182,
+        179,
+        141
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": [
+            "portal_global"
+          ]
+        },
+        {
+          "name": "portal_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "initialize",
       "docs": [
         "Admin Instructions"
@@ -137,6 +179,12 @@
         {
           "name": "chain_id",
           "type": "u32"
+        },
+        {
+          "name": "isolated_hub_chain_id",
+          "type": {
+            "option": "u32"
+          }
         }
       ]
     },
@@ -332,6 +380,10 @@
               32
             ]
           }
+        },
+        {
+          "name": "source_chain_id",
+          "type": "u32"
         },
         {
           "name": "payload",
@@ -1173,6 +1225,73 @@
       ]
     }
   ],
+  "events": [
+    {
+      "name": "FillReportReceived",
+      "discriminator": [
+        101,
+        71,
+        41,
+        220,
+        125,
+        65,
+        44,
+        48
+      ]
+    },
+    {
+      "name": "FillReportSent",
+      "discriminator": [
+        127,
+        44,
+        168,
+        99,
+        163,
+        152,
+        5,
+        94
+      ]
+    },
+    {
+      "name": "MTokenIndexReceived",
+      "discriminator": [
+        8,
+        176,
+        76,
+        78,
+        200,
+        62,
+        28,
+        142
+      ]
+    },
+    {
+      "name": "TokenReceived",
+      "discriminator": [
+        251,
+        126,
+        204,
+        211,
+        2,
+        159,
+        194,
+        227
+      ]
+    },
+    {
+      "name": "TokenSent",
+      "discriminator": [
+        1,
+        10,
+        12,
+        13,
+        206,
+        47,
+        175,
+        162
+      ]
+    }
+  ],
   "types": [
     {
       "name": "BridgeMessage",
@@ -1224,6 +1343,138 @@
       }
     },
     {
+      "name": "FillReportReceived",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "source_chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "bridge_adapter",
+            "type": "pubkey"
+          },
+          {
+            "name": "order_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "amount_in_to_release",
+            "type": "u128"
+          },
+          {
+            "name": "amount_out_filled",
+            "type": "u128"
+          },
+          {
+            "name": "origin_recipient",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "token_in",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "message_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "FillReportSent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "destination_chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "bridge_adapter",
+            "type": "pubkey"
+          },
+          {
+            "name": "order_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "amount_in_to_release",
+            "type": "u128"
+          },
+          {
+            "name": "amount_out_filled",
+            "type": "u128"
+          },
+          {
+            "name": "origin_recipient",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "token_in",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MTokenIndexReceived",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "index",
+            "type": "u128"
+          },
+          {
+            "name": "message_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "PortalGlobal",
       "type": {
         "kind": "struct",
@@ -1246,7 +1497,7 @@
           },
           {
             "name": "m_index",
-            "type": "u64"
+            "type": "u128"
           },
           {
             "name": "message_nonce",
@@ -1256,6 +1507,12 @@
             "name": "pending_admin",
             "type": {
               "option": "pubkey"
+            }
+          },
+          {
+            "name": "isolated_hub_chain_id",
+            "type": {
+              "option": "u32"
             }
           },
           {
@@ -1298,6 +1555,116 @@
                 }
               }
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "TokenReceived",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "source_chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "bridge_adapter",
+            "type": "pubkey"
+          },
+          {
+            "name": "destination_token",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "sender",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "recipient",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "amount",
+            "type": "u128"
+          },
+          {
+            "name": "index",
+            "type": "u128"
+          },
+          {
+            "name": "message_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "TokenSent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "source_token",
+            "type": "pubkey"
+          },
+          {
+            "name": "destination_chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "destination_token",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "sender",
+            "type": "pubkey"
+          },
+          {
+            "name": "recipient",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "amount",
+            "type": "u128"
+          },
+          {
+            "name": "index",
+            "type": "u128"
+          },
+          {
+            "name": "bridge_adapter",
+            "type": "pubkey"
           }
         ]
       }

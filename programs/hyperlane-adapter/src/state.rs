@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::{BridgeError, Extension};
+use common::{Extension, Peers};
 
 #[constant]
 pub const GLOBAL_SEED: &[u8] = b"global";
@@ -39,57 +39,32 @@ pub struct HyperlaneGlobal {
     pub bump: u8,
     pub admin: Pubkey,
     pub paused: bool,
+    pub chain_id: u32,
     pub igp_program_id: Pubkey,
     pub igp_gas_amount: u64,
     pub igp_account: Pubkey,
     pub igp_overhead_account: Option<Pubkey>,
     pub ism: Option<Pubkey>,
     pub pending_admin: Option<Pubkey>,
-    pub peers: Vec<Peer>,
+    pub peers: Peers,
     pub padding: [u8; 128],
-}
-
-#[account]
-pub struct Peer {
-    pub address: [u8; 32],
-    pub chain_id: u32,
 }
 
 impl HyperlaneGlobal {
     pub fn size(peers: usize) -> usize {
         8 + // discriminator
         1 + // bump
-        8 + // nonce
         32 + // admin
         1 + // paused
+        4 + // chain_id
         32 + // igp program id
         8 + // igp gas amount
         32 + // igp account
         1 + 32 + // igp overhead account option + pubkey
         1 + 32 + // ism option + ism pubkey
         1 + 32 + // pending admin
-        4 + // length of peers
-        peers * 36 + // each peer
+        Peers::size(peers) + // peers
         128 // padding
-    }
-
-    pub fn get_peer(&self, chain_id: u32) -> Result<Peer> {
-        self.peers
-            .iter()
-            .find(|peer| peer.chain_id == chain_id)
-            .cloned()
-            .ok_or_else(|| BridgeError::UnsupportedDestinationChain.into())
-    }
-
-    pub fn extended_peers(&self, peers: Vec<Peer>) -> Vec<Peer> {
-        let mut result = self.peers.clone();
-        for peer in peers {
-            match result.iter_mut().find(|p| p.chain_id == peer.chain_id) {
-                Some(existing_peer) => *existing_peer = peer, // Overwrite existing peer
-                None => result.push(peer),
-            }
-        }
-        result
     }
 }
 
