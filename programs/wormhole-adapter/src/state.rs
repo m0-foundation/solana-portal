@@ -10,7 +10,8 @@ pub const GLOBAL_SEED: &[u8] = b"global";
 pub struct WormholeGlobal {
     pub bump: u8,
     pub admin: Pubkey,
-    pub paused: bool,
+    pub outgoing_paused: bool,
+    pub incoming_paused: bool,
     pub chain_id: u32,
     pub receive_lut: Option<Pubkey>,
     pub pending_admin: Option<Pubkey>,
@@ -23,7 +24,8 @@ impl WormholeGlobal {
         8 + // discriminator
         1 + // bump
         32 + // admin
-        1 + // paused
+        1 + // outgoing paused
+        1 + // incoming paused
         4 + // chain_id
         1 + // receive_lut option
         32 + // receive_lut

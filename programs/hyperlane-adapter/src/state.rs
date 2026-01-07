@@ -38,7 +38,8 @@ pub const DASH_SEED: &[u8] = b"-";
 pub struct HyperlaneGlobal {
     pub bump: u8,
     pub admin: Pubkey,
-    pub paused: bool,
+    pub outgoing_paused: bool,
+    pub incoming_paused: bool,
     pub chain_id: u32,
     pub igp_program_id: Pubkey,
     pub igp_gas_amount: u64,
@@ -55,7 +56,8 @@ impl HyperlaneGlobal {
         8 + // discriminator
         1 + // bump
         32 + // admin
-        1 + // paused
+        1 + // incoming paused
+        1 + // outgoing paused
         4 + // chain_id
         32 + // igp program id
         8 + // igp gas amount

@@ -61,7 +61,7 @@ fn test_03_check_globals() -> Result<()> {
     assert_eq!(global_hp.pending_admin, None);
     assert!(global_hp.peers.len() == 0);
     assert_eq!(global_hp.padding, [0u8; 128]);
-    assert!(!global_hp.paused);
+    assert!(!global_hp.outgoing_paused);
 
     // Assert all fields of global_wh
     assert_eq!(global_wh.receive_lut, None);
@@ -69,7 +69,7 @@ fn test_03_check_globals() -> Result<()> {
     assert!(global_wh.peers.len() == 0);
     assert_eq!(global_wh.padding, [0u8; 128]);
     assert_eq!(global_wh.receive_lut, None);
-    assert!(!global_wh.paused);
+    assert!(!global_wh.outgoing_paused);
 
     assert_eq!(global_wh.admin, global_portal.admin);
     assert_eq!(global_portal.admin, global_hp.admin);
