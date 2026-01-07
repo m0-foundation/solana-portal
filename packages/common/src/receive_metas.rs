@@ -21,7 +21,6 @@ use crate::{
 /// Accounts will be passed as remaining accounts to the receive_message instruction on Portal.
 pub fn require_metas(
     payload: &PayloadData,
-    payer: Pubkey,
     extensions: Option<Vec<Extension>>,
     m_mint: Option<Pubkey>,
     orderbook_token_in: Option<&AccountInfo>,
@@ -110,8 +109,15 @@ pub fn require_metas(
                 AccountMeta::new_readonly(token_2022::ID, false),
             ])
         }
-        PayloadData::FillReport(report) => {
-            let token_in = Pubkey::from(report.token_in);
+        PayloadData::FillReport(_) | PayloadData::CancelReport(_) => {
+            // Extract common fields and determine recipient based on report type
+            let (token_in, order_id, recipient) = match payload {
+                PayloadData::FillReport(r) => (r.token_in, r.order_id, r.origin_recipient),
+                PayloadData::CancelReport(r) => (r.token_in, r.order_id, r.order_sender),
+                _ => unreachable!(),
+            };
+
+            let token_in = Pubkey::from(token_in);
 
             let token_in_program = orderbook_token_in
                 .map(|account| *account.owner)
@@ -119,7 +125,7 @@ pub fn require_metas(
                     // Check if token is an extension and get its token program
                     extensions.and_then(|exts| {
                         exts.iter()
-                            .find(|ext| ext.mint == report.token_in.into())
+                            .find(|ext| ext.mint == token_in)
                             .map(|ext| ext.token_program)
                     })
                 })
@@ -127,13 +133,13 @@ pub fn require_metas(
                 .unwrap_or(token::ID);
 
             // PDAs
-            let order = pda!(&[ORDER_SEED_PREFIX, &report.order_id], &order_book::ID);
+            let order = pda!(&[ORDER_SEED_PREFIX, &order_id], &order_book::ID);
             let event_auth = pda!(&[EVENT_AUTHORITY_SEED], &order_book::ID);
             let orderbook_global = pda!(&[GLOBAL_SEED], &order_book::ID);
 
             // Token accounts
             let recipient_token_account = get_associated_token_address_with_program_id(
-                &report.origin_recipient.into(),
+                &recipient.into(),
                 &token_in,
                 &token_in_program,
             );
@@ -144,7 +150,7 @@ pub fn require_metas(
                 AccountMeta::new_readonly(orderbook_global, false),
                 AccountMeta::new(order, false),
                 AccountMeta::new_readonly(token_in, false),
-                AccountMeta::new_readonly(report.origin_recipient.into(), false),
+                AccountMeta::new_readonly(recipient.into(), false),
                 AccountMeta::new(recipient_token_account, false),
                 AccountMeta::new(order_token_account, false),
                 AccountMeta::new_readonly(token_in_program, false),
@@ -156,71 +162,7 @@ pub fn require_metas(
             // Append token accounts in case token program guess was wrong
             if orderbook_token_in.is_none() {
                 let recipient_token_account = get_associated_token_address_with_program_id(
-                    &report.origin_recipient.into(),
-                    &token_in,
-                    &token_2022::ID,
-                );
-                let order_token_account = get_associated_token_address_with_program_id(
-                    &order,
-                    &token_in,
-                    &token_2022::ID,
-                );
-                accounts.extend([
-                    AccountMeta::new(recipient_token_account, false),
-                    AccountMeta::new(order_token_account, false),
-                    AccountMeta::new_readonly(token_2022::ID, false),
-                ]);
-            }
-
-            Ok(accounts)
-        }
-        PayloadData::CancelReport(report) => {
-            let token_in = Pubkey::from(report.token_in);
-
-            let token_in_program = orderbook_token_in
-                .map(|account| *account.owner)
-                .or_else(|| {
-                    // Check if token is an extension and get its token program
-                    extensions.and_then(|exts| {
-                        exts.iter()
-                            .find(|ext| ext.mint == report.token_in.into())
-                            .map(|ext| ext.token_program)
-                    })
-                })
-                // Default to SPL Token program if no other info is available
-                .unwrap_or(token::ID);
-
-            // PDAs
-            let order = pda!(&[ORDER_SEED_PREFIX, &report.order_id], &order_book::ID);
-            let event_auth = pda!(&[EVENT_AUTHORITY_SEED], &order_book::ID);
-            let orderbook_global = pda!(&[GLOBAL_SEED], &order_book::ID);
-
-            // Token accounts
-            let sender_token_account = get_associated_token_address_with_program_id(
-                &report.order_sender.into(),
-                &token_in,
-                &token_in_program,
-            );
-            let order_token_account =
-                get_associated_token_address_with_program_id(&order, &token_in, &token_in_program);
-
-            let mut accounts = vec![
-                AccountMeta::new_readonly(orderbook_global, false),
-                AccountMeta::new(order, false),
-                AccountMeta::new_readonly(token_in, false),
-                AccountMeta::new_readonly(report.order_sender.into(), false),
-                AccountMeta::new(sender_token_account, false),
-                AccountMeta::new(order_token_account, false),
-                AccountMeta::new_readonly(token_in_program, false),
-                AccountMeta::new_readonly(associated_token::ID, false),
-                AccountMeta::new_readonly(event_auth, false),
-                AccountMeta::new_readonly(order_book::ID, false),
-            ];
-
-            // Append token accounts in case token program guess was wrong
-            if orderbook_token_in.is_none() {
-                let recipient_token_account = get_associated_token_address_with_program_id(
-                    &report.order_sender.into(),
+                    &recipient.into(),
                     &token_in,
                     &token_2022::ID,
                 );

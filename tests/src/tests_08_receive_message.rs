@@ -37,7 +37,7 @@ fn test_01_receive_index_wormhole() -> Result<()> {
     let message_id = [42u8; 32];
     let payload = create_default_payload(message_id, SOLANA_CHAIN_ID, portal::ID.to_bytes());
     let vaa = create_default_vaa(2, ETHEREUM_WORMHOLE_TRANSCEIVER, payload.clone());
-    let metas = require_metas(&payload.data, signer.pubkey(), None, Some(M_MINT), None)?;
+    let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
 
     // Relay message - Bridge validation is skipped with skip-validation feature flag
     let signature = program
@@ -97,7 +97,7 @@ fn test_02_receive_index_hyperlane() -> Result<()> {
     }
     .to_account_metas(None);
 
-    let metas = require_metas(&payload.data, signer.pubkey(), None, Some(M_MINT), None)?;
+    let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
     accounts.extend_from_slice(&metas);
 
     // Remove hyperlane's mailbox process authority
@@ -155,7 +155,7 @@ fn test_03_receive_invalid_peer_address() -> Result<()> {
     let message_id = [42u8; 32];
     let payload = create_default_payload(message_id, SOLANA_CHAIN_ID, portal::ID.to_bytes());
     let vaa = create_default_vaa(2, [4; 32], payload.clone()); // Invalid emitter address
-    let metas = require_metas(&payload.data, signer.pubkey(), None, Some(M_MINT), None)?;
+    let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
 
     let result = program
         .request()
@@ -187,7 +187,7 @@ fn test_04_receive_invalid_peer_chain() -> Result<()> {
     let message_id = [42u8; 32];
     let payload = create_default_payload(message_id, SOLANA_CHAIN_ID, portal::ID.to_bytes());
     let vaa = create_default_vaa(2334, ETHEREUM_WORMHOLE_TRANSCEIVER, payload.clone()); // Invalid chain
-    let metas = require_metas(&payload.data, signer.pubkey(), None, Some(M_MINT), None)?;
+    let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
 
     let result = program
         .request()
@@ -219,7 +219,7 @@ fn test_05_receive_invalid_destination_chain() -> Result<()> {
     let message_id = [42u8; 32];
     let payload = create_default_payload(message_id, SOLANA_CHAIN_ID + 1, portal::ID.to_bytes()); // Invalid chain ID
     let vaa = create_default_vaa(2334, ETHEREUM_WORMHOLE_TRANSCEIVER, payload.clone());
-    let metas = require_metas(&payload.data, signer.pubkey(), None, Some(M_MINT), None)?;
+    let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
 
     let result = program
         .request()
@@ -251,7 +251,7 @@ fn test_06_receive_invalid_destination_peer() -> Result<()> {
     let message_id = [42u8; 32];
     let payload = create_default_payload(message_id, SOLANA_CHAIN_ID, [2; 32]); // Invalid peer
     let vaa = create_default_vaa(2334, ETHEREUM_WORMHOLE_TRANSCEIVER, payload.clone());
-    let metas = require_metas(&payload.data, signer.pubkey(), None, Some(M_MINT), None)?;
+    let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
 
     let result = program
         .request()
@@ -276,7 +276,6 @@ fn test_06_receive_invalid_destination_peer() -> Result<()> {
 
 #[test]
 fn test_07_receive_cancel_wormhole() -> Result<()> {
-    let rpc_client = get_rpc_client();
     let signer = get_signer();
     let client = Client::new(Cluster::Localnet, signer.clone());
     let program = client.program(wormhole_adapter::ID)?;
@@ -292,9 +291,9 @@ fn test_07_receive_cancel_wormhole() -> Result<()> {
     });
 
     let vaa = create_default_vaa(2, ETHEREUM_WORMHOLE_TRANSCEIVER, payload.clone());
-    let metas = require_metas(&payload.data, signer.pubkey(), None, Some(M_MINT), None)?;
+    let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
 
-    let signature = program
+    let result = program
         .request()
         .accounts(create_receive_message_accounts(signer.pubkey(), message_id))
         .args(wormhole_instruction::ReceiveMessage {
@@ -302,21 +301,15 @@ fn test_07_receive_cancel_wormhole() -> Result<()> {
             guardian_set_index: 0,
         })
         .accounts(metas)
-        .send()?;
+        .send();
 
-    let transaction = rpc_client.get_transaction(&signature, UiTransactionEncoding::Json)?;
-    let logs = transaction
-        .transaction
-        .meta
-        .unwrap()
-        .log_messages
-        .unwrap()
-        .join(". ");
-
-    // order_book not deployed
-    assert!(logs.contains(
-        "Program MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce failed: Unsupported program id"
-    ),);
+    assert!(result.is_err());
+    let err = result.err().unwrap().to_string();
+    assert!(
+        err.contains("Unsupported program id"),
+        "Invalid error: {}",
+        err
+    );
 
     Ok(())
 }
