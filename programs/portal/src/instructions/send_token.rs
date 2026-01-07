@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface};
 use common::{
     ext_swap::{self, accounts::SwapGlobal, program::ExtSwap},
     BridgeAdapter, BridgeError, PayloadData, TokenTransferPayload,
@@ -176,6 +176,20 @@ impl SendToken<'_> {
         // Amount of $M we got from unwrap
         ctx.accounts.m_token_account.reload()?;
         let m_amount = ctx.accounts.m_token_account.amount - m_pre_balance;
+
+        // Burn $M
+        token_interface::burn(
+            CpiContext::new_with_signer(
+                ctx.accounts.m_token_program.to_account_info(),
+                token_interface::Burn {
+                    mint: ctx.accounts.m_mint.to_account_info(),
+                    from: ctx.accounts.m_token_account.to_account_info(),
+                    authority: ctx.accounts.portal_authority.to_account_info(),
+                },
+                &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
+            ),
+            m_amount,
+        )?;
 
         let payload = PayloadData::TokenTransfer(TokenTransferPayload {
             amount: m_amount as u128,
