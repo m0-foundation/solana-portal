@@ -401,6 +401,10 @@ fn test_04_send_token_wormhole_success() -> Result<()> {
         _ => panic!("Expected TokenTransferPayload"),
     }
 
+    // assert the $M was burned
+    let balance = ctx.rpc.get_token_account_balance(&ctx.m_token_account)?;
+    assert_eq!(balance.amount, "0");
+
     Ok(())
 }
 
