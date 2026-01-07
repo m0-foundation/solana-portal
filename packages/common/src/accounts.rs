@@ -4,8 +4,10 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use common_macros::ExtractAccounts;
 
 use crate::{
-    earn, ext_swap, order_book, BridgeError, CancelReportPayload, EarnerMerkleRootPayload,
-    FillReportPayload, IndexPayload, TokenTransferPayload,
+    earn,
+    ext_swap::{self, accounts::SwapGlobal},
+    order_book, BridgeError, CancelReportPayload, EarnerMerkleRootPayload, FillReportPayload,
+    IndexPayload, TokenTransferPayload,
 };
 
 #[derive(ExtractAccounts)]
@@ -91,6 +93,21 @@ impl TokenTransferPayload {
 
         if accounts.swap_program.key != &ext_swap::ID {
             return err!(BridgeError::InvalidRemainingAccount);
+        }
+
+        // Enforce destination token if found in whitelist
+        {
+            let data = accounts.swap_global.try_borrow_data()?;
+            let extensions = SwapGlobal::deserialize(&mut &data[..])?.whitelisted_extensions;
+            let expected_extension = extensions
+                .iter()
+                .find(|ext| ext.mint.eq(&self.destination_token.into()));
+
+            if let Some(expected_extension) = expected_extension {
+                if accounts.extension_mint.key != &expected_extension.mint {
+                    return err!(BridgeError::InvalidRemainingAccount);
+                }
+            }
         }
 
         Ok(accounts)
