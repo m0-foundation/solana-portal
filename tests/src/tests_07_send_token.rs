@@ -3,9 +3,9 @@ use std::{str::FromStr, sync::Arc};
 use anchor_client::{Client, Cluster, Program};
 use anchor_lang::{prelude::Pubkey, system_program, AccountDeserialize};
 use anchor_spl::token_2022;
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use solana_client::rpc_client::RpcClient;
-use solana_sdk::{compute_budget::ComputeBudgetInstruction, signature::Keypair};
+use solana_sdk::signature::Keypair;
 use solana_transaction_status_client_types::UiTransactionEncoding;
 use spl_token_2022::{
     extension::StateWithExtensions,
@@ -19,8 +19,8 @@ use common::{
     m_ext::{self, accounts::ExtGlobalV2},
     pda,
     portal::constants::{GLOBAL_SEED, MINT_AUTHORITY_SEED, M_VAULT_SEED},
-    wormhole_adapter,
-    HyperlaneRemainingAccounts, PayloadData, WormholeRemainingAccounts, AUTHORITY_SEED,
+    wormhole_adapter, HyperlaneRemainingAccounts, PayloadData, WormholeRemainingAccounts,
+    AUTHORITY_SEED,
 };
 
 use portal::{accounts as portal_accounts, instruction as portal_instruction, state::PortalGlobal};
@@ -98,11 +98,15 @@ impl TestCtx {
     }
 
     fn hyperlane_remaining_accounts(&self) -> Result<HyperlaneRemainingAccounts> {
-        let data =
-            self.rpc
-                .get_account_data(&pda!(&[GLOBAL_SEED], &hyperlane_adapter::ID))?;
+        let data = self
+            .rpc
+            .get_account_data(&pda!(&[GLOBAL_SEED], &hyperlane_adapter::ID))?;
         let global = HyperlaneGlobal::try_deserialize(&mut data.as_slice())?;
-        Ok(HyperlaneRemainingAccounts::new(&self.portal.payer(), &global, None))
+        Ok(HyperlaneRemainingAccounts::new(
+            &self.portal.payer(),
+            &global,
+            None,
+        ))
     }
 }
 
@@ -122,10 +126,10 @@ fn assert_err_contains(err: impl ToString, any_of: &[&str], must: &[&str]) {
 }
 
 fn whitelist_portal_authority(ctx: &TestCtx) -> Result<()> {
-
     let mut swap_account = ctx.rpc.get_account(&ctx.swap_global_pk)?;
     let admin_offset = 9; // Offset: 8 (discriminator) + 1 (bump) = 9
-    swap_account.data[admin_offset..admin_offset + 32].copy_from_slice(&ctx.portal.payer().to_bytes());
+    swap_account.data[admin_offset..admin_offset + 32]
+        .copy_from_slice(&ctx.portal.payer().to_bytes());
     set_account(&ctx.swap_global_pk, &swap_account).expect("failed to set account");
 
     let mut ext_account: solana_sdk::account::Account = ctx.rpc.get_account(&ctx.ext_global_pk)?;
@@ -328,7 +332,9 @@ fn test_04_send_token_wormhole_success() -> Result<()> {
     )?;
 
     // assert payer's extension_token_account has 1,000,000,000 wrapped_m
-    let balance = ctx.rpc.get_token_account_balance(&ctx.extension_token_account)?;
+    let balance = ctx
+        .rpc
+        .get_token_account_balance(&ctx.extension_token_account)?;
     assert_eq!(balance.amount, "1000000000");
 
     // unfreeze portal_authority's m_token_account
@@ -379,7 +385,9 @@ fn test_04_send_token_wormhole_success() -> Result<()> {
     let payload =
         util::wormhole::find_post_message_payload(&tx).expect("Send Token payload not found");
 
-    let portal_global_bytes = ctx.rpc.get_account_data(&pda!(&[GLOBAL_SEED], &portal::ID))?;
+    let portal_global_bytes = ctx
+        .rpc
+        .get_account_data(&pda!(&[GLOBAL_SEED], &portal::ID))?;
     let portal_global = PortalGlobal::try_deserialize(&mut portal_global_bytes.as_slice())?;
 
     match payload.data {
@@ -437,5 +445,3 @@ fn test_04_send_token_wormhole_success() -> Result<()> {
 
 //     Ok(())
 // }
-
-

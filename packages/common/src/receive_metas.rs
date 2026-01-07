@@ -117,8 +117,6 @@ pub fn require_metas(
                 _ => unreachable!(),
             };
 
-            let token_in = Pubkey::from(token_in);
-
             let token_in_program = orderbook_token_in
                 .map(|account| *account.owner)
                 .or_else(|| {
