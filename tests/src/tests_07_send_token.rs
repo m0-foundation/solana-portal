@@ -496,5 +496,17 @@ fn test_05_send_token_hyperlane_success() -> Result<()> {
     let balance = ctx.rpc.get_token_account_balance(&ctx.m_token_account)?;
     assert_eq!(balance.amount, "0");
 
+    let message_data = ctx.rpc.get_account_data(&hyp.dispatched_message)?;
+    let (payload, _) = util::hyperlane::decode_payload_from_message_account(&message_data)
+        .expect("Failed to decode index payload");
+
+    match payload.data {
+        PayloadData::TokenTransfer(payload) => {
+            assert_eq!(payload.recipient, ctx.portal.payer().to_bytes());
+            assert!(payload.amount < AMOUNT as u128 && payload.amount > 0); // will change depending on current index value
+        }
+        _ => panic!("Expected TokenTransfer"),
+    }
+
     Ok(())
 }
