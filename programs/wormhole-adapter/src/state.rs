@@ -44,3 +44,36 @@ impl WormholeGlobal {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use anchor_lang::AnchorSerialize;
+    use common::Peer;
+
+    #[test]
+    fn test_wormhole_global_size() {
+        let peers = Peers::default().updated_peers(Peer {
+            adapter_chain_id: 1,
+            address: [0; 32],
+            m0_chain_id: 1,
+        });
+
+        let instance = WormholeGlobal {
+            bump: 0,
+            admin: Pubkey::default(),
+            outgoing_paused: false,
+            incoming_paused: false,
+            chain_id: 0,
+            pending_admin: Some(Pubkey::default()),
+            peers: peers.clone(),
+            padding: [0u8; 128],
+            receive_lut: Some(Pubkey::default()),
+        };
+
+        let mut buf = Vec::new();
+        instance.serialize(&mut buf).unwrap();
+
+        assert_eq!(WormholeGlobal::size(peers.len()), buf.len() + 8);
+    }
+}

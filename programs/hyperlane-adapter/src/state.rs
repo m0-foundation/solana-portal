@@ -102,3 +102,40 @@ impl HyperlaneUserGlobal {
         8 // nonce
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use anchor_lang::AnchorSerialize;
+    use common::Peer;
+
+    #[test]
+    fn test_hyperlane_global_size() {
+        let peers = Peers::default().updated_peers(Peer {
+            adapter_chain_id: 1,
+            address: [0; 32],
+            m0_chain_id: 1,
+        });
+
+        let instance = HyperlaneGlobal {
+            bump: 0,
+            admin: Pubkey::default(),
+            outgoing_paused: false,
+            incoming_paused: false,
+            chain_id: 0,
+            igp_program_id: Pubkey::default(),
+            igp_gas_amount: 0,
+            igp_account: Pubkey::default(),
+            igp_overhead_account: Some(Pubkey::default()),
+            ism: Some(Pubkey::default()),
+            pending_admin: Some(Pubkey::default()),
+            peers: peers.clone(),
+            padding: [0u8; 128],
+        };
+
+        let mut buf = Vec::new();
+        instance.serialize(&mut buf).unwrap();
+
+        assert_eq!(HyperlaneGlobal::size(peers.len()), buf.len() + 8);
+    }
+}
