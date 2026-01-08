@@ -23,6 +23,7 @@ pub struct ReceiveMessage<'info> {
         mut,
         seeds = [GLOBAL_SEED],
         bump = portal_global.bump,
+        constraint = !portal_global.incoming_paused @ BridgeError::Paused,
     )]
     pub portal_global: Account<'info, PortalGlobal>,
 

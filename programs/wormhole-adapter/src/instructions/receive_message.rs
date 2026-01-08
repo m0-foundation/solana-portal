@@ -3,6 +3,7 @@ use anchor_spl::associated_token::spl_associated_token_account::solana_program::
 use common::{
     portal::{self, accounts::PortalGlobal, program::Portal},
     wormhole_verify_vaa_shim::{self, cpi::accounts::VerifyHash, program::WormholeVerifyVaaShim},
+    BridgeError,
 };
 
 use crate::{
@@ -28,6 +29,7 @@ pub struct ReceiveMessage<'info> {
         seeds = [GLOBAL_SEED],
         seeds::program = portal::ID,
         bump = portal_global.bump,
+        constraint = !wormhole_global.incoming_paused @ BridgeError::Paused,
     )]
     pub portal_global: Account<'info, PortalGlobal>,
 

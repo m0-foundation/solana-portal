@@ -38,7 +38,8 @@ pub const DASH_SEED: &[u8] = b"-";
 pub struct HyperlaneGlobal {
     pub bump: u8,
     pub admin: Pubkey,
-    pub paused: bool,
+    pub outgoing_paused: bool,
+    pub incoming_paused: bool,
     pub chain_id: u32,
     pub igp_program_id: Pubkey,
     pub igp_gas_amount: u64,
@@ -55,7 +56,8 @@ impl HyperlaneGlobal {
         8 + // discriminator
         1 + // bump
         32 + // admin
-        1 + // paused
+        1 + // incoming paused
+        1 + // outgoing paused
         4 + // chain_id
         32 + // igp program id
         8 + // igp gas amount
@@ -98,5 +100,42 @@ impl HyperlaneUserGlobal {
         1 + // bump
         32 + // user
         8 // nonce
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use anchor_lang::AnchorSerialize;
+    use common::Peer;
+
+    #[test]
+    fn test_hyperlane_global_size() {
+        let peers = Peers::default().updated_peers(Peer {
+            adapter_chain_id: 1,
+            address: [0; 32],
+            m0_chain_id: 1,
+        });
+
+        let instance = HyperlaneGlobal {
+            bump: 0,
+            admin: Pubkey::default(),
+            outgoing_paused: false,
+            incoming_paused: false,
+            chain_id: 0,
+            igp_program_id: Pubkey::default(),
+            igp_gas_amount: 0,
+            igp_account: Pubkey::default(),
+            igp_overhead_account: Some(Pubkey::default()),
+            ism: Some(Pubkey::default()),
+            pending_admin: Some(Pubkey::default()),
+            peers: peers.clone(),
+            padding: [0u8; 128],
+        };
+
+        let mut buf = Vec::new();
+        instance.serialize(&mut buf).unwrap();
+
+        assert_eq!(HyperlaneGlobal::size(peers.len()), buf.len() + 8);
     }
 }

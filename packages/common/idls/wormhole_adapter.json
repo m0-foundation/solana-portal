@@ -234,16 +234,58 @@
       ]
     },
     {
-      "name": "pause",
+      "name": "pause_incoming",
       "discriminator": [
-        211,
-        22,
-        221,
-        251,
-        74,
-        121,
-        193,
-        47
+        159,
+        50,
+        214,
+        15,
+        183,
+        226,
+        174,
+        196
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": [
+            "wormhole_global"
+          ]
+        },
+        {
+          "name": "wormhole_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "pause_outgoing",
+      "discriminator": [
+        254,
+        51,
+        37,
+        160,
+        105,
+        61,
+        204,
+        223
       ],
       "accounts": [
         {
@@ -1107,16 +1149,58 @@
       ]
     },
     {
-      "name": "unpause",
+      "name": "unpause_incoming",
       "discriminator": [
-        169,
+        40,
+        3,
         144,
-        4,
-        38,
-        10,
-        141,
-        188,
-        255
+        42,
+        253,
+        44,
+        153,
+        249
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": [
+            "wormhole_global"
+          ]
+        },
+        {
+          "name": "wormhole_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "unpause_outgoing",
+      "discriminator": [
+        255,
+        24,
+        174,
+        235,
+        25,
+        115,
+        35,
+        11
       ],
       "accounts": [
         {
@@ -1335,7 +1419,11 @@
             "type": "pubkey"
           },
           {
-            "name": "paused",
+            "name": "outgoing_paused",
+            "type": "bool"
+          },
+          {
+            "name": "incoming_paused",
             "type": "bool"
           },
           {
@@ -1466,7 +1554,11 @@
             "type": "pubkey"
           },
           {
-            "name": "paused",
+            "name": "outgoing_paused",
+            "type": "bool"
+          },
+          {
+            "name": "incoming_paused",
             "type": "bool"
           },
           {

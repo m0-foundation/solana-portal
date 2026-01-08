@@ -50,6 +50,7 @@ pub struct ReceiveMessage<'info> {
     #[account(
         seeds = [GLOBAL_SEED],
         bump = hyperlane_global.bump,
+        constraint = !hyperlane_global.incoming_paused @ BridgeError::Paused,
     )]
     pub hyperlane_global: Account<'info, HyperlaneGlobal>,
 

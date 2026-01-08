@@ -19,7 +19,7 @@ pub struct SendToken<'info> {
         mut,
         seeds = [GLOBAL_SEED],
         bump = portal_global.bump,
-        constraint = !portal_global.paused @ BridgeError::Paused,
+        constraint = !portal_global.outgoing_paused @ BridgeError::Paused,
     )]
     pub portal_global: Account<'info, PortalGlobal>,
 
@@ -106,7 +106,7 @@ pub struct SendToken<'info> {
 
 impl SendToken<'_> {
     fn validate(&self, amount: u64, destination_chain_id: u32) -> Result<()> {
-        if self.portal_global.paused {
+        if self.portal_global.outgoing_paused {
             return err!(BridgeError::Paused);
         }
 
