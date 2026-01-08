@@ -71,6 +71,7 @@ impl TokenTransferPayload {
     pub fn parse_and_validate_accounts<'info>(
         &self,
         remaining_accounts: Vec<AccountInfo<'info>>,
+        expected_m_mint: Pubkey,
     ) -> Result<TokenTransferPayloadAccounts<'info>> {
         let accounts =
             TokenTransferPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
@@ -91,6 +92,10 @@ impl TokenTransferPayload {
 
         if accounts.swap_program.key != &ext_swap::ID {
             return err!(BridgeError::InvalidRemainingAccount);
+        }
+
+        if accounts.m_mint.key() != expected_m_mint {
+            return err!(BridgeError::InvalidMint);
         }
 
         Ok(accounts)
