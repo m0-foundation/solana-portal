@@ -510,3 +510,51 @@ fn test_05_send_token_hyperlane_success() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn test_06_send_token_invalid_m_mint() -> Result<()> {
+    let ctx = TestCtx::new()?;
+
+    let err = ctx
+        .portal
+        .request()
+        .accounts(portal_accounts::SendToken {
+            sender: ctx.portal.payer(),
+            portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
+            swap_global: pda!(&[GLOBAL_SEED], &ext_swap::ID),
+            extension_global: pda!(&[GLOBAL_SEED], &ctx.extension_program),
+            m_mint: Pubkey::new_unique(), // invalid m_mint
+            extension_mint: ctx.extension_mint,
+            m_token_account: ctx.m_token_account,
+            extension_token_account: ctx.extension_token_account,
+            portal_authority: ctx.portal_authority,
+            ext_m_vault: ctx.ext_m_vault,
+            ext_m_vault_auth: pda!(&[M_VAULT_SEED], &ctx.extension_program),
+            ext_mint_authority: pda!(&[MINT_AUTHORITY_SEED], &ctx.extension_program),
+            swap_program: ext_swap::ID,
+            extension_program: ctx.extension_program,
+            m_token_program: token_2022::ID,
+            extension_token_program: token_2022::ID,
+            bridge_adapter: wormhole_adapter::ID,
+            system_program: system_program::ID,
+        })
+        .args(portal_instruction::SendToken {
+            amount: AMOUNT,
+            destination_token: ctx.m_mint.to_bytes(),
+            destination_chain_id: 2,
+            recipient: ctx.portal.payer().to_bytes(),
+        })
+        .accounts(WormholeRemainingAccounts::account_metas())
+        .send()
+        .unwrap_err();
+
+    let s = err.to_string();
+    assert!(s.contains("custom program error: 0xbbf"), "got: {}", s);
+    assert!(
+        s.contains("AnchorError caused by account: m_mint"),
+        "got: {}",
+        s
+    );
+
+    Ok(())
+}
