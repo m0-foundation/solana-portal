@@ -1,7 +1,13 @@
+use std::str::FromStr;
+
 use anchor_client::{Client, Cluster};
-use anchor_lang::{system_program, InstructionData, ToAccountMetas};
+use anchor_lang::{system_program, AnchorDeserialize, InstructionData, ToAccountMetas};
 use anyhow::Result;
-use common::{earn, IndexPayload, PayloadData, PayloadHeader};
+use common::ext_swap::accounts::SwapGlobal;
+use common::{
+    earn, ext_swap, CancelReportPayload, Extension, IndexPayload, PayloadData, PayloadHeader,
+    TokenTransferPayload,
+};
 use common::{
     hyperlane_adapter::constants::PAYER_SEED, pda, portal::constants::GLOBAL_SEED, require_metas,
     wormhole_adapter::constants::GUARDIAN_SET_SEED, wormhole_verify_vaa_shim, Payload,
@@ -9,6 +15,7 @@ use common::{
 };
 use hyperlane_adapter::{accounts as hyperlane_accounts, instruction as hyperlane_instruction};
 use portal::state::MESSAGE_SEED;
+use solana_client::rpc_config::RpcSendTransactionConfig;
 use solana_sdk::transaction::Transaction;
 use solana_sdk::{instruction::Instruction, pubkey::Pubkey, signer::Signer};
 use solana_transaction_status_client_types::UiTransactionEncoding;
@@ -267,6 +274,106 @@ fn test_06_receive_invalid_destination_peer() -> Result<()> {
     let err = result.err().unwrap().to_string();
     assert!(
         err.contains("Error Code: InvalidPeer"),
+        "Invalid error: {}",
+        err
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_07_receive_cancel_wormhole() -> Result<()> {
+    let signer = get_signer();
+    let client = Client::new(Cluster::Localnet, signer.clone());
+    let program = client.program(wormhole_adapter::ID)?;
+
+    let message_id = [44u8; 32];
+    let mut payload = create_default_payload(message_id, SOLANA_CHAIN_ID, portal::ID.to_bytes());
+
+    payload.header.payload_type = 6; // CancelReport
+    payload.data = PayloadData::CancelReport(CancelReportPayload {
+        order_id: [0; 32],
+        order_sender: [0; 32],
+        token_in: [0; 32],
+    });
+
+    let vaa = create_default_vaa(2, ETHEREUM_WORMHOLE_TRANSCEIVER, payload.clone());
+    let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
+
+    let result = program
+        .request()
+        .accounts(create_receive_message_accounts(signer.pubkey(), message_id))
+        .args(wormhole_instruction::ReceiveMessage {
+            vaa_body: vaa.to_bytes(),
+            guardian_set_index: 0,
+        })
+        .accounts(metas)
+        .send();
+
+    // order_book not deployed
+    assert!(result.is_err());
+    let err = result.err().unwrap().to_string();
+    assert!(
+        err.contains("Unsupported program id"),
+        "Invalid error: {}",
+        err
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_08_change_destination_mint() -> Result<()> {
+    let rpc_client = get_rpc_client();
+    let signer = get_signer();
+    let client = Client::new(Cluster::Localnet, signer.clone());
+    let program = client.program(wormhole_adapter::ID)?;
+
+    let message_id = [45u8; 32];
+    let mut payload = create_default_payload(message_id, SOLANA_CHAIN_ID, portal::ID.to_bytes());
+
+    payload.header.payload_type = 0;
+    payload.data = PayloadData::TokenTransfer(TokenTransferPayload {
+        recipient: signer.pubkey().to_bytes(),
+        destination_token: Pubkey::new_unique().to_bytes(),
+        amount: 1_000_000,
+        sender: get_signer().pubkey().to_bytes(),
+        index: 0,
+    });
+
+    let data_swap = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &ext_swap::ID))?;
+    let swap_global = SwapGlobal::deserialize(&mut &data_swap[8..])?;
+    let whitelisted_extensions = Some(
+        swap_global
+            .whitelisted_extensions
+            .iter()
+            .map(|&ext| Extension::from(ext))
+            .collect(),
+    );
+
+    let vaa = create_default_vaa(2, ETHEREUM_WORMHOLE_TRANSCEIVER, payload.clone());
+    let mut metas = require_metas(&payload.data, whitelisted_extensions, Some(M_MINT), None)?;
+
+    // Change destination mint to an different mint (should fail validation)
+    metas[4].pubkey = Pubkey::from_str("usdkbee86pkLyRmxfFCdkyySpxRb5ndCxVsK2BkRXwX").unwrap();
+
+    let result = program
+        .request()
+        .accounts(create_receive_message_accounts(signer.pubkey(), message_id))
+        .args(wormhole_instruction::ReceiveMessage {
+            vaa_body: vaa.to_bytes(),
+            guardian_set_index: 0,
+        })
+        .accounts(metas)
+        .send_with_spinner_and_config(RpcSendTransactionConfig {
+            skip_preflight: true,
+            ..Default::default()
+        });
+
+    assert!(result.is_err());
+    let err = result.err().unwrap().to_string();
+    assert!(
+        err.contains("custom program error: 0x1771"),
         "Invalid error: {}",
         err
     );
