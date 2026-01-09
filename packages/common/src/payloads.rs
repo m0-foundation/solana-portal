@@ -95,6 +95,7 @@ impl PayloadData {
                 data.extend_from_slice(&payload.order_id);
                 data.extend_from_slice(&payload.order_sender);
                 data.extend_from_slice(&payload.token_in);
+                data.extend_from_slice(&payload.amount_in_to_refund.to_be_bytes());
                 data
             }
         }
@@ -151,7 +152,7 @@ impl PayloadData {
             Self::CANCEL_REPORT_DISCRIMINANT => {
                 let (order_id_bytes, data) = data.split_at(32);
                 let (order_sender_bytes, data) = data.split_at(32);
-                let (token_in_bytes, _) = data.split_at(32);
+                let (token_in_bytes, data) = data.split_at(32);
                 let (amount_in_to_refund_bytes, _) = data.split_at(16);
 
                 Ok(PayloadData::CancelReport(CancelReportPayload {
@@ -402,7 +403,7 @@ mod tests {
             order_id: [15u8; 32],
             order_sender: [16u8; 32],
             token_in: [17u8; 32],
-            amount_in_to_refund: 1000_000000u128,
+            amount_in_to_refund: 1000000000u128,
         };
         let payload = Payload {
             header: header.clone(),
@@ -415,7 +416,7 @@ mod tests {
                 assert_eq!(decoded_payload.order_id, [15u8; 32]);
                 assert_eq!(decoded_payload.order_sender, [16u8; 32]);
                 assert_eq!(decoded_payload.token_in, [17u8; 32]);
-                assert_eq!(decoded_payload.amount_in_to_refund, 1000_000000u128);
+                assert_eq!(decoded_payload.amount_in_to_refund, 1000000000u128);
                 assert_eq!(decoded.header.message_id, [13u8; 32]);
                 assert_eq!(decoded.header.destination_chain_id, 56);
                 assert_eq!(decoded.header.destination_peer, [14u8; 32]);
