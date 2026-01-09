@@ -295,6 +295,7 @@ fn test_07_receive_cancel_wormhole() -> Result<()> {
         order_id: [0; 32],
         order_sender: [0; 32],
         token_in: [0; 32],
+        amount_in_to_refund: 10,
     });
 
     let vaa = create_default_vaa(2, ETHEREUM_WORMHOLE_TRANSCEIVER, payload.clone());

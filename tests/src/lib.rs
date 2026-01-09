@@ -187,11 +187,7 @@ pub fn set_account(pubkey: &Pubkey, account: &Account) -> Result<()> {
     Ok(())
 }
 
-pub fn set_token_account(
-    owner: &Pubkey,
-    mint: &Pubkey,
-    update: serde_json::Value,
-) -> Result<()> {
+pub fn set_token_account(owner: &Pubkey, mint: &Pubkey, update: serde_json::Value) -> Result<()> {
     let rpc_url = get_rpc_client().url();
 
     let request = util::rpc::JsonRpcRequest {
