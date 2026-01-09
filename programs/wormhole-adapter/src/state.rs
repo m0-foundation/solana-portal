@@ -10,7 +10,8 @@ pub const GLOBAL_SEED: &[u8] = b"global";
 pub struct WormholeGlobal {
     pub bump: u8,
     pub admin: Pubkey,
-    pub paused: bool,
+    pub outgoing_paused: bool,
+    pub incoming_paused: bool,
     pub chain_id: u32,
     pub receive_lut: Option<Pubkey>,
     pub pending_admin: Option<Pubkey>,
@@ -23,7 +24,8 @@ impl WormholeGlobal {
         8 + // discriminator
         1 + // bump
         32 + // admin
-        1 + // paused
+        1 + // outgoing paused
+        1 + // incoming paused
         4 + // chain_id
         1 + // receive_lut option
         32 + // receive_lut
@@ -40,5 +42,38 @@ impl WormholeGlobal {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use anchor_lang::AnchorSerialize;
+    use common::Peer;
+
+    #[test]
+    fn test_wormhole_global_size() {
+        let peers = Peers::default().updated_peers(Peer {
+            adapter_chain_id: 1,
+            address: [0; 32],
+            m0_chain_id: 1,
+        });
+
+        let instance = WormholeGlobal {
+            bump: 0,
+            admin: Pubkey::default(),
+            outgoing_paused: false,
+            incoming_paused: false,
+            chain_id: 0,
+            pending_admin: Some(Pubkey::default()),
+            peers: peers.clone(),
+            padding: [0u8; 128],
+            receive_lut: Some(Pubkey::default()),
+        };
+
+        let mut buf = Vec::new();
+        instance.serialize(&mut buf).unwrap();
+
+        assert_eq!(WormholeGlobal::size(peers.len()), buf.len() + 8);
     }
 }

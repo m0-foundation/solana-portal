@@ -22,7 +22,7 @@ pub struct SendMessage<'info> {
     payer: Signer<'info>,
 
     #[account(
-        constraint = !wormhole_global.paused @ BridgeError::Paused,
+        constraint = !wormhole_global.outgoing_paused @ BridgeError::Paused,
         seeds = [GLOBAL_SEED],
         bump = wormhole_global.bump,
     )]

@@ -23,6 +23,7 @@ pub struct ReceiveMessage<'info> {
         mut,
         seeds = [GLOBAL_SEED],
         bump = portal_global.bump,
+        constraint = !portal_global.incoming_paused @ BridgeError::Paused,
     )]
     pub portal_global: Account<'info, PortalGlobal>,
 
@@ -263,7 +264,7 @@ impl ReceiveMessage<'_> {
                 accounts.orderbook_program.clone(),
                 order_book::cpi::accounts::ReportOrderFill {
                     relayer: ctx.accounts.payer.to_account_info(), // Relayer pays for ATA initialization
-                    messenger_authority: ctx.accounts.portal_authority.to_account_info(),
+                    portal_authority: ctx.accounts.portal_authority.to_account_info(),
                     global_account: accounts.orderbook_global_account,
                     order: accounts.order,
                     token_in_mint: accounts.token_in_mint,
@@ -278,6 +279,7 @@ impl ReceiveMessage<'_> {
                 },
                 &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
             ),
+            source_chain_id,
             FillReport {
                 order_id: payload.order_id,
                 amount_in_to_release: payload.amount_in_to_release,
@@ -315,7 +317,7 @@ impl ReceiveMessage<'_> {
                 accounts.orderbook_program.clone(),
                 order_book::cpi::accounts::ReportOrderCancel {
                     relayer: ctx.accounts.payer.to_account_info(), // Relayer pays for ATA initialization
-                    messenger_authority: ctx.accounts.portal_authority.to_account_info(),
+                    portal_authority: ctx.accounts.portal_authority.to_account_info(),
                     global_account: accounts.orderbook_global_account,
                     order: accounts.order,
                     token_in_mint: accounts.token_in_mint,
@@ -330,6 +332,7 @@ impl ReceiveMessage<'_> {
                 },
                 &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
             ),
+            source_chain_id,
             CancelReport {
                 order_id: payload.order_id,
                 order_sender: payload.order_sender,

@@ -18,7 +18,7 @@ pub struct SendMerkleRoot<'info> {
         mut,
         seeds = [GLOBAL_SEED],
         bump = portal_global.bump,
-        constraint = !portal_global.paused @ BridgeError::Paused,
+        constraint = !portal_global.outgoing_paused @ BridgeError::Paused,
     )]
     pub portal_global: Account<'info, PortalGlobal>,
 

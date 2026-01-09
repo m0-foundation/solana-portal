@@ -52,7 +52,8 @@ impl Initialize<'_> {
         ctx.accounts.wormhole_global.set_inner(WormholeGlobal {
             bump: ctx.bumps.wormhole_global,
             admin: ctx.accounts.admin.key(),
-            paused: false,
+            outgoing_paused: false,
+            incoming_paused: false,
             chain_id,
             peers: Peers::default(),
             pending_admin: None,

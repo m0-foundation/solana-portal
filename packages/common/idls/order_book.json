@@ -107,6 +107,7 @@
         },
         {
           "name": "global_account",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -709,7 +710,7 @@
           "type": "u32"
         },
         {
-          "name": "messenger_authority",
+          "name": "portal_authority",
           "type": "pubkey"
         }
       ]
@@ -930,7 +931,7 @@
           "signer": true
         },
         {
-          "name": "messenger_authority",
+          "name": "portal_authority",
           "signer": true
         },
         {
@@ -1053,6 +1054,10 @@
       ],
       "args": [
         {
+          "name": "source_chain_id",
+          "type": "u32"
+        },
+        {
           "name": "cancel_report",
           "type": {
             "defined": {
@@ -1072,7 +1077,7 @@
           "signer": true
         },
         {
-          "name": "messenger_authority",
+          "name": "portal_authority",
           "signer": true
         },
         {
@@ -1195,41 +1200,16 @@
       ],
       "args": [
         {
+          "name": "source_chain_id",
+          "type": "u32"
+        },
+        {
           "name": "fill_report",
           "type": {
             "defined": {
               "name": "FillReport"
             }
           }
-        }
-      ]
-    },
-    {
-      "name": "set_messenger_authority",
-      "discriminator": [145, 255, 61, 204, 135, 22, 251, 160],
-      "accounts": [
-        {
-          "name": "admin",
-          "signer": true,
-          "relations": ["global_account"]
-        },
-        {
-          "name": "global_account",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [103, 108, 111, 98, 97, 108]
-              }
-            ]
-          }
-        }
-      ],
-      "args": [
-        {
-          "name": "messenger_authority",
-          "type": "pubkey"
         }
       ]
     },
@@ -1261,6 +1241,35 @@
           "type": "pubkey"
         }
       ]
+    },
+    {
+      "name": "set_portal_authority",
+      "discriminator": [185, 39, 254, 131, 166, 20, 176, 126],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": ["global_account"]
+        },
+        {
+          "name": "global_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "portal_authority",
+          "type": "pubkey"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -1286,6 +1295,10 @@
     }
   ],
   "events": [
+    {
+      "name": "CancelReported",
+      "discriminator": [252, 60, 197, 41, 225, 209, 88, 99]
+    },
     {
       "name": "DestinationSupportUpdated",
       "discriminator": [227, 159, 191, 253, 130, 208, 72, 39]
@@ -1460,6 +1473,11 @@
       "code": 6028,
       "name": "InvalidSender",
       "msg": "Sender address does not match order sender"
+    },
+    {
+      "code": 6029,
+      "name": "InvalidReportSource",
+      "msg": "Invalid report source chain ID"
     }
   ],
   "types": [
@@ -1482,6 +1500,20 @@
           },
           {
             "name": "token_in",
+            "type": {
+              "array": ["u8", 32]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "CancelReported",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "order_id",
             "type": {
               "array": ["u8", 32]
             }
@@ -1771,7 +1803,7 @@
             "type": "u32"
           },
           {
-            "name": "messenger_authority",
+            "name": "portal_authority",
             "type": "pubkey"
           },
           {

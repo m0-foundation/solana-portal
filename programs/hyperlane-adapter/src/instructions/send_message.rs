@@ -21,7 +21,7 @@ pub struct SendMessage<'info> {
     payer: Signer<'info>,
 
     #[account(
-        constraint = !hyperlane_global.paused @ BridgeError::Paused,
+        constraint = !hyperlane_global.outgoing_paused @ BridgeError::Paused,
         has_one = igp_program_id @ BridgeError::InvalidIgpAccount,
         has_one = igp_account @ BridgeError::InvalidIgpAccount,
         seeds = [GLOBAL_SEED],

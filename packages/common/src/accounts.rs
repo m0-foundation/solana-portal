@@ -4,10 +4,10 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use common_macros::ExtractAccounts;
 
 use crate::{
-    earn,
     ext_swap::{self, accounts::SwapGlobal},
     order_book, BridgeError, CancelReportPayload, EarnerMerkleRootPayload, FillReportPayload,
     IndexPayload, TokenTransferPayload,
+    earn,
 };
 
 #[derive(ExtractAccounts)]
@@ -16,21 +16,6 @@ pub struct IndexPayloadAccounts<'info> {
     pub m_mint: AccountInfo<'info>,
     pub earn_program: AccountInfo<'info>,
     pub m_token_program: AccountInfo<'info>,
-}
-
-impl IndexPayload {
-    pub fn parse_and_validate_accounts<'info>(
-        &self,
-        remaining_accounts: Vec<AccountInfo<'info>>,
-    ) -> Result<IndexPayloadAccounts<'info>> {
-        let accounts = IndexPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
-
-        if accounts.earn_program.key != &earn::ID {
-            return err!(BridgeError::InvalidRemainingAccount);
-        }
-
-        Ok(accounts)
-    }
 }
 
 impl EarnerMerkleRootPayload {
