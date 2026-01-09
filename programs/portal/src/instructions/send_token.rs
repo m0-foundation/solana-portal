@@ -20,6 +20,7 @@ pub struct SendToken<'info> {
         seeds = [GLOBAL_SEED],
         bump = portal_global.bump,
         constraint = !portal_global.outgoing_paused @ BridgeError::Paused,
+        has_one = m_mint @ BridgeError::InvalidMint,
     )]
     pub portal_global: Account<'info, PortalGlobal>,
 
