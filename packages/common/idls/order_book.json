@@ -344,6 +344,96 @@
       "args": []
     },
     {
+      "name": "close_order_token_account",
+      "discriminator": [242, 180, 199, 62, 212, 67, 188, 136],
+      "accounts": [
+        {
+          "name": "payer",
+          "docs": [
+            "The original payer who paid SOL rent for the ATA",
+            "SOL rent will be refunded to this account"
+          ],
+          "writable": true
+        },
+        {
+          "name": "sender",
+          "writable": true
+        },
+        {
+          "name": "order",
+          "docs": [
+            "The order account - must be in Completed or Cancelled status"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [111, 114, 100, 101, 114]
+              },
+              {
+                "kind": "arg",
+                "path": "order_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_in_mint",
+          "docs": ["The token mint for validation"]
+        },
+        {
+          "name": "order_token_in_ata",
+          "docs": ["The order's ATA to close"],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "order"
+              },
+              {
+                "kind": "account",
+                "path": "token_in_program"
+              },
+              {
+                "kind": "account",
+                "path": "token_in_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142,
+                13, 131, 11, 90, 19, 153, 218, 255, 16, 132, 4, 142, 123, 216,
+                219, 233, 248, 89
+              ]
+            }
+          }
+        },
+        {
+          "name": "recipient_token_account",
+          "docs": [
+            "Optional recipient for any dust tokens (due to griefing donations)",
+            "Must be owned by the order sender"
+          ],
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "token_in_program",
+          "docs": ["SPL Token or Token-2022 program"]
+        }
+      ],
+      "args": [
+        {
+          "name": "order_id",
+          "type": {
+            "array": ["u8", 32]
+          }
+        }
+      ]
+    },
+    {
       "name": "fill_foreign_order",
       "discriminator": [1, 98, 55, 150, 213, 36, 162, 17],
       "accounts": [
@@ -856,6 +946,30 @@
       ]
     },
     {
+      "name": "pause",
+      "discriminator": [211, 22, 221, 251, 74, 121, 193, 47],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": ["global_account"]
+        },
+        {
+          "name": "global_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "remove_destination",
       "discriminator": [57, 157, 206, 225, 233, 131, 241, 108],
       "accounts": [
@@ -1270,6 +1384,30 @@
           "type": "pubkey"
         }
       ]
+    },
+    {
+      "name": "unpause",
+      "discriminator": [169, 144, 4, 38, 10, 141, 188, 255],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": ["global_account"]
+        },
+        {
+          "name": "global_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -1446,8 +1584,8 @@
     },
     {
       "code": 6023,
-      "name": "DestinationAccountRequired",
-      "msg": "Destination account required"
+      "name": "DustRecipientRequired",
+      "msg": "Recipient token account required - order token account has dust balance that must be swept"
     },
     {
       "code": 6024,
@@ -1478,6 +1616,26 @@
       "code": 6029,
       "name": "InvalidReportSource",
       "msg": "Invalid report source chain ID"
+    },
+    {
+      "code": 6030,
+      "name": "InvalidPayer",
+      "msg": "Payer address does not match order payer"
+    },
+    {
+      "code": 6031,
+      "name": "TokenAccountNotEmpty",
+      "msg": "Token account has non-zero balance - cannot close"
+    },
+    {
+      "code": 6032,
+      "name": "ProgramPaused",
+      "msg": "Program is paused"
+    },
+    {
+      "code": 6033,
+      "name": "InvalidRefundAmount",
+      "msg": "Reported refund amount is greater than available"
     }
   ],
   "types": [
@@ -1503,6 +1661,10 @@
             "type": {
               "array": ["u8", 32]
             }
+          },
+          {
+            "name": "amount_in_to_refund",
+            "type": "u128"
           }
         ]
       }
@@ -1653,6 +1815,10 @@
           {
             "name": "amount_out_filled",
             "type": "u128"
+          },
+          {
+            "name": "amount_in_refunded",
+            "type": "u128"
           }
         ]
       }
@@ -1676,6 +1842,10 @@
           },
           {
             "name": "sender",
+            "type": "pubkey"
+          },
+          {
+            "name": "payer",
             "type": "pubkey"
           },
           {
@@ -1730,6 +1900,10 @@
           },
           {
             "name": "amount_out_filled",
+            "type": "u128"
+          },
+          {
+            "name": "amount_in_refunded",
             "type": "u128"
           }
         ]
@@ -1805,6 +1979,10 @@
           {
             "name": "portal_authority",
             "type": "pubkey"
+          },
+          {
+            "name": "paused",
+            "type": "bool"
           },
           {
             "name": "bump",

@@ -340,6 +340,7 @@ impl ReceiveMessage<'_> {
                 order_id: payload.order_id,
                 order_sender: payload.order_sender,
                 token_in: payload.token_in,
+                amount_in_to_refund: payload.amount_in_to_refund,
             },
         )?;
 
@@ -349,6 +350,7 @@ impl ReceiveMessage<'_> {
             order_id: payload.order_id,
             order_sender: payload.order_sender,
             token_in: payload.token_in,
+            amount_in_to_refund: payload.amount_in_to_refund,
             message_id: message_id,
         });
 
@@ -387,5 +389,6 @@ pub struct CancelReportReceived {
     pub order_id: [u8; 32],
     pub order_sender: [u8; 32],
     pub token_in: [u8; 32],
+    pub amount_in_to_refund: u128,
     pub message_id: [u8; 32],
 }
