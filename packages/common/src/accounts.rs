@@ -4,10 +4,10 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use common_macros::ExtractAccounts;
 
 use crate::{
+    earn,
     ext_swap::{self, accounts::SwapGlobal},
     order_book, BridgeError, CancelReportPayload, EarnerMerkleRootPayload, FillReportPayload,
-    IndexPayload, TokenTransferPayload,
-    earn,
+    TokenTransferPayload,
 };
 
 #[derive(ExtractAccounts)]
@@ -95,7 +95,7 @@ impl TokenTransferPayload {
                 }
             }
         }
-      
+
         if accounts.m_mint.key() != expected_m_mint {
             return err!(BridgeError::InvalidMint);
         }
