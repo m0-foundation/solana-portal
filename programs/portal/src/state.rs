@@ -19,6 +19,7 @@ pub const MESSAGE_SEED: &[u8] = b"message";
 pub struct PortalGlobal {
     pub bump: u8,
     pub chain_id: u32,
+    pub m_mint: Pubkey,
     pub admin: Pubkey,
     pub outgoing_paused: bool,
     pub incoming_paused: bool,
@@ -89,6 +90,7 @@ mod tests {
             bump: 0,
             chain_id,
             admin: Pubkey::default(),
+            m_mint: Pubkey::default(),
             outgoing_paused: false,
             incoming_paused: false,
             m_index: 0,
@@ -127,6 +129,7 @@ mod tests {
                 bump: 0,
                 chain_id,
                 admin: Pubkey::default(),
+                m_mint: Pubkey::default(),
                 outgoing_paused: false,
                 incoming_paused: false,
                 m_index: 0,

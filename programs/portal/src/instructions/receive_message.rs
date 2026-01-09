@@ -186,7 +186,10 @@ impl ReceiveMessage<'_> {
             Self::handle_index_payload(&ctx, payload.clone().into())?;
         }
 
-        let accounts = payload.parse_and_validate_accounts(ctx.remaining_accounts.to_vec())?;
+        let accounts = payload.parse_and_validate_accounts(
+            ctx.remaining_accounts.to_vec(),
+            ctx.accounts.portal_global.m_mint,
+        )?;
 
         // Get the principal amount of $M tokens to transfer using the multiplier
         let principal = common::amount_to_principal_down(

@@ -171,6 +171,61 @@
           }
         },
         {
+          "name": "earn_global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                11,
+                134,
+                11,
+                7,
+                229,
+                245,
+                33,
+                49,
+                225,
+                170,
+                183,
+                171,
+                210,
+                177,
+                147,
+                110,
+                166,
+                55,
+                182,
+                49,
+                97,
+                242,
+                35,
+                170,
+                152,
+                135,
+                152,
+                108,
+                102,
+                78,
+                112,
+                208
+              ]
+            }
+          }
+        },
+        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
@@ -1082,7 +1137,10 @@
         },
         {
           "name": "m_mint",
-          "writable": true
+          "writable": true,
+          "relations": [
+            "portal_global"
+          ]
         },
         {
           "name": "extension_mint",
@@ -1851,6 +1909,10 @@
           {
             "name": "chain_id",
             "type": "u32"
+          },
+          {
+            "name": "m_mint",
+            "type": "pubkey"
           },
           {
             "name": "admin",
