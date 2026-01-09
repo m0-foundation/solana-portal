@@ -152,11 +152,15 @@ impl PayloadData {
                 let (order_id_bytes, data) = data.split_at(32);
                 let (order_sender_bytes, data) = data.split_at(32);
                 let (token_in_bytes, _) = data.split_at(32);
+                let (amount_in_to_refund_bytes, _) = data.split_at(16);
 
                 Ok(PayloadData::CancelReport(CancelReportPayload {
                     order_id: order_id_bytes.try_into().unwrap(),
                     order_sender: order_sender_bytes.try_into().unwrap(),
                     token_in: token_in_bytes.try_into().unwrap(),
+                    amount_in_to_refund: u128::from_be_bytes(
+                        amount_in_to_refund_bytes.try_into().unwrap(),
+                    ),
                 }))
             }
             _ => err!(BridgeError::InvalidPayload),
@@ -215,6 +219,7 @@ pub struct CancelReportPayload {
     pub order_id: [u8; 32],
     pub order_sender: [u8; 32],
     pub token_in: [u8; 32],
+    pub amount_in_to_refund: u128,
 }
 
 #[derive(Debug, Clone)]
@@ -397,6 +402,7 @@ mod tests {
             order_id: [15u8; 32],
             order_sender: [16u8; 32],
             token_in: [17u8; 32],
+            amount_in_to_refund: 1000_000000u128,
         };
         let payload = Payload {
             header: header.clone(),
@@ -409,6 +415,7 @@ mod tests {
                 assert_eq!(decoded_payload.order_id, [15u8; 32]);
                 assert_eq!(decoded_payload.order_sender, [16u8; 32]);
                 assert_eq!(decoded_payload.token_in, [17u8; 32]);
+                assert_eq!(decoded_payload.amount_in_to_refund, 1000_000000u128);
                 assert_eq!(decoded.header.message_id, [13u8; 32]);
                 assert_eq!(decoded.header.destination_chain_id, 56);
                 assert_eq!(decoded.header.destination_peer, [14u8; 32]);

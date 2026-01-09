@@ -122,6 +122,7 @@ pub mod portal {
         order_id: [u8; 32],
         order_sender: [u8; 32],
         token_in: [u8; 32],
+        amount_in_to_refund: u128,
         origin_chain_id: u32,
     ) -> Result<()> {
         SendReport::send_cancel_report_handler(
@@ -129,6 +130,7 @@ pub mod portal {
             order_id,
             order_sender,
             token_in,
+            amount_in_to_refund,
             origin_chain_id,
         )
     }

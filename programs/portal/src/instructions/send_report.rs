@@ -93,12 +93,14 @@ impl SendReport<'_> {
         order_id: [u8; 32],
         order_sender: [u8; 32],
         token_in: [u8; 32],
+        amount_in_to_refund: u128,
         origin_chain_id: u32,
     ) -> Result<()> {
         let payload = PayloadData::CancelReport(CancelReportPayload {
             order_id,
             order_sender,
             token_in,
+            amount_in_to_refund,
         });
 
         send_message(
@@ -121,7 +123,8 @@ impl SendReport<'_> {
             bridge_adapter: ctx.accounts.bridge_adapter.key(),
             order_id,
             order_sender,
-            token_in
+            token_in,
+            amount_in_to_refund,
         });
 
         Ok(())
@@ -146,4 +149,5 @@ pub struct CancelReportSent {
     pub order_id: [u8; 32],
     pub order_sender: [u8; 32],
     pub token_in: [u8; 32],
+    pub amount_in_to_refund: u128,
 }
