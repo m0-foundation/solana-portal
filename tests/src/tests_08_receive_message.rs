@@ -384,8 +384,6 @@ fn test_08_change_destination_mint() -> Result<()> {
 
 #[test]
 fn test_09_receive_merkle_root() -> Result<()> {
-    let rpc_client = get_rpc_client();
-
     let signer = get_signer();
     let client = Client::new(Cluster::Localnet, signer.clone());
     let program = client.program(wormhole_adapter::ID)?;
@@ -403,7 +401,7 @@ fn test_09_receive_merkle_root() -> Result<()> {
     let vaa = create_default_vaa(23, ETHEREUM_WORMHOLE_TRANSCEIVER, payload.clone());
     let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
 
-    let signature = program
+    let result = program
         .request()
         .accounts(create_receive_message_accounts(signer.pubkey(), message_id))
         .args(wormhole_instruction::ReceiveMessage {
@@ -411,22 +409,11 @@ fn test_09_receive_merkle_root() -> Result<()> {
             guardian_set_index: 0,
         })
         .accounts(metas)
-        .send()?;
+        .send();
 
-    let transaction = rpc_client.get_transaction(&signature, UiTransactionEncoding::Json)?;
-    let logs = transaction
-        .transaction
-        .meta
-        .unwrap()
-        .log_messages
-        .unwrap()
-        .join(". ");
-
-    assert!(
-        logs.contains("InvalidSourceChain.."),
-        "Missing InvalidSourceChain log: {:?}",
-        logs
-    );
+    assert!(result.is_err());
+    let err = result.err().unwrap().to_string();
+    assert!(err.contains("InvalidSourceChain"), "Invalid error: {}", err);
 
     Ok(())
 }
