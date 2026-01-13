@@ -81,6 +81,7 @@ impl ReceiveMessage<'_> {
         // Only accept Earner Merkle Root payloads from the mainnet hub
         if let PayloadData::EarnerMerkleRoot(_payload) = &message.data {
             if source_chain_id != ETHEREUM_CHAIN_ID {
+                msg!("Chain {} is not a hub", source_chain_id);
                 return err!(BridgeError::InvalidSourceChain);
             }
         }
