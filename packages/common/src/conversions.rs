@@ -23,6 +23,20 @@ pub fn amount_to_principal_down(amount: u128, multiplier: f64) -> u128 {
         .expect("underflow")
 }
 
+pub fn principal_to_amount_down(principal: u128, multiplier: f64) -> u128 {
+    if multiplier == 1.0 {
+        return principal;
+    }
+
+    let index = (multiplier * INDEX_SCALE_F64).trunc() as u128;
+
+    index
+        .checked_mul(principal as u128)
+        .expect("overflow")
+        .checked_div(INDEX_SCALE_U64 as u128)
+        .expect("underflow")
+}
+
 pub fn get_scaled_ui_config<'info>(mint: &AccountInfo<'info>) -> Result<ScaledUiAmountConfig> {
     let mint_data = mint.try_borrow_data()?;
     let mint_ext_data = StateWithExtensions::<state::Mint>::unpack(&mint_data)?;
