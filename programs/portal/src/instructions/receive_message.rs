@@ -11,7 +11,9 @@ use common::{
     Payload, PayloadData, TokenTransferPayload,
 };
 
-use crate::state::{BridgeMessage, PortalGlobal, AUTHORITY_SEED, GLOBAL_SEED, MESSAGE_SEED};
+use crate::state::{
+    BridgeMessage, PortalGlobal, AUTHORITY_SEED, ETHEREUM_CHAIN_ID, GLOBAL_SEED, MESSAGE_SEED,
+};
 
 #[derive(Accounts)]
 #[instruction(message_id: [u8; 32])]
@@ -49,7 +51,12 @@ pub struct ReceiveMessage<'info> {
 }
 
 impl ReceiveMessage<'_> {
-    fn validate(&self, message_id: [u8; 32], payload: &Vec<u8>) -> Result<()> {
+    fn validate(
+        &self,
+        message_id: [u8; 32],
+        source_chain_id: u32,
+        payload: &Vec<u8>,
+    ) -> Result<()> {
         let message = Payload::decode(&payload)?;
 
         // Verify the message_id matches the decoded payload
@@ -71,10 +78,17 @@ impl ReceiveMessage<'_> {
             return err!(BridgeError::InvalidDestinationPeer);
         }
 
+        // Only accept Earner Merkle Root payloads from the mainnet hub
+        if let PayloadData::EarnerMerkleRoot(_payload) = &message.data {
+            if source_chain_id != ETHEREUM_CHAIN_ID {
+                return err!(BridgeError::InvalidSourceChain);
+            }
+        }
+
         Ok(())
     }
 
-    #[access_control(ctx.accounts.validate(message_id, &payload))]
+    #[access_control(ctx.accounts.validate(message_id, source_chain_id, &payload))]
     pub fn handler<'info>(
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
         message_id: [u8; 32],
