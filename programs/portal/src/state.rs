@@ -3,6 +3,8 @@ use std::cmp::max;
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::spl_associated_token_account::solana_program::keccak;
 
+pub const ETHEREUM_CHAIN_ID: u32 = 1;
+
 #[constant]
 pub const GLOBAL_SEED: &[u8] = b"global";
 #[constant]

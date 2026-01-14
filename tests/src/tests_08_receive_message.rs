@@ -5,8 +5,8 @@ use anchor_lang::{system_program, AnchorDeserialize, InstructionData, ToAccountM
 use anyhow::Result;
 use common::ext_swap::accounts::SwapGlobal;
 use common::{
-    earn, ext_swap, CancelReportPayload, Extension, IndexPayload, PayloadData, PayloadHeader,
-    TokenTransferPayload,
+    earn, ext_swap, CancelReportPayload, EarnerMerkleRootPayload, Extension, IndexPayload,
+    PayloadData, PayloadHeader, TokenTransferPayload,
 };
 use common::{
     hyperlane_adapter::constants::PAYER_SEED, pda, portal::constants::GLOBAL_SEED, require_metas,
@@ -378,6 +378,42 @@ fn test_08_change_destination_mint() -> Result<()> {
         "Invalid error: {}",
         err
     );
+
+    Ok(())
+}
+
+#[test]
+fn test_09_receive_merkle_root() -> Result<()> {
+    let signer = get_signer();
+    let client = Client::new(Cluster::Localnet, signer.clone());
+    let program = client.program(wormhole_adapter::ID)?;
+
+    let message_id = [47u8; 32];
+
+    let mut payload = create_default_payload(message_id, SOLANA_CHAIN_ID, portal::ID.to_bytes());
+    payload.header.payload_type = 5;
+    payload.data = PayloadData::EarnerMerkleRoot(EarnerMerkleRootPayload {
+        merkle_root: [7u8; 32],
+        index: 1_700_000_000,
+    });
+
+    // Message coming from Arbitrum
+    let vaa = create_default_vaa(23, ETHEREUM_WORMHOLE_TRANSCEIVER, payload.clone());
+    let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
+
+    let result = program
+        .request()
+        .accounts(create_receive_message_accounts(signer.pubkey(), message_id))
+        .args(wormhole_instruction::ReceiveMessage {
+            vaa_body: vaa.to_bytes(),
+            guardian_set_index: 0,
+        })
+        .accounts(metas)
+        .send();
+
+    assert!(result.is_err());
+    let err = result.err().unwrap().to_string();
+    assert!(err.contains("InvalidSourceChain"), "Invalid error: {}", err);
 
     Ok(())
 }
