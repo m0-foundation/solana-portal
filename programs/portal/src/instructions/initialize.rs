@@ -32,12 +32,14 @@ impl Initialize<'_> {
         ctx: Context<Self>,
         chain_id: u32,
         isolated_hub_chain_id: Option<u32>,
+        evm_m_mint: [u8; 32],
     ) -> Result<()> {
         ctx.accounts.portal_global.set_inner(PortalGlobal {
             admin: ctx.accounts.admin.key(),
             bump: ctx.bumps.portal_global,
             m_index: 0,
             m_mint: ctx.accounts.earn_global.m_mint,
+            evm_m_mint,
             outgoing_paused: false,
             incoming_paused: false,
             chain_id,

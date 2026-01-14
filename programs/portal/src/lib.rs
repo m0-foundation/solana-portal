@@ -29,8 +29,9 @@ pub mod portal {
         ctx: Context<Initialize>,
         chain_id: u32,
         isolated_hub_chain_id: Option<u32>,
+        evm_m_mint: [u8; 32],
     ) -> Result<()> {
-        Initialize::handler(ctx, chain_id, isolated_hub_chain_id)
+        Initialize::handler(ctx, chain_id, isolated_hub_chain_id, evm_m_mint)
     }
 
     pub fn pause_outgoing(ctx: Context<ManagePause>) -> Result<()> {
@@ -97,14 +98,14 @@ pub mod portal {
         )
     }
 
-    // pub fn send_m<'info>(
-    //     ctx: Context<'_, '_, '_, 'info, SendM<'info>>,
-    //     amount: u64,
-    //     destination_chain_id: u32,
-    //     recipient: [u8; 32],
-    // ) -> Result<()> {
-    //     SendM::handler(ctx, amount, destination_chain_id, recipient)
-    // }
+    pub fn send_m<'info>(
+        ctx: Context<'_, '_, '_, 'info, SendM<'info>>,
+        amount: u64,
+        destination_chain_id: u32,
+        recipient: [u8; 32],
+    ) -> Result<()> {
+        SendM::handler(ctx, amount, destination_chain_id, recipient)
+    }
 
     pub fn send_fill_report<'info>(
         ctx: Context<'_, '_, '_, 'info, SendReport<'info>>,
