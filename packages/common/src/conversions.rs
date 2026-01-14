@@ -23,9 +23,9 @@ pub fn amount_to_principal_down(amount: u128, multiplier: f64) -> u128 {
         .expect("underflow")
 }
 
-pub fn principal_to_amount_down(principal: u128, multiplier: f64) -> u128 {
+pub fn principal_to_amount_down(principal: u64, multiplier: f64) -> u128 {
     if multiplier == 1.0 {
-        return principal;
+        return principal as u128;
     }
 
     let index = (multiplier * INDEX_SCALE_F64).trunc() as u128;

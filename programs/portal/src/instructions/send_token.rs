@@ -193,7 +193,7 @@ impl SendToken<'_> {
         )?;
 
         let scaled_m_amount = common::principal_to_amount_down(
-            m_amount as u128,
+            m_amount,
             common::get_scaled_ui_config(&ctx.accounts.m_mint.to_account_info())?
                 .multiplier
                 .into(),
