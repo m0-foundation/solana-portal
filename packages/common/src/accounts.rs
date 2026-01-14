@@ -43,6 +43,7 @@ pub struct TokenTransferPayloadAccounts<'info> {
     // Remaining accounts specific to TokenTransferPayload
     pub extension_mint: AccountInfo<'info>,
     pub recipient_token_account: AccountInfo<'info>,
+    pub recipient_m_account: AccountInfo<'info>,
     pub authority_m_token_account: AccountInfo<'info>,
     pub extension_m_vault: AccountInfo<'info>,
     pub extension_m_vault_authority: AccountInfo<'info>,
@@ -70,6 +71,15 @@ impl TokenTransferPayload {
             accounts.extension_token_program.key,
         );
         if accounts.recipient_token_account.key() != recipient_token_account {
+            return err!(BridgeError::InvalidRemainingAccount);
+        }
+
+        let recipient_m_account = get_associated_token_address_with_program_id(
+            &self.recipient.into(),
+            accounts.m_mint.key,
+            accounts.m_token_program.key,
+        );
+        if accounts.recipient_m_account.key() != recipient_m_account {
             return err!(BridgeError::InvalidRemainingAccount);
         }
 

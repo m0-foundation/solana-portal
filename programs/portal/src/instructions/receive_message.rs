@@ -1,5 +1,8 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface;
+use anchor_spl::{
+    token_2022::spl_token_2022::state::AccountState,
+    token_interface::{self, TokenAccount},
+};
 use common::{
     earn::{self, cpi::accounts::PropagateIndex},
     ext_swap,
@@ -213,31 +216,58 @@ impl ReceiveMessage<'_> {
             principal.try_into().unwrap(),
         )?;
 
-        // Wrap $M to extension tokens
-        ext_swap::cpi::wrap(
-            CpiContext::new_with_signer(
-                accounts.swap_program,
-                ext_swap::cpi::accounts::Wrap {
-                    signer: ctx.accounts.portal_authority.to_account_info(), // Signer owns the $M tokens
-                    wrap_authority: Some(ctx.accounts.portal_authority.to_account_info()),
-                    swap_global: accounts.swap_global,
-                    to_global: accounts.extension_global,
-                    to_mint: accounts.extension_mint,
-                    m_mint: accounts.m_mint,
-                    m_token_account: accounts.authority_m_token_account,
-                    to_token_account: accounts.recipient_token_account,
-                    to_m_vault_auth: accounts.extension_m_vault_authority,
-                    to_mint_authority: accounts.extension_mint_authority,
-                    to_m_vault: accounts.extension_m_vault,
-                    to_token_program: accounts.extension_token_program,
-                    m_token_program: accounts.m_token_program,
-                    to_ext_program: accounts.extension_program,
-                    system_program: ctx.accounts.system_program.to_account_info(),
-                },
-                &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
-            ),
-            principal.try_into().unwrap(),
-        )?;
+        // Check if $M should be sent directly to recipient or wrapped
+        let should_receive_m = payload.destination_token
+            == ctx.accounts.portal_global.m_mint.to_bytes()
+            && accounts
+                .recipient_m_account
+                .try_borrow_data()
+                .ok()
+                .and_then(|data| TokenAccount::try_deserialize(&mut data.as_ref()).ok())
+                // Account must be initialized and not frozen
+                .map_or(false, |account| account.state == AccountState::Initialized);
+
+        if should_receive_m {
+            // Transfer $M to recipient
+            token_interface::transfer(
+                CpiContext::new_with_signer(
+                    accounts.m_token_program.to_account_info(),
+                    token_interface::Transfer {
+                        from: accounts.authority_m_token_account.clone(),
+                        to: accounts.recipient_m_account.clone(),
+                        authority: ctx.accounts.portal_authority.to_account_info(),
+                    },
+                    &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
+                ),
+                principal.try_into().unwrap(),
+            )?;
+        } else {
+            // Wrap $M to extension tokens
+            ext_swap::cpi::wrap(
+                CpiContext::new_with_signer(
+                    accounts.swap_program,
+                    ext_swap::cpi::accounts::Wrap {
+                        signer: ctx.accounts.portal_authority.to_account_info(), // Signer owns the $M tokens
+                        wrap_authority: Some(ctx.accounts.portal_authority.to_account_info()),
+                        swap_global: accounts.swap_global,
+                        to_global: accounts.extension_global,
+                        to_mint: accounts.extension_mint,
+                        m_mint: accounts.m_mint,
+                        m_token_account: accounts.authority_m_token_account,
+                        to_token_account: accounts.recipient_token_account,
+                        to_m_vault_auth: accounts.extension_m_vault_authority,
+                        to_mint_authority: accounts.extension_mint_authority,
+                        to_m_vault: accounts.extension_m_vault,
+                        to_token_program: accounts.extension_token_program,
+                        m_token_program: accounts.m_token_program,
+                        to_ext_program: accounts.extension_program,
+                        system_program: ctx.accounts.system_program.to_account_info(),
+                    },
+                    &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
+                ),
+                principal.try_into().unwrap(),
+            )?;
+        }
 
         emit!(TokenReceived {
             source_chain_id,

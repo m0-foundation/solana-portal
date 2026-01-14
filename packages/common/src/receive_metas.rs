@@ -69,6 +69,11 @@ pub fn require_metas(
                 &extension_mint,
                 &extension_token_program,
             );
+            let recipient_m_account = get_associated_token_address_with_program_id(
+                &token_transfer.recipient.into(),
+                &m_mint,
+                &token_2022::ID,
+            );
             let extention_m_vault = get_associated_token_address_with_program_id(
                 &extension_m_vault_auth,
                 &m_mint,
@@ -87,6 +92,7 @@ pub fn require_metas(
                 AccountMeta::new_readonly(token_2022::ID, false),
                 AccountMeta::new(extension_mint, false),
                 AccountMeta::new(recipient_token_account, false),
+                AccountMeta::new(recipient_m_account, false),
                 AccountMeta::new(authority_m_token_account, false),
                 AccountMeta::new(extention_m_vault, false),
                 AccountMeta::new_readonly(extension_m_vault_auth, false),

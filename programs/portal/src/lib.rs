@@ -97,6 +97,15 @@ pub mod portal {
         )
     }
 
+    // pub fn send_m<'info>(
+    //     ctx: Context<'_, '_, '_, 'info, SendM<'info>>,
+    //     amount: u64,
+    //     destination_chain_id: u32,
+    //     recipient: [u8; 32],
+    // ) -> Result<()> {
+    //     SendM::handler(ctx, amount, destination_chain_id, recipient)
+    // }
+
     pub fn send_fill_report<'info>(
         ctx: Context<'_, '_, '_, 'info, SendReport<'info>>,
         order_id: [u8; 32],
