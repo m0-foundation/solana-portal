@@ -65,6 +65,21 @@ pub mod portal {
         EnableCrossSpokeTransfers::handler(ctx)
     }
 
+    pub fn set_permissioned_path(
+        ctx: Context<SetPermissionedPath>,
+        extension_mint: Pubkey,
+        destination_token: [u8; 32],
+    ) -> Result<()> {
+        SetPermissionedPath::handler(ctx, extension_mint, destination_token)
+    }
+
+    pub fn remove_permissioned_path(
+        ctx: Context<RemovePermissionedPath>,
+        extension_mint: Pubkey,
+    ) -> Result<()> {
+        RemovePermissionedPath::handler(ctx, extension_mint)
+    }
+
     /// Outbound Instructions
 
     pub fn send_index<'info>(

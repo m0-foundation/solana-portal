@@ -7,7 +7,10 @@ use common::{
 
 use crate::{
     instructions::send_message,
-    state::{PortalGlobal, AUTHORITY_SEED, GLOBAL_SEED, MINT_AUTHORITY_SEED, M_VAULT_SEED},
+    state::{
+        PermissionedExtension, PortalGlobal, AUTHORITY_SEED, GLOBAL_SEED, MINT_AUTHORITY_SEED,
+        M_VAULT_SEED, PERMISSIONED_PATH_SEED,
+    },
 };
 
 #[derive(Accounts)]
@@ -48,6 +51,13 @@ pub struct SendToken<'info> {
 
     #[account(mut)]
     pub extension_mint: InterfaceAccount<'info, Mint>,
+
+    #[account(
+        seeds = [PERMISSIONED_PATH_SEED, extension_mint.key().as_ref()],
+        bump,
+    )]
+    /// CHECK: account may not be initialized
+    pub permissioned_path: AccountInfo<'info>,
 
     #[account(
         mut,
@@ -106,7 +116,12 @@ pub struct SendToken<'info> {
 }
 
 impl SendToken<'_> {
-    fn validate(&self, amount: u64, destination_chain_id: u32) -> Result<()> {
+    fn validate(
+        &self,
+        amount: u64,
+        destination_token: [u8; 32],
+        destination_chain_id: u32,
+    ) -> Result<()> {
         if self.portal_global.outgoing_paused {
             return err!(BridgeError::Paused);
         }
@@ -135,10 +150,20 @@ impl SendToken<'_> {
             return err!(BridgeError::InvalidAmount);
         }
 
+        // If permissioned path exists, validate destination token
+        if !self.permissioned_path.data_is_empty() {
+            let mut data_slice: &[u8] = &self.permissioned_path.try_borrow_data()?;
+            let permissioned_extension = PermissionedExtension::deserialize(&mut data_slice)?;
+
+            if permissioned_extension.destination_token != destination_token {
+                return err!(BridgeError::InvalidDestinationToken);
+            }
+        }
+
         Ok(())
     }
 
-    #[access_control(ctx.accounts.validate(amount, destination_chain_id))]
+    #[access_control(ctx.accounts.validate(amount, destination_token, destination_chain_id))]
     pub fn handler<'info>(
         ctx: Context<'_, '_, '_, 'info, SendToken<'info>>,
         amount: u64,

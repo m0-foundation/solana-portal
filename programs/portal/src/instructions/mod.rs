@@ -1,6 +1,7 @@
 pub mod enable_cross_spoke_transfers;
 pub mod initialize;
 pub mod pause;
+pub mod permissioned_path;
 pub mod receive_message;
 pub mod send_index;
 pub mod send_merkle_root;
@@ -14,6 +15,7 @@ use common::{hyperlane_adapter, wormhole_adapter, BridgeError, PayloadData};
 pub use enable_cross_spoke_transfers::*;
 pub use initialize::*;
 pub use pause::*;
+pub use permissioned_path::*;
 pub use receive_message::*;
 pub use send_index::*;
 pub use send_merkle_root::*;

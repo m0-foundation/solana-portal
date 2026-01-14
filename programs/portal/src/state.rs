@@ -13,6 +13,8 @@ pub const MINT_AUTHORITY_SEED: &[u8] = b"mint_authority";
 pub use common::interfaces::AUTHORITY_SEED;
 #[constant]
 pub const MESSAGE_SEED: &[u8] = b"message";
+#[constant]
+pub const PERMISSIONED_PATH_SEED: &[u8] = b"permissioned_path";
 
 #[account]
 #[derive(InitSpace)]
@@ -66,6 +68,14 @@ pub struct BridgeMessage {
 
 impl BridgeMessage {
     pub const SIZE: usize = BridgeMessage::INIT_SPACE + BridgeMessage::DISCRIMINATOR.len();
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct PermissionedExtension {
+    pub extension_mint: Pubkey,
+    pub destination_token: [u8; 32],
+    pub bump: u8,
 }
 
 #[event]

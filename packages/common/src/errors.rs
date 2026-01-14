@@ -43,4 +43,6 @@ pub enum BridgeError {
     InvalidDestinationPeer,
     InvalidPayload,
     InvalidReturnData,
+    #[msg("Destination token not valid for this permissioned extension")]
+    InvalidDestinationToken,
 }
