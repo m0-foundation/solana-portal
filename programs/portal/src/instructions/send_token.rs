@@ -192,8 +192,15 @@ impl SendToken<'_> {
             m_amount,
         )?;
 
+        let scaled_m_amount = common::principal_to_amount_down(
+            m_amount,
+            common::get_scaled_ui_config(&ctx.accounts.m_mint.to_account_info())?
+                .multiplier
+                .into(),
+        );
+
         let payload = PayloadData::TokenTransfer(TokenTransferPayload {
-            amount: m_amount as u128,
+            amount: scaled_m_amount,
             destination_token,
             sender: ctx.accounts.sender.key().to_bytes(),
             recipient,
