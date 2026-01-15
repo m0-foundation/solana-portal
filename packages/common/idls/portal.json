@@ -181,6 +181,146 @@
       "args": []
     },
     {
+      "name": "claim_m_balance",
+      "discriminator": [
+        40,
+        231,
+        208,
+        20,
+        70,
+        24,
+        144,
+        159
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": [
+            "portal_global"
+          ]
+        },
+        {
+          "name": "portal_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "portal_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority_m_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "portal_authority"
+              },
+              {
+                "kind": "account",
+                "path": "m_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "m_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "m_mint"
+        },
+        {
+          "name": "destination_token_account",
+          "docs": [
+            "Destination token account for claimed M tokens (admin specifies any valid M token account)"
+          ],
+          "writable": true
+        },
+        {
+          "name": "m_token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": {
+            "option": "u64"
+          }
+        }
+      ]
+    },
+    {
       "name": "enable_cross_spoke_transfers",
       "discriminator": [
         14,
@@ -2001,6 +2141,32 @@
       ]
     },
     {
+      "name": "MBalanceClaimed",
+      "discriminator": [
+        243,
+        168,
+        124,
+        70,
+        238,
+        205,
+        79,
+        145
+      ]
+    },
+    {
+      "name": "MBalanceStored",
+      "discriminator": [
+        123,
+        28,
+        142,
+        205,
+        171,
+        228,
+        140,
+        219
+      ]
+    },
+    {
       "name": "MTokenIndexReceived",
       "discriminator": [
         8,
@@ -2426,6 +2592,86 @@
       }
     },
     {
+      "name": "MBalanceClaimed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "destination",
+            "type": "pubkey"
+          },
+          {
+            "name": "remaining_unclaimed",
+            "type": "u128"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MBalanceStored",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "source_chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "bridge_adapter",
+            "type": "pubkey"
+          },
+          {
+            "name": "destination_token",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "sender",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "recipient",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "principal_amount",
+            "type": "u128"
+          },
+          {
+            "name": "message_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "MTokenIndexReceived",
       "type": {
         "kind": "struct",
@@ -2496,11 +2742,18 @@
             }
           },
           {
+            "name": "unclaimed_m_balance",
+            "docs": [
+              "Aggregate principal amount of M tokens stored when destination_token is not whitelisted"
+            ],
+            "type": "u128"
+          },
+          {
             "name": "padding",
             "type": {
               "array": [
                 "u8",
-                128
+                112
               ]
             }
           }

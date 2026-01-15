@@ -1,4 +1,5 @@
 pub mod bridge_path;
+pub mod claim_m_balance;
 pub mod enable_cross_spoke_transfers;
 pub mod initialize;
 pub mod pause;
@@ -13,6 +14,7 @@ use anchor_lang::prelude::*;
 use m0_portal_common::{hyperlane_adapter, wormhole_adapter, BridgeError, PayloadData};
 
 pub use bridge_path::*;
+pub use claim_m_balance::*;
 pub use enable_cross_spoke_transfers::*;
 pub use initialize::*;
 pub use pause::*;
