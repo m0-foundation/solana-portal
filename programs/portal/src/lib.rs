@@ -65,6 +65,10 @@ pub mod portal {
         EnableCrossSpokeTransfers::handler(ctx)
     }
 
+    pub fn claim_m_balance(ctx: Context<ClaimMBalance>, amount: Option<u64>) -> Result<()> {
+        ClaimMBalance::handler(ctx, amount)
+    }
+
     /// Bridge Path Configuration Instructions
 
     pub fn initialize_chain_paths(

@@ -4,9 +4,10 @@ use anchor_spl::{
     token_2022::Token2022,
     token_interface::{self, Mint},
 };
+use borsh::BorshDeserialize;
 use m0_portal_common::{
     earn::{self, accounts::EarnGlobal, cpi::accounts::PropagateIndex, program::Earn},
-    ext_swap,
+    ext_swap::{self, accounts::SwapGlobal},
     order_book::{
         self,
         types::{CancelReport, FillReport},
@@ -16,8 +17,8 @@ use m0_portal_common::{
 };
 
 use crate::state::{
-    BridgeMessage, PortalGlobal, AUTHORITY_SEED, ETHEREUM_CHAIN_ID, GLOBAL_SEED, MESSAGE_SEED,
-    SEPOLIA_CHAIN_ID,
+    BridgeMessage, MTokenIndexReceived, PortalGlobal, AUTHORITY_SEED, ETHEREUM_CHAIN_ID,
+    GLOBAL_SEED, MESSAGE_SEED, SEPOLIA_CHAIN_ID,
 };
 
 #[derive(Accounts)]
@@ -226,7 +227,7 @@ impl ReceiveMessage<'_> {
                 .into(),
         );
 
-        // Mint to authority account which will wrap it to the recipient
+        // Mint to authority account
         token_interface::mint_to(
             CpiContext::new_with_signer(
                 ctx.accounts.m_token_program.to_account_info(),
@@ -240,56 +241,76 @@ impl ReceiveMessage<'_> {
             principal.try_into().unwrap(),
         )?;
 
-        // Initialize recipient token account if not already initialized
-        if accounts.recipient_token_account.data_is_empty() {
-            associated_token::create(CpiContext::new(
-                accounts.associated_token_program.to_account_info(),
-                associated_token::Create {
-                    payer: ctx.accounts.payer.to_account_info(),
-                    associated_token: accounts.recipient_token_account.clone(),
-                    authority: accounts.recipient.clone(),
-                    mint: accounts.extension_mint.clone(),
-                    system_program: ctx.accounts.system_program.to_account_info(),
-                    token_program: accounts.extension_token_program.clone(),
-                },
-            ))?;
+        // Check if destination_token is in whitelist
+        let is_whitelisted = {
+            let data = accounts.swap_global.try_borrow_data()?;
+            let extensions = SwapGlobal::deserialize(&mut &data[..])?.whitelisted_extensions;
+            extensions
+                .iter()
+                .any(|ext| ext.mint.eq(&payload.destination_token.into()))
+        };
+
+        if is_whitelisted {
+            // Normal flow: wrap $M to extension tokens
+            ext_swap::cpi::wrap(
+                CpiContext::new_with_signer(
+                    accounts.swap_program,
+                    ext_swap::cpi::accounts::Wrap {
+                        signer: ctx.accounts.portal_authority.to_account_info(),
+                        wrap_authority: Some(ctx.accounts.portal_authority.to_account_info()),
+                        swap_global: accounts.swap_global,
+                        to_global: accounts.extension_global,
+                        to_mint: accounts.extension_mint,
+                        m_mint: ctx.accounts.m_mint.to_account_info(),
+                        m_token_account: accounts.authority_m_token_account,
+                        to_token_account: accounts.recipient_token_account,
+                        to_m_vault_auth: accounts.extension_m_vault_authority,
+                        to_mint_authority: accounts.extension_mint_authority,
+                        to_m_vault: accounts.extension_m_vault,
+                        to_token_program: accounts.extension_token_program,
+                        m_token_program: ctx.accounts.m_token_program.to_account_info(),
+                        to_ext_program: accounts.extension_program,
+                        system_program: ctx.accounts.system_program.to_account_info(),
+                    },
+                    &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
+                ),
+                principal.try_into().unwrap(),
+            )?;
+
+            emit!(TokenReceived {
+                source_chain_id,
+                bridge_adapter: *ctx.accounts.adapter_authority.as_ref().owner,
+                destination_token: payload.destination_token,
+                sender: payload.sender,
+                recipient: payload.recipient,
+                amount: payload.amount,
+                message_id: message_id,
+            });
+        } else {
+            // Store flow: M stays in portal ATA, track balance
+            msg!(
+                "Destination token {} not whitelisted, storing {} M principal",
+                Pubkey::from(payload.destination_token),
+                principal
+            );
+
+            ctx.accounts.portal_global.unclaimed_m_balance = ctx
+                .accounts
+                .portal_global
+                .unclaimed_m_balance
+                .checked_add(principal)
+                .ok_or(BridgeError::InvalidAmount)?;
+
+            emit!(MBalanceStored {
+                source_chain_id,
+                bridge_adapter: *ctx.accounts.adapter_authority.as_ref().owner,
+                destination_token: payload.destination_token,
+                sender: payload.sender,
+                recipient: payload.recipient,
+                principal_amount: principal,
+                message_id: message_id,
+            });
         }
-
-        // Wrap $M to extension tokens
-        ext_swap::cpi::wrap(
-            CpiContext::new_with_signer(
-                accounts.swap_program,
-                ext_swap::cpi::accounts::Wrap {
-                    signer: ctx.accounts.portal_authority.to_account_info(), // Signer owns the $M tokens
-                    wrap_authority: Some(ctx.accounts.portal_authority.to_account_info()),
-                    swap_global: accounts.swap_global,
-                    to_global: accounts.extension_global,
-                    to_mint: accounts.extension_mint,
-                    m_mint: ctx.accounts.m_mint.to_account_info(),
-                    m_token_account: accounts.authority_m_token_account,
-                    to_token_account: accounts.recipient_token_account,
-                    to_m_vault_auth: accounts.extension_m_vault_authority,
-                    to_mint_authority: accounts.extension_mint_authority,
-                    to_m_vault: accounts.extension_m_vault,
-                    to_token_program: accounts.extension_token_program,
-                    m_token_program: ctx.accounts.m_token_program.to_account_info(),
-                    to_ext_program: accounts.extension_program,
-                    system_program: ctx.accounts.system_program.to_account_info(),
-                },
-                &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
-            ),
-            principal.try_into().unwrap(),
-        )?;
-
-        emit!(TokenReceived {
-            source_chain_id,
-            bridge_adapter: *ctx.accounts.adapter_authority.as_ref().owner,
-            destination_token: payload.destination_token,
-            sender: payload.sender,
-            recipient: payload.recipient,
-            amount: payload.amount,
-            message_id: message_id,
-        });
 
         Ok(())
     }
@@ -434,7 +455,12 @@ pub struct CancelReportReceived {
 }
 
 #[event]
-pub struct MTokenIndexReceived {
-    pub index: u128,
+pub struct MBalanceStored {
+    pub source_chain_id: u32,
+    pub bridge_adapter: Pubkey,
+    pub destination_token: [u8; 32],
+    pub sender: [u8; 32],
+    pub recipient: [u8; 32],
+    pub principal_amount: u128,
     pub message_id: [u8; 32],
 }
