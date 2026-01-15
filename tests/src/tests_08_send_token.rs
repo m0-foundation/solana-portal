@@ -20,8 +20,8 @@ use m0_portal_common::{
     },
     m_ext::{self, accounts::ExtGlobalV2},
     pda,
-    portal::constants::{GLOBAL_SEED, MINT_AUTHORITY_SEED, M_VAULT_SEED},
-    wormhole_adapter::{self},
+    portal::constants::{CHAIN_PATHS_SEED, GLOBAL_SEED, MINT_AUTHORITY_SEED, M_VAULT_SEED},
+    wormhole_adapter::{self, accounts::WormholeGlobal},
     HyperlaneRemainingAccounts, PayloadData, WormholeRemainingAccounts, AUTHORITY_SEED,
 };
 
@@ -100,6 +100,13 @@ impl TestCtx {
             extension_token_account,
             ext_m_vault,
         })
+    }
+
+    fn chain_paths_pda(&self, destination_chain_id: u32) -> Pubkey {
+        pda!(
+            &[CHAIN_PATHS_SEED, &destination_chain_id.to_be_bytes()],
+            &portal::ID
+        )
     }
 
     fn hyperlane_remaining_accounts(&self, nonce: u64) -> Result<HyperlaneRemainingAccounts> {
@@ -193,6 +200,7 @@ fn whitelist_portal_authority(ctx: &TestCtx) -> Result<()> {
 #[test]
 fn test_01_send_token_wormhole_unauthorized_unwrapper() -> Result<()> {
     let ctx = TestCtx::new()?;
+    let destination_chain_id: u32 = 2;
 
     let err = ctx
         .portal
@@ -201,6 +209,7 @@ fn test_01_send_token_wormhole_unauthorized_unwrapper() -> Result<()> {
             sender: ctx.portal.payer(),
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
             swap_global: ctx.swap_global_pk,
+            chain_paths: ctx.chain_paths_pda(destination_chain_id),
             extension_global: ctx.ext_global_pk,
             m_mint: ctx.m_mint,
             extension_mint: ctx.extension_mint,
@@ -220,7 +229,7 @@ fn test_01_send_token_wormhole_unauthorized_unwrapper() -> Result<()> {
         .args(portal_instruction::SendToken {
             amount: AMOUNT,
             destination_token: ctx.m_mint.to_bytes(),
-            destination_chain_id: 2,
+            destination_chain_id,
             recipient: ctx.portal.payer().to_bytes(),
         })
         .accounts(WormholeRemainingAccounts::account_metas(false))
@@ -239,6 +248,7 @@ fn test_01_send_token_wormhole_unauthorized_unwrapper() -> Result<()> {
 #[test]
 fn test_02_send_token_hyperlane_unauthorized_unwrapper() -> Result<()> {
     let ctx = TestCtx::new()?;
+    let destination_chain_id: u32 = 2;
     let hyp = ctx.hyperlane_remaining_accounts(0)?;
 
     let instructions = ctx
@@ -248,6 +258,7 @@ fn test_02_send_token_hyperlane_unauthorized_unwrapper() -> Result<()> {
             sender: ctx.portal.payer(),
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
             swap_global: pda!(&[GLOBAL_SEED], &ext_swap::ID),
+            chain_paths: ctx.chain_paths_pda(destination_chain_id),
             extension_global: pda!(&[GLOBAL_SEED], &ctx.extension_program),
             m_mint: ctx.m_mint,
             extension_mint: ctx.extension_mint,
@@ -267,7 +278,7 @@ fn test_02_send_token_hyperlane_unauthorized_unwrapper() -> Result<()> {
         .args(portal_instruction::SendToken {
             amount: AMOUNT,
             destination_token: ctx.m_mint.to_bytes(),
-            destination_chain_id: 2,
+            destination_chain_id,
             recipient: ctx.portal.payer().to_bytes(),
         })
         .accounts(hyp.to_account_metas())
@@ -291,6 +302,7 @@ fn test_02_send_token_hyperlane_unauthorized_unwrapper() -> Result<()> {
 #[test]
 fn test_03_send_token_wormhole_insufficient_funds() -> Result<()> {
     let ctx = TestCtx::new()?;
+    let destination_chain_id: u32 = 2;
 
     // whitelist portal authority as unwrapper and wrap authority
     whitelist_portal_authority(&ctx)?;
@@ -302,6 +314,7 @@ fn test_03_send_token_wormhole_insufficient_funds() -> Result<()> {
             sender: ctx.portal.payer(),
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
             swap_global: pda!(&[GLOBAL_SEED], &ext_swap::ID),
+            chain_paths: ctx.chain_paths_pda(destination_chain_id),
             extension_global: pda!(&[GLOBAL_SEED], &ctx.extension_program),
             m_mint: ctx.m_mint,
             extension_mint: ctx.extension_mint,
@@ -321,7 +334,7 @@ fn test_03_send_token_wormhole_insufficient_funds() -> Result<()> {
         .args(portal_instruction::SendToken {
             amount: AMOUNT,
             destination_token: ctx.m_mint.to_bytes(),
-            destination_chain_id: 2,
+            destination_chain_id,
             recipient: ctx.portal.payer().to_bytes(),
         })
         .accounts(WormholeRemainingAccounts::account_metas(false))
@@ -338,6 +351,7 @@ fn test_03_send_token_wormhole_insufficient_funds() -> Result<()> {
 #[test]
 fn test_04_send_token_wormhole_success() -> Result<()> {
     let ctx = TestCtx::new()?;
+    let destination_chain_id: u32 = 1;
 
     // fund's payer's wrapped_m ata
     set_token_account(
@@ -371,6 +385,7 @@ fn test_04_send_token_wormhole_success() -> Result<()> {
             sender: ctx.portal.payer(),
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
             swap_global: pda!(&[GLOBAL_SEED], &ext_swap::ID),
+            chain_paths: ctx.chain_paths_pda(destination_chain_id),
             extension_global: pda!(&[GLOBAL_SEED], &ctx.extension_program),
             m_mint: ctx.m_mint,
             extension_mint: ctx.extension_mint,
@@ -390,7 +405,7 @@ fn test_04_send_token_wormhole_success() -> Result<()> {
         .args(portal_instruction::SendToken {
             amount: AMOUNT,
             destination_token: ctx.m_mint.to_bytes(),
-            destination_chain_id: 1,
+            destination_chain_id,
             recipient: ctx.portal.payer().to_bytes(),
         })
         .accounts(WormholeRemainingAccounts::account_metas(false))
@@ -426,6 +441,7 @@ fn test_04_send_token_wormhole_success() -> Result<()> {
 #[test]
 fn test_05_send_token_hyperlane_success() -> Result<()> {
     let ctx = TestCtx::new()?;
+    let destination_chain_id: u32 = 1;
     let hyp = ctx.hyperlane_remaining_accounts(1)?;
 
     let instructions = ctx
@@ -436,6 +452,7 @@ fn test_05_send_token_hyperlane_success() -> Result<()> {
             sender: ctx.portal.payer(),
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
             swap_global: pda!(&[GLOBAL_SEED], &ext_swap::ID),
+            chain_paths: ctx.chain_paths_pda(destination_chain_id),
             extension_global: pda!(&[GLOBAL_SEED], &ctx.extension_program),
             m_mint: ctx.m_mint,
             extension_mint: ctx.extension_mint,
@@ -455,7 +472,7 @@ fn test_05_send_token_hyperlane_success() -> Result<()> {
         .args(portal_instruction::SendToken {
             amount: AMOUNT,
             destination_token: ctx.m_mint.to_bytes(),
-            destination_chain_id: 1,
+            destination_chain_id,
             recipient: ctx.portal.payer().to_bytes(),
         })
         .accounts(hyp.to_account_metas())
@@ -486,6 +503,7 @@ fn test_05_send_token_hyperlane_success() -> Result<()> {
 #[test]
 fn test_06_send_token_invalid_m_mint() -> Result<()> {
     let ctx = TestCtx::new()?;
+    let destination_chain_id: u32 = 2;
 
     let err = ctx
         .portal
@@ -494,6 +512,7 @@ fn test_06_send_token_invalid_m_mint() -> Result<()> {
             sender: ctx.portal.payer(),
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
             swap_global: pda!(&[GLOBAL_SEED], &ext_swap::ID),
+            chain_paths: ctx.chain_paths_pda(destination_chain_id),
             extension_global: pda!(&[GLOBAL_SEED], &ctx.extension_program),
             m_mint: Pubkey::new_unique(), // invalid m_mint
             extension_mint: ctx.extension_mint,
@@ -513,7 +532,7 @@ fn test_06_send_token_invalid_m_mint() -> Result<()> {
         .args(portal_instruction::SendToken {
             amount: AMOUNT,
             destination_token: ctx.m_mint.to_bytes(),
-            destination_chain_id: 2,
+            destination_chain_id,
             recipient: ctx.portal.payer().to_bytes(),
         })
         .accounts(WormholeRemainingAccounts::account_metas(false))

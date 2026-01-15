@@ -65,6 +65,33 @@ pub mod portal {
         EnableCrossSpokeTransfers::handler(ctx)
     }
 
+    /// Bridge Path Configuration Instructions
+
+    pub fn initialize_chain_paths(
+        ctx: Context<InitializeChainPaths>,
+        destination_chain_id: u32,
+    ) -> Result<()> {
+        InitializeChainPaths::handler(ctx, destination_chain_id)
+    }
+
+    pub fn add_bridge_path(
+        ctx: Context<AddBridgePath>,
+        destination_chain_id: u32,
+        source_mint: Pubkey,
+        destination_token: [u8; 32],
+    ) -> Result<()> {
+        AddBridgePath::handler(ctx, destination_chain_id, source_mint, destination_token)
+    }
+
+    pub fn remove_bridge_path(
+        ctx: Context<RemoveBridgePath>,
+        destination_chain_id: u32,
+        source_mint: Pubkey,
+        destination_token: [u8; 32],
+    ) -> Result<()> {
+        RemoveBridgePath::handler(ctx, destination_chain_id, source_mint, destination_token)
+    }
+
     /// Outbound Instructions
 
     pub fn send_index<'info>(

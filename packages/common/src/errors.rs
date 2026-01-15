@@ -44,4 +44,10 @@ pub enum BridgeError {
     InvalidPayload,
     InvalidReturnData,
     InvalidSourceChain,
+    #[msg("Bridge path is not supported")]
+    UnsupportedBridgePath,
+    #[msg("Bridge path already exists")]
+    PathAlreadyExists,
+    #[msg("Bridge path not found")]
+    PathNotFound,
 }

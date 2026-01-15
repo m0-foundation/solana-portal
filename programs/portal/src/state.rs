@@ -14,6 +14,8 @@ pub const MINT_AUTHORITY_SEED: &[u8] = b"mint_authority";
 pub use m0_portal_common::interfaces::AUTHORITY_SEED;
 #[constant]
 pub const MESSAGE_SEED: &[u8] = b"message";
+#[constant]
+pub const CHAIN_PATHS_SEED: &[u8] = b"chain_paths";
 
 #[account]
 #[derive(InitSpace)]
@@ -60,6 +62,52 @@ impl BridgeMessage {
     pub const SIZE: usize = BridgeMessage::INIT_SPACE + BridgeMessage::DISCRIMINATOR.len();
 }
 
+/// Represents an allowed bridging path from a source token to a destination token
+#[derive(Clone, AnchorSerialize, AnchorDeserialize, InitSpace, PartialEq, Debug)]
+pub struct BridgePath {
+    /// Extension mint on Solana (e.g., wM mint pubkey)
+    pub source_mint: Pubkey,
+    /// Token address on destination chain (e.g., Ethereum wM address)
+    pub destination_token: [u8; 32],
+}
+
+impl BridgePath {
+    pub const SIZE: usize = 32 + 32; // 64 bytes
+}
+
+/// Per-destination-chain configuration of allowed bridging paths
+#[account]
+#[derive(InitSpace)]
+pub struct ChainBridgePaths {
+    pub bump: u8,
+    pub destination_chain_id: u32,
+    #[max_len(20)]
+    pub paths: Vec<BridgePath>,
+}
+
+impl ChainBridgePaths {
+    /// Check if a given source_mint → destination_token path is supported
+    pub fn is_path_supported(&self, source_mint: &Pubkey, destination_token: &[u8; 32]) -> bool {
+        self.paths
+            .iter()
+            .any(|p| p.source_mint == *source_mint && p.destination_token == *destination_token)
+    }
+
+    /// Calculate account size for a given number of paths
+    pub fn size(num_paths: usize) -> usize {
+        8 +  // discriminator
+        1 +  // bump
+        4 +  // destination_chain_id
+        4 +  // Vec length prefix
+        (num_paths * BridgePath::SIZE)
+    }
+}
+
+#[event]
+pub struct MTokenIndexReceived {
+    pub index: u128,
+    pub message_id: [u8; 32],
+}
 #[cfg(test)]
 mod tests {
     use super::*;
