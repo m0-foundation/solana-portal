@@ -47,6 +47,98 @@
       "args": []
     },
     {
+      "name": "add_bridge_path",
+      "discriminator": [
+        161,
+        105,
+        130,
+        57,
+        245,
+        226,
+        124,
+        236
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "portal_global"
+          ]
+        },
+        {
+          "name": "portal_global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "chain_paths",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  104,
+                  97,
+                  105,
+                  110,
+                  95,
+                  112,
+                  97,
+                  116,
+                  104,
+                  115
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "destination_chain_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "destination_chain_id",
+          "type": "u32"
+        },
+        {
+          "name": "source_mint",
+          "type": "pubkey"
+        },
+        {
+          "name": "destination_token",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "cancel_admin_transfer",
       "discriminator": [
         38,
@@ -240,6 +332,88 @@
           "type": {
             "option": "u32"
           }
+        }
+      ]
+    },
+    {
+      "name": "initialize_chain_paths",
+      "docs": [
+        "Bridge Path Configuration Instructions"
+      ],
+      "discriminator": [
+        58,
+        17,
+        209,
+        169,
+        47,
+        79,
+        27,
+        53
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "portal_global"
+          ]
+        },
+        {
+          "name": "portal_global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "chain_paths",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  104,
+                  97,
+                  105,
+                  110,
+                  95,
+                  112,
+                  97,
+                  116,
+                  104,
+                  115
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "destination_chain_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "destination_chain_id",
+          "type": "u32"
         }
       ]
     },
@@ -553,6 +727,98 @@
         {
           "name": "payload",
           "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "remove_bridge_path",
+      "discriminator": [
+        72,
+        202,
+        104,
+        24,
+        227,
+        65,
+        72,
+        4
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "portal_global"
+          ]
+        },
+        {
+          "name": "portal_global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "chain_paths",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  104,
+                  97,
+                  105,
+                  110,
+                  95,
+                  112,
+                  97,
+                  116,
+                  104,
+                  115
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "destination_chain_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "destination_chain_id",
+          "type": "u32"
+        },
+        {
+          "name": "source_mint",
+          "type": "pubkey"
+        },
+        {
+          "name": "destination_token",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
         }
       ]
     },
@@ -1185,6 +1451,36 @@
           }
         },
         {
+          "name": "chain_paths",
+          "docs": [
+            "Chain-specific bridge path configuration"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  104,
+                  97,
+                  105,
+                  110,
+                  95,
+                  112,
+                  97,
+                  116,
+                  104,
+                  115
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "destination_chain_id"
+              }
+            ]
+          }
+        },
+        {
           "name": "extension_global",
           "writable": true,
           "pda": {
@@ -1560,6 +1856,19 @@
       ]
     },
     {
+      "name": "ChainBridgePaths",
+      "discriminator": [
+        89,
+        30,
+        178,
+        53,
+        154,
+        232,
+        75,
+        140
+      ]
+    },
+    {
       "name": "EarnGlobal",
       "discriminator": [
         229,
@@ -1601,6 +1910,32 @@
   ],
   "events": [
     {
+      "name": "BridgePathAdded",
+      "discriminator": [
+        60,
+        60,
+        161,
+        230,
+        207,
+        42,
+        101,
+        174
+      ]
+    },
+    {
+      "name": "BridgePathRemoved",
+      "discriminator": [
+        245,
+        243,
+        242,
+        225,
+        230,
+        129,
+        158,
+        165
+      ]
+    },
+    {
       "name": "CancelReportReceived",
       "discriminator": [
         139,
@@ -1624,6 +1959,19 @@
         120,
         12,
         31
+      ]
+    },
+    {
+      "name": "ChainPathsInitialized",
+      "discriminator": [
+        182,
+        96,
+        36,
+        123,
+        226,
+        44,
+        109,
+        244
       ]
     },
     {
@@ -1701,6 +2049,86 @@
           {
             "name": "consumed",
             "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "BridgePath",
+      "docs": [
+        "Represents an allowed bridging path from a source token to a destination token"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "source_mint",
+            "docs": [
+              "Extension mint on Solana (e.g., wM mint pubkey)"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "destination_token",
+            "docs": [
+              "Token address on destination chain (e.g., Ethereum wM address)"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "BridgePathAdded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "destination_chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "source_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "destination_token",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "BridgePathRemoved",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "destination_chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "source_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "destination_token",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           }
         ]
       }
@@ -1804,6 +2232,47 @@
           {
             "name": "amount_in_to_refund",
             "type": "u128"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ChainBridgePaths",
+      "docs": [
+        "Per-destination-chain configuration of allowed bridging paths"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "destination_chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "paths",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "BridgePath"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ChainPathsInitialized",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "destination_chain_id",
+            "type": "u32"
           }
         ]
       }
@@ -2198,6 +2667,11 @@
     }
   ],
   "constants": [
+    {
+      "name": "CHAIN_PATHS_SEED",
+      "type": "bytes",
+      "value": "[99, 104, 97, 105, 110, 95, 112, 97, 116, 104, 115]"
+    },
     {
       "name": "GLOBAL_SEED",
       "type": "bytes",

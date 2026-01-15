@@ -238,7 +238,10 @@ mod tests_05_pausing;
 mod tests_06_set_lut;
 
 #[cfg(test)]
-mod tests_07_send_token;
+mod tests_07_bridge_path;
 
 #[cfg(test)]
-mod tests_08_receive_message;
+mod tests_08_send_token;
+
+#[cfg(test)]
+mod tests_09_receive_message;
