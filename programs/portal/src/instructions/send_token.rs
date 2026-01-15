@@ -192,7 +192,9 @@ impl SendToken<'_> {
             m_amount,
         )?;
 
-        let scaled_m_amount = common::principal_to_amount_down(
+        // Round up to account for downward rounding in extensions
+        // This results in the user receiving the expected M unit value on the receiving chain
+        let scaled_m_amount = common::principal_to_amount_up(
             m_amount,
             common::get_scaled_ui_config(&ctx.accounts.m_mint.to_account_info())?
                 .multiplier

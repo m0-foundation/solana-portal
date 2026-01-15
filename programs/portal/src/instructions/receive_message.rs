@@ -207,7 +207,8 @@ impl ReceiveMessage<'_> {
         )?;
 
         // Get the principal amount of $M tokens to transfer using the multiplier
-        let principal = common::amount_to_principal_down(
+        // We round up to ensure that the user receives the UI amount specified when converted back to M units
+        let principal = common::amount_to_principal_up(
             payload.amount,
             common::get_scaled_ui_config(&accounts.m_mint)?
                 .new_multiplier
