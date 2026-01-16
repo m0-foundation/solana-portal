@@ -92,7 +92,7 @@ impl ChainBridgePaths {
     pub fn is_path_supported(&self, source_mint: &Pubkey, destination_token: &[u8; 32]) -> bool {
         self.paths
             .iter()
-            .any(|p| p.source_mint == *source_mint && p.destination_token == *destination_token)
+            .any(|p| &p.source_mint == source_mint && &p.destination_token == destination_token)
     }
 
     /// Calculate account size for a given number of paths
