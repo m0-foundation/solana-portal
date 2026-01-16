@@ -125,6 +125,42 @@ impl TestCtx {
             false,
         ))
     }
+
+    fn build_versioned_tx_with_lut(
+        &self,
+        instructions: Vec<solana_sdk::instruction::Instruction>,
+    ) -> Result<VersionedTransaction> {
+        let data_wh = self
+            .rpc
+            .get_account_data(&pda!(&[GLOBAL_SEED], &wormhole_adapter::ID))?;
+        let global_wh = WormholeGlobal::try_deserialize(&mut data_wh.as_slice())?;
+        let lut = global_wh
+            .receive_lut
+            .expect("expected receive LUT to be initialized");
+
+        let recent_blockhash = self.rpc.get_latest_blockhash()?;
+
+        let lut_account = self.rpc.get_account(&lut)?;
+        let address_lookup_table = AddressLookupTableAccount {
+            key: lut,
+            addresses: AddressLookupTable::deserialize(&lut_account.data)?
+                .addresses
+                .to_vec(),
+        };
+
+        let message = v0::Message::try_compile(
+            &self.portal.payer(),
+            &instructions,
+            &[address_lookup_table],
+            recent_blockhash,
+        )?;
+
+        let versioned_message = VersionedMessage::V0(message);
+        Ok(VersionedTransaction::try_new(
+            versioned_message,
+            &[get_signer()],
+        )?)
+    }
 }
 
 fn assert_err_contains(err: impl ToString, any_of: &[&str], must: &[&str]) {
@@ -254,6 +290,7 @@ fn test_02_send_token_hyperlane_unauthorized_unwrapper() -> Result<()> {
     let instructions = ctx
         .portal
         .request()
+        .instruction(ComputeBudgetInstruction::set_compute_unit_limit(600_000))
         .accounts(portal_accounts::SendToken {
             sender: ctx.portal.payer(),
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
@@ -284,7 +321,7 @@ fn test_02_send_token_hyperlane_unauthorized_unwrapper() -> Result<()> {
         .accounts(hyp.to_account_metas())
         .instructions()?;
 
-    let versioned_tx = build_versioned_tx_with_lut(ctx.rpc.clone(), instructions)?;
+    let versioned_tx = ctx.build_versioned_tx_with_lut(instructions)?;
     let err = ctx
         .rpc
         .send_and_confirm_transaction(&versioned_tx)
@@ -478,7 +515,7 @@ fn test_05_send_token_hyperlane_success() -> Result<()> {
         .accounts(hyp.to_account_metas())
         .instructions()?;
 
-    let versioned_tx = build_versioned_tx_with_lut(ctx.rpc.clone(), instructions)?;
+    let versioned_tx = ctx.build_versioned_tx_with_lut(instructions)?;
     ctx.rpc.send_and_confirm_transaction(&versioned_tx)?;
 
     // assert the $M was burned
