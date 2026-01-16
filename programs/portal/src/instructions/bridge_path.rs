@@ -50,7 +50,7 @@ pub struct ChainPathsInitialized {
 
 /// Add a new bridge path to a chain's configuration
 #[derive(Accounts)]
-#[instruction(destination_chain_id: u32, source_mint: Pubkey, destination_token: [u8; 32])]
+#[instruction(destination_chain_id: u32)]
 pub struct AddBridgePath<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
