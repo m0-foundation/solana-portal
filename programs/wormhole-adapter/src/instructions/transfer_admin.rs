@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::BridgeError;
+use m0_portal_common::BridgeError;
 
 use crate::state::{WormholeGlobal, GLOBAL_SEED};
 

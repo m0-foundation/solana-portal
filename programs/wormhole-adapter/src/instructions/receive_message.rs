@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::spl_associated_token_account::solana_program::keccak;
-use common::{
+use m0_portal_common::{
     portal::{self, accounts::PortalGlobal, program::Portal},
     wormhole_verify_vaa_shim::{self, cpi::accounts::VerifyHash, program::WormholeVerifyVaaShim},
     BridgeError,

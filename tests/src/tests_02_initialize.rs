@@ -1,6 +1,7 @@
 use anchor_lang::AccountDeserialize;
 use anyhow::Result;
-use common::{
+use hyperlane_adapter::state::HyperlaneGlobal;
+use m0_portal_common::{
     hyperlane_adapter::{
         accounts::AccountMetasData,
         constants::{DEFAULT_IGP_ACCOUNT, DEFAULT_IGP_PROGRAM_ID, DEFAULT_OVERHEAD_IGP_ACCOUNT},
@@ -8,7 +9,6 @@ use common::{
     pda,
     portal::{self, accounts::PortalGlobal},
 };
-use hyperlane_adapter::state::HyperlaneGlobal;
 use std::vec;
 use wormhole_adapter::state::WormholeGlobal;
 
@@ -93,7 +93,7 @@ fn test_04_check_hyperlane_metas_pda() -> Result<()> {
     ))?;
 
     let account_metas = AccountMetasData::try_deserialize(&mut data_account_metas.as_slice())?;
-    assert_eq!(account_metas.extensions.len(), 4);
+    assert_eq!(account_metas.extensions.len(), 5);
 
     Ok(())
 }

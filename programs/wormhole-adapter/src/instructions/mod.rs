@@ -8,7 +8,7 @@ pub mod set_peer;
 pub mod transfer_admin;
 
 use anchor_lang::prelude::*;
-use common::{BridgeError, Payload, PayloadData, PayloadHeader, TokenTransferPayload};
+use m0_portal_common::{BridgeError, Payload, PayloadData, PayloadHeader, TokenTransferPayload};
 pub use initialize::*;
 pub use pause::*;
 pub use receive_message::*;

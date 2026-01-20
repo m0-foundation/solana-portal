@@ -1,10 +1,12 @@
 [package]
-name = "common"
+name = "m0-portal-common"
+description = "Shared common utilities for M0 portal"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
 
 [lib]
-name = "common"
+name = "m0_portal_common"
 crate-type = ["lib"]
 
 [features]
@@ -13,6 +15,6 @@ idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build", "anchor-lang-idl"]
 [dependencies]
 anchor-lang.workspace = true
 anchor-spl.workspace = true
-common-macros = { path = "../common-macros" }
+m0-portal-common-macros = { path = "../common-macros", version = "0.1.0"}
 borsh.workspace = true
 anchor-lang-idl = { version = "0.1.2", optional = true }

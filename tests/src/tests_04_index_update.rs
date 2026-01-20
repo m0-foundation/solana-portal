@@ -1,7 +1,7 @@
 use anchor_client::{Client, Cluster};
 use anchor_lang::{system_program, AccountDeserialize};
 use anyhow::Result;
-use common::{
+use m0_portal_common::{
     earn,
     hyperlane_adapter::{
         self,

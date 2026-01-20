@@ -12,7 +12,7 @@ pub const M_VAULT_SEED: &[u8] = b"m_vault";
 #[constant]
 pub const MINT_AUTHORITY_SEED: &[u8] = b"mint_authority";
 #[constant]
-pub use common::interfaces::AUTHORITY_SEED;
+pub use m0_portal_common::interfaces::AUTHORITY_SEED;
 #[constant]
 pub const MESSAGE_SEED: &[u8] = b"message";
 

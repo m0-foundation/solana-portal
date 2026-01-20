@@ -2,7 +2,7 @@ use anchor_lang::{
     prelude::*,
     system_program::{transfer, Transfer},
 };
-use common::{
+use m0_portal_common::{
     portal,
     wormhole_post_message_shim::{self, program::WormholePostMessageShim, types::Finality},
     BridgeError, Payload, PayloadData, PayloadHeader, AUTHORITY_SEED,

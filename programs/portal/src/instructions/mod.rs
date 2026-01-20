@@ -9,7 +9,7 @@ pub mod send_token;
 pub mod transfer_admin;
 
 use anchor_lang::prelude::*;
-use common::{hyperlane_adapter, wormhole_adapter, BridgeError, PayloadData};
+use m0_portal_common::{hyperlane_adapter, wormhole_adapter, BridgeError, PayloadData};
 
 pub use enable_cross_spoke_transfers::*;
 pub use initialize::*;
@@ -78,7 +78,7 @@ pub fn send_message<'info>(
             payload.encode(),
             payload_type,
         )
-    } else if bridge_adapter.key() == common::hyperlane_adapter::ID {
+    } else if bridge_adapter.key() == m0_portal_common::hyperlane_adapter::ID {
         if remaining_accounts.len() < 12 {
             return err!(BridgeError::InvalidRemainingAccounts);
         }

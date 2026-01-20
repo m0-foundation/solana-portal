@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface};
-use common::{
+use m0_portal_common::{
     ext_swap::{self, accounts::SwapGlobal, program::ExtSwap},
     BridgeAdapter, BridgeError, PayloadData, TokenTransferPayload,
 };
@@ -192,9 +192,9 @@ impl SendToken<'_> {
             m_amount,
         )?;
 
-        let scaled_m_amount = common::principal_to_amount_down(
+        let scaled_m_amount = m0_portal_common::principal_to_amount_down(
             m_amount,
-            common::get_scaled_ui_config(&ctx.accounts.m_mint.to_account_info())?
+            m0_portal_common::get_scaled_ui_config(&ctx.accounts.m_mint.to_account_info())?
                 .multiplier
                 .into(),
         );

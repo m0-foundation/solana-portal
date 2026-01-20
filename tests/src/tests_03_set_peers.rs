@@ -1,7 +1,7 @@
 use anchor_client::{Client, Cluster};
 use anchor_lang::{system_program, AccountDeserialize};
 use anyhow::Result;
-use common::{pda, Peer};
+use m0_portal_common::{pda, Peer};
 use hyperlane_adapter::state::HyperlaneGlobal;
 use portal::state::GLOBAL_SEED;
 use std::vec;

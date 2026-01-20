@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::earn::{self, accounts::EarnGlobal};
+use m0_portal_common::earn::{self, accounts::EarnGlobal};
 
 use crate::state::{PortalGlobal, GLOBAL_SEED};
 

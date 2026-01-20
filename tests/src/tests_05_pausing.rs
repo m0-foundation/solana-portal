@@ -1,6 +1,6 @@
 use anchor_lang::AccountDeserialize;
 use anyhow::Result;
-use common::{
+use m0_portal_common::{
     pda,
     portal::{self, accounts::PortalGlobal},
 };

@@ -3,7 +3,7 @@ use anchor_lang::prelude::{
     program::{get_return_data, invoke_signed},
     *,
 };
-use common::{portal, BridgeError, Payload, PayloadData, PayloadHeader, AUTHORITY_SEED};
+use m0_portal_common::{portal, BridgeError, Payload, PayloadData, PayloadHeader, AUTHORITY_SEED};
 use std::vec;
 
 use crate::{

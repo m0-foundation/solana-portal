@@ -11,7 +11,7 @@ programs
 └── wormhole-adapter
 packages
 ├── common
-└── common-macros
+└── m0-portal-common-macros
 runbooks
 ├── deployment
 ├── initialize

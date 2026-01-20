@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::{Extension, Peers};
+use m0_portal_common::{Extension, Peers};
 
 #[constant]
 pub const GLOBAL_SEED: &[u8] = b"global";
@@ -107,7 +107,7 @@ impl HyperlaneUserGlobal {
 mod tests {
     use super::*;
     use anchor_lang::AnchorSerialize;
-    use common::Peer;
+    use m0_portal_common::Peer;
 
     #[test]
     fn test_hyperlane_global_size() {

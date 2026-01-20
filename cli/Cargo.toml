@@ -17,7 +17,7 @@ base64 = "0.21"
 bs58 = "0.5"
 anchor-client.workspace = true
 anchor-lang.workspace = true
-common = { path = "../packages/common" }
+m0-portal-common = { path = "../packages/common" }
 wormhole-adapter = { path = "../programs/wormhole-adapter" }
 solana-rpc-client-types = "2.0"
 solana-rpc-client = "2.0"

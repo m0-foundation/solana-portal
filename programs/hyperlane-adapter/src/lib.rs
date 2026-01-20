@@ -5,7 +5,7 @@ mod instructions;
 pub mod state;
 
 use anchor_lang::prelude::*;
-use common::Peer;
+use m0_portal_common::Peer;
 use consts::{
     HANDLE_ACCOUNT_METAS_DISCRIMINATOR, HANDLE_DISCRIMINATOR, ISM_DISCRIMINATOR,
     ISM_METAS_DISCRIMINATOR,

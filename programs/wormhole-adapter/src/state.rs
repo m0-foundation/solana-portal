@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::{BridgeError, Peers};
+use m0_portal_common::{BridgeError, Peers};
 
 use crate::instructions::VaaBody;
 
@@ -49,7 +49,7 @@ impl WormholeGlobal {
 mod tests {
     use super::*;
     use anchor_lang::AnchorSerialize;
-    use common::Peer;
+    use m0_portal_common::Peer;
 
     #[test]
     fn test_wormhole_global_size() {

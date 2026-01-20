@@ -1,5 +1,5 @@
 use anyhow::Result;
-use common::Payload;
+use m0_portal_common::Payload;
 
 const DESTINATION_PEER: [u8; 32] = [
     11, 106, 134, 128, 106, 3, 84, 200, 43, 143, 4, 158, 183, 93, 156, 151, 227, 112, 166, 240,

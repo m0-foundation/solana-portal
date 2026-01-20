@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::ext_swap::{self, accounts::SwapGlobal};
+use m0_portal_common::ext_swap::{self, accounts::SwapGlobal};
 
 use crate::state::{
     AccountMetasData, DASH_SEED, GLOBAL_SEED, METADATA_SEED_1, METADATA_SEED_2, METADATA_SEED_3,

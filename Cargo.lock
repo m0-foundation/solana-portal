@@ -1292,26 +1292,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "common"
-version = "0.1.0"
-dependencies = [
- "anchor-lang",
- "anchor-lang-idl",
- "anchor-spl",
- "borsh 0.10.4",
- "common-macros",
-]
-
-[[package]]
-name = "common-macros"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.108",
-]
-
-[[package]]
 name = "compression-codecs"
 version = "0.4.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2614,8 +2594,8 @@ dependencies = [
  "anchor-spl",
  "borsh 0.10.4",
  "cfg-if",
- "common",
  "fixed-hash",
+ "m0-portal-common",
  "solana-security-txt",
 ]
 
@@ -3039,6 +3019,26 @@ name = "lru-slab"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "112b39cec0b298b6c1999fee3e31427f74f676e4cb9879ed1a121b43661a4154"
+
+[[package]]
+name = "m0-portal-common"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-lang-idl",
+ "anchor-spl",
+ "borsh 0.10.4",
+ "m0-portal-common-macros",
+]
+
+[[package]]
+name = "m0-portal-common-macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.108",
+]
 
 [[package]]
 name = "macro-string"
@@ -3544,7 +3544,7 @@ dependencies = [
  "alloy-sol-types",
  "anchor-lang",
  "anchor-spl",
- "common",
+ "m0-portal-common",
  "solana-security-txt",
 ]
 
@@ -3560,8 +3560,8 @@ dependencies = [
  "borsh 0.10.4",
  "bs58",
  "clap",
- "common",
  "executor-account-resolver-svm",
+ "m0-portal-common",
  "reqwest",
  "serde",
  "serde_json",
@@ -7649,10 +7649,10 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "anyhow",
- "common",
  "ctor",
  "hex",
  "hyperlane-adapter",
+ "m0-portal-common",
  "once_cell",
  "portal",
  "reqwest",
@@ -8657,8 +8657,8 @@ dependencies = [
  "anchor-spl",
  "base64 0.22.1",
  "cfg-if",
- "common",
  "executor-account-resolver-svm",
+ "m0-portal-common",
  "solana-address-lookup-table-interface",
  "solana-security-txt",
  "wormhole-svm-definitions",

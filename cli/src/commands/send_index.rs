@@ -1,6 +1,6 @@
 use anchor_lang::{pubkey, system_program, AccountDeserialize};
 use anyhow::{Context, Result};
-use common::{
+use m0_portal_common::{
     hyperlane_adapter::{
         self,
         accounts::{HyperlaneGlobal, HyperlaneUserGlobal},

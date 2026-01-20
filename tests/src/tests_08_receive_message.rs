@@ -3,12 +3,12 @@ use std::str::FromStr;
 use anchor_client::{Client, Cluster};
 use anchor_lang::{system_program, AnchorDeserialize, InstructionData, ToAccountMetas};
 use anyhow::Result;
-use common::ext_swap::accounts::SwapGlobal;
-use common::{
+use m0_portal_common::ext_swap::accounts::SwapGlobal;
+use m0_portal_common::{
     earn, ext_swap, CancelReportPayload, EarnerMerkleRootPayload, Extension, IndexPayload,
     PayloadData, PayloadHeader, TokenTransferPayload,
 };
-use common::{
+use m0_portal_common::{
     hyperlane_adapter::constants::PAYER_SEED, pda, portal::constants::GLOBAL_SEED, require_metas,
     wormhole_adapter::constants::GUARDIAN_SET_SEED, wormhole_verify_vaa_shim, Payload,
     AUTHORITY_SEED,

@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::pda;
+use m0_portal_common::pda;
 
 use crate::{
     instructions::{SerializableAccountMeta, SimulationReturnData},

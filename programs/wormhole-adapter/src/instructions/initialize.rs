@@ -3,7 +3,7 @@ use anchor_spl::{
     token_2022::{spl_token_2022::instruction::AuthorityType, Token2022},
     token_interface::{self, Mint},
 };
-use common::{portal, Peers, AUTHORITY_SEED};
+use m0_portal_common::{portal, Peers, AUTHORITY_SEED};
 
 use crate::state::{WormholeGlobal, GLOBAL_SEED};
 

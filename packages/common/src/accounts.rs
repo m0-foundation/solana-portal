@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::get_associated_token_address_with_program_id;
 use borsh::{BorshDeserialize, BorshSerialize};
-use common_macros::ExtractAccounts;
+use m0_portal_common_macros::ExtractAccounts;
 
 use crate::{
     earn,

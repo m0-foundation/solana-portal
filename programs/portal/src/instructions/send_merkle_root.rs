@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::{
+use m0_portal_common::{
     earn::{self, accounts::EarnGlobal},
     BridgeAdapter, BridgeError, EarnerMerkleRootPayload, PayloadData,
 };

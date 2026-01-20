@@ -5,7 +5,7 @@ pub mod instructions;
 pub mod state;
 
 use anchor_lang::prelude::*;
-use common::Peer;
+use m0_portal_common::Peer;
 use executor_account_resolver_svm::{InstructionGroups, Resolver, RESOLVER_EXECUTE_VAA_V1};
 use instructions::*;
 

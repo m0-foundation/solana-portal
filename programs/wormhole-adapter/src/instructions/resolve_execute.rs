@@ -5,7 +5,7 @@ use anchor_lang::{
 use anchor_spl::associated_token::spl_associated_token_account::solana_program::{
    system_instruction::MAX_PERMITTED_DATA_LENGTH,
 };
-use common::{
+use m0_portal_common::{
     earn::{self, accounts::EarnGlobal},
     ext_swap::{self, accounts::SwapGlobal},
     pda,
@@ -51,7 +51,7 @@ impl ResolveExecuteVaa {
             let mut accounts_required = vec![System::id(), result_account, global];
 
             match vaa.payload.data {
-                common::PayloadData::TokenTransfer(_) => {
+                m0_portal_common::PayloadData::TokenTransfer(_) => {
                     let earn_global = pda!(&[GLOBAL_SEED], &earn::ID);
                     let earn_global_data: Option<EarnGlobal> =
                         deserialize_account(ctx.remaining_accounts, earn_global).ok();
@@ -76,7 +76,7 @@ impl ResolveExecuteVaa {
 
                     accounts_required.extend([earn_global, swap_global]);
                 }
-                common::PayloadData::FillReport(ref report) => {
+                m0_portal_common::PayloadData::FillReport(ref report) => {
                     accounts_required.push(report.token_in.into());
 
                     // Need mint account to see token program

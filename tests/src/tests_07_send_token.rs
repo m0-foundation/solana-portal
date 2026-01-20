@@ -18,7 +18,7 @@ use spl_token_2022::{
     state::{Account as TokenAccount2022, AccountState},
 };
 
-use common::{
+use m0_portal_common::{
     ext_swap::{self, accounts::SwapGlobal},
     hyperlane_adapter::{
         self,

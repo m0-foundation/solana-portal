@@ -4,7 +4,7 @@ use anchor_lang::pubkey;
 use anyhow::{Context, Result};
 use base64::{prelude::BASE64_STANDARD, Engine};
 use borsh::BorshDeserialize;
-use common::{
+use m0_portal_common::{
     pda,
     wormhole_adapter::{self, constants::GUARDIAN_SET_SEED},
 };

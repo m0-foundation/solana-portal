@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::{BridgeAdapter, BridgeError, IndexPayload, PayloadData};
+use m0_portal_common::{BridgeAdapter, BridgeError, IndexPayload, PayloadData};
 
 use crate::{
     instructions::send_message,

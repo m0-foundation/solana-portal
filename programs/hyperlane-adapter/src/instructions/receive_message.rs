@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::{
+use m0_portal_common::{
     pda,
     portal::{self, accounts::PortalGlobal, constants::MESSAGE_SEED, program::Portal},
     require_metas, BridgeError, Payload, AUTHORITY_SEED,

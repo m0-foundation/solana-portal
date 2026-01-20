@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface;
-use common::{
+use m0_portal_common::{
     earn::{self, cpi::accounts::PropagateIndex},
     ext_swap,
     order_book::{
@@ -207,9 +207,9 @@ impl ReceiveMessage<'_> {
         )?;
 
         // Get the principal amount of $M tokens to transfer using the multiplier
-        let principal = common::amount_to_principal_down(
+        let principal = m0_portal_common::amount_to_principal_down(
             payload.amount,
-            common::get_scaled_ui_config(&accounts.m_mint)?
+            m0_portal_common::get_scaled_ui_config(&accounts.m_mint)?
                 .new_multiplier
                 .into(),
         );
