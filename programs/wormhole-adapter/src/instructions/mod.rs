@@ -89,7 +89,7 @@ impl VaaBody {
         };
 
         #[cfg(not(feature = "legacy-ntt"))]
-        let payload = Payload::decode(&payload_bytes.to_vec());
+        let payload = Payload::decode(&payload_bytes.to_vec())?;
 
         Ok(VaaBody {
             timestamp: u32::from_be_bytes(timestamp_bytes.try_into().unwrap()),
