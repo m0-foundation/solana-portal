@@ -1,5 +1,4 @@
 pub mod bridge_path;
-pub mod claim_m_balance;
 pub mod enable_cross_spoke_transfers;
 pub mod initialize;
 pub mod pause;
@@ -9,12 +8,12 @@ pub mod send_merkle_root;
 pub mod send_report;
 pub mod send_token;
 pub mod transfer_admin;
+pub mod wrap_unclaimed;
 
 use anchor_lang::prelude::*;
 use m0_portal_common::{hyperlane_adapter, wormhole_adapter, BridgeError, PayloadData};
 
 pub use bridge_path::*;
-pub use claim_m_balance::*;
 pub use enable_cross_spoke_transfers::*;
 pub use initialize::*;
 pub use pause::*;
@@ -24,6 +23,7 @@ pub use send_merkle_root::*;
 pub use send_report::*;
 pub use send_token::*;
 pub use transfer_admin::*;
+pub use wrap_unclaimed::*;
 
 use crate::state::{PortalGlobal, AUTHORITY_SEED};
 

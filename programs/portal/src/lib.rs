@@ -5,6 +5,7 @@ pub mod state;
 
 use anchor_lang::prelude::*;
 use instructions::*;
+use state::BridgePath;
 
 #[cfg(not(feature = "no-entrypoint"))]
 solana_security_txt::security_txt! {
@@ -65,35 +66,33 @@ pub mod portal {
         EnableCrossSpokeTransfers::handler(ctx)
     }
 
-    pub fn claim_m_balance(ctx: Context<ClaimMBalance>, amount: Option<u64>) -> Result<()> {
-        ClaimMBalance::handler(ctx, amount)
+    pub fn wrap_unclaimed(ctx: Context<WrapUnclaimed>, amount: Option<u64>) -> Result<()> {
+        WrapUnclaimed::handler(ctx, amount)
     }
 
     /// Bridge Path Configuration Instructions
 
-    pub fn initialize_chain_paths(
-        ctx: Context<InitializeChainPaths>,
+    pub fn initialize_bridge_paths(
+        ctx: Context<InitializeBridgePaths>,
         destination_chain_id: u32,
     ) -> Result<()> {
-        InitializeChainPaths::handler(ctx, destination_chain_id)
+        InitializeBridgePaths::handler(ctx, destination_chain_id)
     }
 
     pub fn add_bridge_path(
         ctx: Context<AddBridgePath>,
         destination_chain_id: u32,
-        source_mint: Pubkey,
-        destination_token: [u8; 32],
+        path: BridgePath,
     ) -> Result<()> {
-        AddBridgePath::handler(ctx, destination_chain_id, source_mint, destination_token)
+        AddBridgePath::handler(ctx, destination_chain_id, path)
     }
 
     pub fn remove_bridge_path(
         ctx: Context<RemoveBridgePath>,
         destination_chain_id: u32,
-        source_mint: Pubkey,
-        destination_token: [u8; 32],
+        path: BridgePath,
     ) -> Result<()> {
-        RemoveBridgePath::handler(ctx, destination_chain_id, source_mint, destination_token)
+        RemoveBridgePath::handler(ctx, destination_chain_id, path)
     }
 
     /// Outbound Instructions

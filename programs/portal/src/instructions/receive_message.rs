@@ -220,12 +220,14 @@ impl ReceiveMessage<'_> {
         let accounts = payload.parse_and_validate_accounts(ctx.remaining_accounts.to_vec())?;
 
         // Get the principal amount of $M tokens to transfer using the multiplier
-        let principal = m0_portal_common::amount_to_principal_down(
+        let principal: u64 = m0_portal_common::amount_to_principal_down(
             payload.amount,
             m0_portal_common::get_scaled_ui_config(&ctx.accounts.m_mint.to_account_info())?
                 .new_multiplier
                 .into(),
-        );
+        )
+        .try_into()
+        .unwrap();
 
         // Mint to authority account
         token_interface::mint_to(
@@ -238,7 +240,7 @@ impl ReceiveMessage<'_> {
                 },
                 &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
             ),
-            principal.try_into().unwrap(),
+            principal,
         )?;
 
         // Check if destination_token is in whitelist
@@ -274,7 +276,7 @@ impl ReceiveMessage<'_> {
                     },
                     &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
                 ),
-                principal.try_into().unwrap(),
+                principal,
             )?;
 
             emit!(TokenReceived {
@@ -303,7 +305,6 @@ impl ReceiveMessage<'_> {
 
             emit!(MBalanceStored {
                 source_chain_id,
-                bridge_adapter: *ctx.accounts.adapter_authority.as_ref().owner,
                 destination_token: payload.destination_token,
                 sender: payload.sender,
                 recipient: payload.recipient,
@@ -457,10 +458,9 @@ pub struct CancelReportReceived {
 #[event]
 pub struct MBalanceStored {
     pub source_chain_id: u32,
-    pub bridge_adapter: Pubkey,
     pub destination_token: [u8; 32],
     pub sender: [u8; 32],
     pub recipient: [u8; 32],
-    pub principal_amount: u128,
+    pub principal_amount: u64,
     pub message_id: [u8; 32],
 }

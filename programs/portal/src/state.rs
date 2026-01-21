@@ -26,12 +26,15 @@ pub struct PortalGlobal {
     pub admin: Pubkey,
     pub outgoing_paused: bool,
     pub incoming_paused: bool,
+    /// The lastest index value to propagate to other chains
     pub m_index: u128,
+    /// To ensure bridge message ID uniqueness
     pub message_nonce: u64,
     pub pending_admin: Option<Pubkey>,
+    /// This portal is an isolated spoke
     pub isolated_hub_chain_id: Option<u32>,
     /// Aggregate principal amount of M tokens stored when destination_token is not whitelisted
-    pub unclaimed_m_balance: u128,
+    pub unclaimed_m_balance: u64,
     pub padding: [u8; 112],
 }
 
@@ -79,11 +82,9 @@ impl BridgePath {
 
 /// Per-destination-chain configuration of allowed bridging paths
 #[account]
-#[derive(InitSpace)]
 pub struct ChainBridgePaths {
     pub bump: u8,
     pub destination_chain_id: u32,
-    #[max_len(20)]
     pub paths: Vec<BridgePath>,
 }
 

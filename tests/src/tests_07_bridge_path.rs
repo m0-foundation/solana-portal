@@ -1,21 +1,18 @@
-use std::{str::FromStr, sync::Arc};
-
 use anchor_client::{Client, Cluster, Program};
 use anchor_lang::{prelude::Pubkey, system_program, AccountDeserialize};
 use anyhow::{Ok, Result};
-use solana_client::{nonce_utils::get_account, rpc_client::RpcClient};
-use solana_sdk::signature::Keypair;
-
-use common::{
+use m0_portal_common::{
     pda,
     portal::constants::{CHAIN_PATHS_SEED, GLOBAL_SEED},
 };
-
 use portal::{
     accounts as portal_accounts, instruction as portal_instruction, state::ChainBridgePaths,
 };
+use solana_client::rpc_client::RpcClient;
+use solana_sdk::signature::Keypair;
+use std::{str::FromStr, sync::Arc};
 
-use crate::{get_rpc_client, get_signer, set_account};
+use crate::{get_rpc_client, get_signer};
 
 struct BridgePathTestCtx {
     rpc: Arc<RpcClient>,
@@ -59,10 +56,6 @@ fn assert_err_contains(err: impl ToString, substrings: &[&str]) {
     }
 }
 
-// ============================================================================
-// Initialize Chain Paths Tests
-// ============================================================================
-
 #[test]
 fn test_01_initialize_chain_paths_for_chain_1() -> Result<()> {
     let ctx = BridgePathTestCtx::new()?;
@@ -70,13 +63,13 @@ fn test_01_initialize_chain_paths_for_chain_1() -> Result<()> {
 
     ctx.portal
         .request()
-        .accounts(portal_accounts::InitializeChainPaths {
+        .accounts(portal_accounts::InitializeBridgePaths {
             admin: ctx.portal.payer(),
             portal_global: ctx.portal_global,
             chain_paths: ctx.chain_paths_pda(destination_chain_id),
             system_program: system_program::ID,
         })
-        .args(portal_instruction::InitializeChainPaths {
+        .args(portal_instruction::InitializeBridgePaths {
             destination_chain_id,
         })
         .send()?;
@@ -100,13 +93,13 @@ fn test_02_initialize_chain_paths_for_chain_2() -> Result<()> {
 
     ctx.portal
         .request()
-        .accounts(portal_accounts::InitializeChainPaths {
+        .accounts(portal_accounts::InitializeBridgePaths {
             admin: ctx.portal.payer(),
             portal_global: ctx.portal_global,
             chain_paths: ctx.chain_paths_pda(destination_chain_id),
             system_program: system_program::ID,
         })
-        .args(portal_instruction::InitializeChainPaths {
+        .args(portal_instruction::InitializeBridgePaths {
             destination_chain_id,
         })
         .send()?;
@@ -131,13 +124,13 @@ fn test_03_initialize_chain_paths_already_exists() -> Result<()> {
     let err = ctx
         .portal
         .request()
-        .accounts(portal_accounts::InitializeChainPaths {
+        .accounts(portal_accounts::InitializeBridgePaths {
             admin: ctx.portal.payer(),
             portal_global: ctx.portal_global,
             chain_paths: ctx.chain_paths_pda(destination_chain_id),
             system_program: system_program::ID,
         })
-        .args(portal_instruction::InitializeChainPaths {
+        .args(portal_instruction::InitializeBridgePaths {
             destination_chain_id,
         })
         .send()
@@ -174,8 +167,10 @@ fn test_04_add_bridge_path_success() -> Result<()> {
         })
         .args(portal_instruction::AddBridgePath {
             destination_chain_id,
-            source_mint: ctx.extension_mint,
-            destination_token: ctx.m_mint.to_bytes(),
+            path: portal::state::BridgePath {
+                source_mint: ctx.extension_mint,
+                destination_token: ctx.m_mint.to_bytes(),
+            },
         })
         .send()?;
 
@@ -211,8 +206,10 @@ fn test_05_add_bridge_path_for_chain_2() -> Result<()> {
         })
         .args(portal_instruction::AddBridgePath {
             destination_chain_id,
-            source_mint: ctx.extension_mint,
-            destination_token: ctx.m_mint.to_bytes(),
+            path: portal::state::BridgePath {
+                source_mint: ctx.extension_mint,
+                destination_token: ctx.m_mint.to_bytes(),
+            },
         })
         .send()?;
 
@@ -244,8 +241,10 @@ fn test_06_add_bridge_path_duplicate_rejected() -> Result<()> {
         })
         .args(portal_instruction::AddBridgePath {
             destination_chain_id,
-            source_mint: ctx.extension_mint,
-            destination_token: ctx.m_mint.to_bytes(),
+            path: portal::state::BridgePath {
+                source_mint: ctx.extension_mint,
+                destination_token: ctx.m_mint.to_bytes(),
+            },
         })
         .send()
         .unwrap_err();
@@ -271,8 +270,10 @@ fn test_07_add_second_bridge_path() -> Result<()> {
         })
         .args(portal_instruction::AddBridgePath {
             destination_chain_id,
-            source_mint: ctx.m_mint,
-            destination_token: ctx.extension_mint.to_bytes(),
+            path: portal::state::BridgePath {
+                source_mint: ctx.m_mint,
+                destination_token: ctx.extension_mint.to_bytes(),
+            },
         })
         .send()?;
 
@@ -314,8 +315,10 @@ fn test_08_remove_bridge_path_success() -> Result<()> {
         })
         .args(portal_instruction::RemoveBridgePath {
             destination_chain_id,
-            source_mint: ctx.m_mint,
-            destination_token: ctx.extension_mint.to_bytes(),
+            path: portal::state::BridgePath {
+                source_mint: ctx.m_mint,
+                destination_token: ctx.extension_mint.to_bytes(),
+            },
         })
         .send()?;
 
@@ -354,8 +357,10 @@ fn test_09_remove_bridge_path_not_found() -> Result<()> {
         })
         .args(portal_instruction::RemoveBridgePath {
             destination_chain_id,
-            source_mint: Pubkey::new_unique(), // Non-existent path
-            destination_token: [0u8; 32],
+            path: portal::state::BridgePath {
+                source_mint: Pubkey::new_unique(), // Non-existent path
+                destination_token: [0u8; 32],
+            },
         })
         .send()
         .unwrap_err();
