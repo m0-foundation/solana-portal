@@ -3,7 +3,7 @@ use anchor_lang::{system_program, AccountDeserialize};
 use anyhow::Result;
 use hyperlane_adapter::state::HyperlaneGlobal;
 use m0_portal_common::{pda, Peer};
-use portal::state::GLOBAL_SEED;
+use portal::state::{ChainBridgePaths, CHAIN_PATHS_SEED, GLOBAL_SEED};
 use std::vec;
 use wormhole_adapter::{accounts, instruction, state::WormholeGlobal};
 
@@ -48,7 +48,11 @@ fn test_03_remove_peer() -> Result<()> {
 
     let program = client.program(wormhole_adapter::ID)?;
 
-    // Remove Optimism
+    let data_wh = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &wormhole_adapter::ID))?;
+    let global_wh = WormholeGlobal::try_deserialize(&mut data_wh.as_slice())?;
+    assert!(global_wh.peers.0.iter().any(|p| p.m0_chain_id == 42161));
+
+    // Remove Arbitrum
     program
         .request()
         .accounts(accounts::SetPeer {
@@ -58,7 +62,7 @@ fn test_03_remove_peer() -> Result<()> {
         })
         .args(instruction::SetPeer {
             peer: Peer {
-                m0_chain_id: 10,
+                m0_chain_id: 42161,
                 address: [0; 32],
                 adapter_chain_id: 24,
             },
@@ -67,7 +71,7 @@ fn test_03_remove_peer() -> Result<()> {
 
     let data_wh = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &wormhole_adapter::ID))?;
     let global_wh = WormholeGlobal::try_deserialize(&mut data_wh.as_slice())?;
-    assert!(global_wh.peers.0.iter().all(|p| p.m0_chain_id != 10));
+    assert!(global_wh.peers.0.iter().all(|p| p.m0_chain_id != 42161));
 
     Ok(())
 }
@@ -108,6 +112,24 @@ fn test_04_update_peer() -> Result<()> {
             .adapter_chain_id
             == 420
     );
+
+    Ok(())
+}
+
+#[test]
+fn test_05_bridge_path_config() -> Result<()> {
+    let client = get_rpc_client();
+
+    for chain_id in [1u32, 42161u32] {
+        let data = client.get_account_data(&pda!(
+            &[CHAIN_PATHS_SEED, &chain_id.to_be_bytes()],
+            &portal::ID
+        ))?;
+        let paths = ChainBridgePaths::try_deserialize(&mut data.as_slice())?;
+
+        assert_eq!(paths.destination_chain_id, chain_id);
+        assert_eq!(paths.paths.len(), 0);
+    }
 
     Ok(())
 }
