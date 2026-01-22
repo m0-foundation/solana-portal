@@ -143,10 +143,10 @@ pub fn run_surfpool_cmd(args: Vec<&str>) -> Result<String> {
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     if stdout.contains("x Failed") {
-        anyhow::bail!(
+        return Err(anyhow::anyhow!(
             "Error executing surfpool command: \n{}",
             stdout.split("x Failed: ").nth(1).unwrap()
-        );
+        ));
     }
     Ok(stdout)
 }

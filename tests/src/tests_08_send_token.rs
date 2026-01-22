@@ -44,6 +44,7 @@ struct TestCtx {
     extension_program: Pubkey,
     ext_global_pk: Pubkey,
     swap_global_pk: Pubkey,
+    destination_token: [u8; 32],
 
     portal_authority: Pubkey,
 
@@ -61,6 +62,8 @@ impl TestCtx {
         let m_mint = Pubkey::from_str("mzerojk9tg56ebsrEAhfkyc9VgKjTW2zDqp6C5mhjzH")?;
         let extension_mint = Pubkey::from_str("mzeroXDoBpRVhnEXBra27qzAMdxgpWVY3DzQW7xMVJp")?;
         let extension_program = Pubkey::from_str("wMXX1K1nca5W4pZr1piETe78gcAVVrEFi9f4g46uXko")?;
+        let destination_token =
+            hex::decode("000000000000000000000000437cc33344a0b27a429f795ff6b469c72698b291")?;
         let portal_authority = pda!(&[AUTHORITY_SEED], &portal::ID);
         let ext_global_pk = pda!(&[GLOBAL_SEED], &extension_program);
         let swap_global_pk = pda!(&[GLOBAL_SEED], &ext_swap::ID);
@@ -99,6 +102,7 @@ impl TestCtx {
             m_token_account,
             extension_token_account,
             ext_m_vault,
+            destination_token: destination_token.try_into().unwrap(),
         })
     }
 
@@ -236,7 +240,7 @@ fn whitelist_portal_authority(ctx: &TestCtx) -> Result<()> {
 #[test]
 fn test_01_send_token_wormhole_unauthorized_unwrapper() -> Result<()> {
     let ctx = TestCtx::new()?;
-    let destination_chain_id: u32 = 2;
+    let destination_chain_id: u32 = 1;
 
     let err = ctx
         .portal
@@ -264,7 +268,7 @@ fn test_01_send_token_wormhole_unauthorized_unwrapper() -> Result<()> {
         })
         .args(portal_instruction::SendToken {
             amount: AMOUNT,
-            destination_token: ctx.m_mint.to_bytes(),
+            destination_token: ctx.destination_token,
             destination_chain_id,
             recipient: ctx.portal.payer().to_bytes(),
         })
@@ -284,7 +288,7 @@ fn test_01_send_token_wormhole_unauthorized_unwrapper() -> Result<()> {
 #[test]
 fn test_02_send_token_hyperlane_unauthorized_unwrapper() -> Result<()> {
     let ctx = TestCtx::new()?;
-    let destination_chain_id: u32 = 2;
+    let destination_chain_id: u32 = 1;
     let hyp = ctx.hyperlane_remaining_accounts(0)?;
 
     let instructions = ctx
@@ -314,7 +318,7 @@ fn test_02_send_token_hyperlane_unauthorized_unwrapper() -> Result<()> {
         })
         .args(portal_instruction::SendToken {
             amount: AMOUNT,
-            destination_token: ctx.m_mint.to_bytes(),
+            destination_token: ctx.destination_token,
             destination_chain_id,
             recipient: ctx.portal.payer().to_bytes(),
         })
@@ -339,7 +343,7 @@ fn test_02_send_token_hyperlane_unauthorized_unwrapper() -> Result<()> {
 #[test]
 fn test_03_send_token_wormhole_insufficient_funds() -> Result<()> {
     let ctx = TestCtx::new()?;
-    let destination_chain_id: u32 = 2;
+    let destination_chain_id: u32 = 1;
 
     // whitelist portal authority as unwrapper and wrap authority
     whitelist_portal_authority(&ctx)?;
@@ -370,7 +374,7 @@ fn test_03_send_token_wormhole_insufficient_funds() -> Result<()> {
         })
         .args(portal_instruction::SendToken {
             amount: AMOUNT,
-            destination_token: ctx.m_mint.to_bytes(),
+            destination_token: ctx.destination_token,
             destination_chain_id,
             recipient: ctx.portal.payer().to_bytes(),
         })
@@ -441,7 +445,7 @@ fn test_04_send_token_wormhole_success() -> Result<()> {
         })
         .args(portal_instruction::SendToken {
             amount: AMOUNT,
-            destination_token: ctx.m_mint.to_bytes(),
+            destination_token: ctx.destination_token,
             destination_chain_id,
             recipient: ctx.portal.payer().to_bytes(),
         })
@@ -461,7 +465,7 @@ fn test_04_send_token_wormhole_success() -> Result<()> {
         PayloadData::TokenTransfer(token_payload) => {
             assert_eq!(payload.header.index, portal_global.m_index);
             assert!(token_payload.amount < AMOUNT as u128 && token_payload.amount > 0); // will change depending on current index value
-            assert_eq!(token_payload.destination_token, ctx.m_mint.to_bytes());
+            assert_eq!(token_payload.destination_token, ctx.destination_token);
             assert_eq!(token_payload.sender, ctx.portal.payer().to_bytes());
             assert_eq!(token_payload.recipient, ctx.portal.payer().to_bytes());
         }
@@ -508,7 +512,7 @@ fn test_05_send_token_hyperlane_success() -> Result<()> {
         })
         .args(portal_instruction::SendToken {
             amount: AMOUNT,
-            destination_token: ctx.m_mint.to_bytes(),
+            destination_token: ctx.destination_token,
             destination_chain_id,
             recipient: ctx.portal.payer().to_bytes(),
         })
@@ -540,7 +544,7 @@ fn test_05_send_token_hyperlane_success() -> Result<()> {
 #[test]
 fn test_06_send_token_invalid_m_mint() -> Result<()> {
     let ctx = TestCtx::new()?;
-    let destination_chain_id: u32 = 2;
+    let destination_chain_id: u32 = 1;
 
     let err = ctx
         .portal
@@ -568,7 +572,7 @@ fn test_06_send_token_invalid_m_mint() -> Result<()> {
         })
         .args(portal_instruction::SendToken {
             amount: AMOUNT,
-            destination_token: ctx.m_mint.to_bytes(),
+            destination_token: ctx.destination_token,
             destination_chain_id,
             recipient: ctx.portal.payer().to_bytes(),
         })

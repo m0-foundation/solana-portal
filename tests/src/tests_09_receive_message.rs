@@ -417,7 +417,7 @@ fn test_09_receive_merkle_root() -> Result<()> {
 
     assert!(result.is_err());
     let err = result.err().unwrap().to_string();
-    assert!(err.contains("InvalidSourceChain"), "Invalid error: {}", err);
+    assert!(err.contains("InvalidPeer"), "Invalid error: {}", err);
 
     Ok(())
 }
