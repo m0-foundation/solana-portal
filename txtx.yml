@@ -11,6 +11,9 @@ runbooks:
   - name: set_peers
     description: Set peers
     location: runbooks/set_peers
+  - name: set_path
+    description: Set bridge path
+    location: runbooks/set_path
   - name: pause
     description: Pause or unpause Portal program
     location: runbooks/pause

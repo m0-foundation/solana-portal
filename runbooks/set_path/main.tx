@@ -1,0 +1,48 @@
+addon "svm" {
+    rpc_api_url = input.rpc_api_url
+    network_id = input.network_id
+}
+
+variable "portal_program" {
+    value = svm::get_program_from_anchor_project("portal")
+}
+
+variable "source_mint" {
+    description = "The Solana source mint"
+    value = "mzeroXDoBpRVhnEXBra27qzAMdxgpWVY3DzQW7xMVJp"
+    editable = true
+}
+
+variable "destination_token" {
+    description = "The destination token address"
+    value = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 67, 124, 195, 51, 68, 160, 178, 122, 66, 159, 121, 95, 246, 180, 105, 199, 38, 152, 178, 145] 
+    editable = true
+}
+
+variable "destination_chain_id" {
+    description = "The destination chain id"
+    value = 1
+    editable = true
+}
+
+action "set_path" "svm::process_instructions" {
+    description = "Sets bridging path"
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.portal_program.idl
+        instruction_name = "add_bridge_path"
+        admin {
+            public_key = signer.caller.public_key
+        }
+		chain_paths {
+            public_key = index(["EQW5DYdRDyPo8LMwGYwVKSwj6y5u8enkG5nViYVBbWiB", "6pgor1C8zfmCQm6KrrXWMGTG4s2hUGpG2duNYGmakudP"], input.chain_id_idx)
+        }
+		instruction_args = [
+			variable.destination_chain_id,
+			{
+				source_mint: variable.source_mint,
+				destination_token: variable.destination_token
+			}
+		]
+    }
+}
