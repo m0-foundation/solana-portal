@@ -143,6 +143,13 @@ action "set_hyperlane_peer_arbitrum" "svm::process_instructions" {
     }
 }
 
+variable "chain_path_ethereum" {
+    value = svm::find_pda("MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce", ["chain_paths", index(["0x00000001", "0x00AA36A7"], input.chain_id_idx)])
+}
+variable "chain_path_arbitrum" {
+    value = svm::find_pda("MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce", ["chain_paths", index(["0x0000A4B1", "0x00066EEE"], input.chain_id_idx)])
+}
+
 action "initailize_path_destination_ethereum" "svm::process_instructions" {
     description = "Initialize Ethereum bridge paths"
     signers = [signer.caller]
@@ -153,7 +160,7 @@ action "initailize_path_destination_ethereum" "svm::process_instructions" {
             public_key = signer.caller.public_key
         }
         chain_paths {
-            public_key = index(["EQW5DYdRDyPo8LMwGYwVKSwj6y5u8enkG5nViYVBbWiB", "6pgor1C8zfmCQm6KrrXWMGTG4s2hUGpG2duNYGmakudP"], input.chain_id_idx)
+            public_key = variable.chain_path_ethereum.pda
         }
         instruction_args = [index([1, 11155111], input.chain_id_idx)]
     }
@@ -169,7 +176,7 @@ action "initailize_path_destination_arbitrum" "svm::process_instructions" {
             public_key = signer.caller.public_key
         }
         chain_paths {
-            public_key = index(["FQ9MAi2axT7U26cav3atUTGJxLDBJfr4zg8htjKA8vEp", "3DqnoN7dEqveURx6q2ugdAVp5aM4NRjiw8L8EocpmNWM"], input.chain_id_idx)
+            public_key = variable.chain_path_arbitrum.pda
         }
         instruction_args = [ index([42161, 421614], input.chain_id_idx)]
     }

@@ -15,7 +15,7 @@ variable "source_mint" {
 
 variable "destination_token" {
     description = "The destination token address"
-    value = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 67, 124, 195, 51, 68, 160, 178, 122, 66, 159, 121, 95, 246, 180, 105, 199, 38, 152, 178, 145] 
+    value = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 67, 124, 195, 51, 68, 160, 178, 122, 66, 159, 121, 95, 246, 180, 105, 199, 38, 152, 178, 145]
     editable = true
 }
 
@@ -23,6 +23,16 @@ variable "destination_chain_id" {
     description = "The destination chain id"
     value = 1
     editable = true
+}
+
+variable "destination_chain_id_hex" {
+    description = "The destination chain id (big-endian hex encoded)"
+    value = "0x00000001"
+    editable = true
+}
+
+variable "chain_path" {
+    value = svm::find_pda("MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce", ["chain_paths", variable.destination_chain_id_hex])
 }
 
 action "set_path" "svm::process_instructions" {
@@ -35,7 +45,7 @@ action "set_path" "svm::process_instructions" {
             public_key = signer.caller.public_key
         }
 		chain_paths {
-            public_key = index(["EQW5DYdRDyPo8LMwGYwVKSwj6y5u8enkG5nViYVBbWiB", "6pgor1C8zfmCQm6KrrXWMGTG4s2hUGpG2duNYGmakudP"], input.chain_id_idx)
+            public_key = variable.chain_path.pda
         }
 		instruction_args = [
 			variable.destination_chain_id,

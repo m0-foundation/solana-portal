@@ -8,351 +8,194 @@ use m0_portal_common::{
 use portal::{
     accounts as portal_accounts, instruction as portal_instruction, state::ChainBridgePaths,
 };
-use solana_client::rpc_client::RpcClient;
 use solana_sdk::signature::Keypair;
 use std::{str::FromStr, sync::Arc};
 
-use crate::{get_rpc_client, get_signer};
-
-struct BridgePathTestCtx {
-    rpc: Arc<RpcClient>,
-    portal: Program<Arc<Keypair>>,
-    portal_global: Pubkey,
-    m_mint: Pubkey,
-    extension_mint: Pubkey,
-}
-
-impl BridgePathTestCtx {
-    fn new() -> Result<Self> {
-        let client: Client<Arc<Keypair>> = Client::new(Cluster::Localnet, get_signer());
-        let rpc: Arc<RpcClient> = get_rpc_client();
-        let portal = client.program(portal::ID)?;
-
-        let portal_global = pda!(&[GLOBAL_SEED], &portal::ID);
-        let m_mint = Pubkey::from_str("mzerojk9tg56ebsrEAhfkyc9VgKjTW2zDqp6C5mhjzH")?;
-        let extension_mint = Pubkey::from_str("mzeroXDoBpRVhnEXBra27qzAMdxgpWVY3DzQW7xMVJp")?;
-
-        Ok(Self {
-            rpc,
-            portal,
-            portal_global,
-            m_mint,
-            extension_mint,
-        })
-    }
-
-    fn chain_paths_pda(&self, destination_chain_id: u32) -> Pubkey {
-        pda!(
-            &[CHAIN_PATHS_SEED, &destination_chain_id.to_be_bytes()],
-            &portal::ID
-        )
-    }
-}
-
-fn assert_err_contains(err: impl ToString, substrings: &[&str]) {
-    let s = err.to_string();
-    for substring in substrings {
-        assert!(s.contains(substring), "Expected '{}' in: {}", substring, s);
-    }
-}
+use crate::{get_rpc_client, get_signer, run_surfpool_cmd};
 
 #[test]
-fn test_01_initialize_chain_paths_for_chain_1() -> Result<()> {
-    let ctx = BridgePathTestCtx::new()?;
-    let destination_chain_id: u32 = 1;
+fn test_01_add_path() -> Result<()> {
+    let logs = run_surfpool_cmd(vec!["run", "set_path", "--unsupervised"])?;
+    assert!(!logs.contains("error"), "Set path failed: {}", logs);
 
-    ctx.portal
-        .request()
-        .accounts(portal_accounts::InitializeBridgePaths {
-            admin: ctx.portal.payer(),
-            portal_global: ctx.portal_global,
-            chain_paths: ctx.chain_paths_pda(destination_chain_id),
-            system_program: system_program::ID,
-        })
-        .args(portal_instruction::InitializeBridgePaths {
-            destination_chain_id,
-        })
-        .send()?;
+    let client = get_rpc_client();
+    let chain_id = 1u32.to_be_bytes();
+    let data = client.get_account_data(&pda!(&[CHAIN_PATHS_SEED, &chain_id], &portal::ID))?;
+    let paths = ChainBridgePaths::try_deserialize(&mut data.as_slice())?;
 
-    // Verify the account was created
-    let chain_paths_data = ctx
-        .rpc
-        .get_account_data(&ctx.chain_paths_pda(destination_chain_id))?;
-    let chain_paths = ChainBridgePaths::try_deserialize(&mut chain_paths_data.as_slice())?;
-
-    assert_eq!(chain_paths.destination_chain_id, destination_chain_id);
-    assert!(chain_paths.paths.is_empty());
-
-    Ok(())
-}
-
-#[test]
-fn test_02_initialize_chain_paths_for_chain_2() -> Result<()> {
-    let ctx = BridgePathTestCtx::new()?;
-    let destination_chain_id: u32 = 2;
-
-    ctx.portal
-        .request()
-        .accounts(portal_accounts::InitializeBridgePaths {
-            admin: ctx.portal.payer(),
-            portal_global: ctx.portal_global,
-            chain_paths: ctx.chain_paths_pda(destination_chain_id),
-            system_program: system_program::ID,
-        })
-        .args(portal_instruction::InitializeBridgePaths {
-            destination_chain_id,
-        })
-        .send()?;
-
-    // Verify the account was created
-    let chain_paths_data = ctx
-        .rpc
-        .get_account_data(&ctx.chain_paths_pda(destination_chain_id))?;
-    let chain_paths = ChainBridgePaths::try_deserialize(&mut chain_paths_data.as_slice())?;
-
-    assert_eq!(chain_paths.destination_chain_id, destination_chain_id);
-    assert!(chain_paths.paths.is_empty());
-
-    Ok(())
-}
-
-#[test]
-fn test_03_initialize_chain_paths_already_exists() -> Result<()> {
-    let ctx = BridgePathTestCtx::new()?;
-    let destination_chain_id: u32 = 1; // Already initialized in test_01
-
-    let err = ctx
-        .portal
-        .request()
-        .accounts(portal_accounts::InitializeBridgePaths {
-            admin: ctx.portal.payer(),
-            portal_global: ctx.portal_global,
-            chain_paths: ctx.chain_paths_pda(destination_chain_id),
-            system_program: system_program::ID,
-        })
-        .args(portal_instruction::InitializeBridgePaths {
-            destination_chain_id,
-        })
-        .send()
-        .unwrap_err();
-
-    // Should fail because account already exists
-    let s = err.to_string();
-    assert!(
-        s.contains("already in use") || s.contains("0x0"),
-        "Expected account already exists error, got: {}",
-        s
-    );
-
-    Ok(())
-}
-
-// ============================================================================
-// Add Bridge Path Tests
-// ============================================================================
-
-#[test]
-fn test_04_add_bridge_path_success() -> Result<()> {
-    let ctx = BridgePathTestCtx::new()?;
-    let destination_chain_id: u32 = 1;
-
-    // Add path: extension_mint -> m_mint on chain 1
-    ctx.portal
-        .request()
-        .accounts(portal_accounts::AddBridgePath {
-            admin: ctx.portal.payer(),
-            portal_global: ctx.portal_global,
-            chain_paths: ctx.chain_paths_pda(destination_chain_id),
-            system_program: system_program::ID,
-        })
-        .args(portal_instruction::AddBridgePath {
-            destination_chain_id,
-            path: portal::state::BridgePath {
-                source_mint: ctx.extension_mint,
-                destination_token: ctx.m_mint.to_bytes(),
-            },
-        })
-        .send()?;
-
-    // Verify the path was added
-    let chain_paths_data = ctx
-        .rpc
-        .get_account_data(&ctx.chain_paths_pda(destination_chain_id))?;
-    let chain_paths = ChainBridgePaths::try_deserialize(&mut chain_paths_data.as_slice())?;
-
-    assert_eq!(chain_paths.paths.len(), 1);
-    assert_eq!(chain_paths.paths[0].source_mint, ctx.extension_mint);
+    assert_eq!(paths.destination_chain_id, 1);
+    assert_eq!(paths.paths.len(), 1);
     assert_eq!(
-        chain_paths.paths[0].destination_token,
-        ctx.m_mint.to_bytes()
+        paths.paths[0].source_mint.to_string(),
+        "mzeroXDoBpRVhnEXBra27qzAMdxgpWVY3DzQW7xMVJp"
+    );
+    assert!(hex::encode(paths.paths[0].destination_token)
+        .trim_start_matches("0")
+        .eq_ignore_ascii_case("437cc33344a0B27A429f795ff6B469C72698B291"));
+
+    Ok(())
+}
+
+#[test]
+fn test_02_path_other_chain() -> Result<()> {
+    let program = portal_program();
+    let chain_id = 42161u32.to_be_bytes();
+
+    program
+        .request()
+        .accounts(portal_accounts::AddBridgePath {
+            admin: program.payer(),
+            portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
+            chain_paths: pda!(&[CHAIN_PATHS_SEED, &chain_id], &portal::ID),
+            system_program: system_program::ID,
+        })
+        .args(portal_instruction::AddBridgePath {
+            destination_chain_id: 42161,
+            path: portal::state::BridgePath {
+                source_mint: Pubkey::from_str("mzeroXDoBpRVhnEXBra27qzAMdxgpWVY3DzQW7xMVJp")?,
+                destination_token: hex::decode(
+                    "000000000000000000000000437cc33344a0b27a429f795ff6b469c72698b291",
+                )?
+                .try_into()
+                .unwrap(),
+            },
+        })
+        .send()?;
+
+    let client = get_rpc_client();
+    let data = client.get_account_data(&pda!(&[CHAIN_PATHS_SEED, &chain_id], &portal::ID))?;
+    let paths = ChainBridgePaths::try_deserialize(&mut data.as_slice())?;
+
+    assert_eq!(paths.destination_chain_id, 42161);
+    assert_eq!(paths.paths.len(), 1);
+    assert_eq!(
+        paths.paths[0].source_mint.to_string(),
+        "mzeroXDoBpRVhnEXBra27qzAMdxgpWVY3DzQW7xMVJp"
+    );
+    assert!(hex::encode(paths.paths[0].destination_token)
+        .trim_start_matches("0")
+        .eq_ignore_ascii_case("437cc33344a0B27A429f795ff6B469C72698B291"));
+
+    Ok(())
+}
+#[test]
+fn test_03_path_already_exists() -> Result<()> {
+    let err = run_surfpool_cmd(vec!["run", "set_path", "--unsupervised"]).unwrap_err();
+
+    assert!(
+        err.to_string().contains("PathAlreadyExists"),
+        "Expected initialization failure: {}",
+        err
     );
 
     Ok(())
 }
 
 #[test]
-fn test_05_add_bridge_path_for_chain_2() -> Result<()> {
-    let ctx = BridgePathTestCtx::new()?;
-    let destination_chain_id: u32 = 2;
+fn test_04_add_second_bridge_path() -> Result<()> {
+    let program = portal_program();
+    let chain_id = 1u32.to_be_bytes();
 
-    // Add path for chain 2 (needed for some error tests in send_token)
-    ctx.portal
+    program
         .request()
         .accounts(portal_accounts::AddBridgePath {
-            admin: ctx.portal.payer(),
-            portal_global: ctx.portal_global,
-            chain_paths: ctx.chain_paths_pda(destination_chain_id),
+            admin: program.payer(),
+            portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
+            chain_paths: pda!(&[CHAIN_PATHS_SEED, &chain_id], &portal::ID),
             system_program: system_program::ID,
         })
         .args(portal_instruction::AddBridgePath {
-            destination_chain_id,
+            destination_chain_id: 1,
             path: portal::state::BridgePath {
-                source_mint: ctx.extension_mint,
-                destination_token: ctx.m_mint.to_bytes(),
+                source_mint: Pubkey::from_str("usdkbee86pkLyRmxfFCdkyySpxRb5ndCxVsK2BkRXwX")?,
+                destination_token: hex::decode(
+                    "000000000000000000000000437cc33344a0b27a429f795ff6b469c72698b291",
+                )?
+                .try_into()
+                .unwrap(),
             },
         })
         .send()?;
 
-    // Verify
-    let chain_paths_data = ctx
-        .rpc
-        .get_account_data(&ctx.chain_paths_pda(destination_chain_id))?;
-    let chain_paths = ChainBridgePaths::try_deserialize(&mut chain_paths_data.as_slice())?;
+    let client = get_rpc_client();
+    let data = client.get_account_data(&pda!(&[CHAIN_PATHS_SEED, &chain_id], &portal::ID))?;
+    let paths = ChainBridgePaths::try_deserialize(&mut data.as_slice())?;
 
-    assert_eq!(chain_paths.paths.len(), 1);
-
-    Ok(())
-}
-
-#[test]
-fn test_06_add_bridge_path_duplicate_rejected() -> Result<()> {
-    let ctx = BridgePathTestCtx::new()?;
-    let destination_chain_id: u32 = 1;
-
-    // Try to add the same path again
-    let err = ctx
-        .portal
-        .request()
-        .accounts(portal_accounts::AddBridgePath {
-            admin: ctx.portal.payer(),
-            portal_global: ctx.portal_global,
-            chain_paths: ctx.chain_paths_pda(destination_chain_id),
-            system_program: system_program::ID,
-        })
-        .args(portal_instruction::AddBridgePath {
-            destination_chain_id,
-            path: portal::state::BridgePath {
-                source_mint: ctx.extension_mint,
-                destination_token: ctx.m_mint.to_bytes(),
-            },
-        })
-        .send()
-        .unwrap_err();
-
-    assert_err_contains(err, &["PathAlreadyExists"]);
+    assert_eq!(paths.destination_chain_id, 1);
+    assert_eq!(paths.paths.len(), 2);
+    assert_eq!(
+        paths.paths[1].source_mint.to_string(),
+        "usdkbee86pkLyRmxfFCdkyySpxRb5ndCxVsK2BkRXwX"
+    );
+    assert!(hex::encode(paths.paths[0].destination_token)
+        .trim_start_matches("0")
+        .eq_ignore_ascii_case("437cc33344a0B27A429f795ff6B469C72698B291"));
 
     Ok(())
 }
 
 #[test]
-fn test_07_add_second_bridge_path() -> Result<()> {
-    let ctx = BridgePathTestCtx::new()?;
-    let destination_chain_id: u32 = 1;
+fn test_05_remove_bridge_path_success() -> Result<()> {
+    let program = portal_program();
+    let chain_id: u32 = 1;
 
-    // Add a different path (m_mint -> extension_mint)
-    ctx.portal
-        .request()
-        .accounts(portal_accounts::AddBridgePath {
-            admin: ctx.portal.payer(),
-            portal_global: ctx.portal_global,
-            chain_paths: ctx.chain_paths_pda(destination_chain_id),
-            system_program: system_program::ID,
-        })
-        .args(portal_instruction::AddBridgePath {
-            destination_chain_id,
-            path: portal::state::BridgePath {
-                source_mint: ctx.m_mint,
-                destination_token: ctx.extension_mint.to_bytes(),
-            },
-        })
-        .send()?;
-
-    // Verify both paths exist
-    let chain_paths_data = ctx
-        .rpc
-        .get_account_data(&ctx.chain_paths_pda(destination_chain_id))?;
-    let chain_paths = ChainBridgePaths::try_deserialize(&mut chain_paths_data.as_slice())?;
-
-    assert_eq!(chain_paths.paths.len(), 2);
-
-    Ok(())
-}
-
-// ============================================================================
-// Remove Bridge Path Tests
-// ============================================================================
-
-#[test]
-fn test_08_remove_bridge_path_success() -> Result<()> {
-    let ctx = BridgePathTestCtx::new()?;
-    let destination_chain_id: u32 = 1;
-
-    // Get current path count
-    let chain_paths_data = ctx
-        .rpc
-        .get_account_data(&ctx.chain_paths_pda(destination_chain_id))?;
-    let chain_paths_before = ChainBridgePaths::try_deserialize(&mut chain_paths_data.as_slice())?;
-    let count_before = chain_paths_before.paths.len();
-
-    // Remove the second path we added (m_mint -> extension_mint)
-    ctx.portal
+    // Remove the second path we added
+    program
         .request()
         .accounts(portal_accounts::RemoveBridgePath {
-            admin: ctx.portal.payer(),
-            portal_global: ctx.portal_global,
-            chain_paths: ctx.chain_paths_pda(destination_chain_id),
+            admin: program.payer(),
+            portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
+            chain_paths: pda!(&[CHAIN_PATHS_SEED, &chain_id.to_be_bytes()], &portal::ID),
             system_program: system_program::ID,
         })
         .args(portal_instruction::RemoveBridgePath {
-            destination_chain_id,
+            destination_chain_id: chain_id,
             path: portal::state::BridgePath {
-                source_mint: ctx.m_mint,
-                destination_token: ctx.extension_mint.to_bytes(),
+                source_mint: Pubkey::from_str("usdkbee86pkLyRmxfFCdkyySpxRb5ndCxVsK2BkRXwX")?,
+                destination_token: hex::decode(
+                    "000000000000000000000000437cc33344a0b27a429f795ff6b469c72698b291",
+                )?
+                .try_into()
+                .unwrap(),
             },
         })
         .send()?;
 
     // Verify the path was removed
-    let chain_paths_data = ctx
-        .rpc
-        .get_account_data(&ctx.chain_paths_pda(destination_chain_id))?;
-    let chain_paths_after = ChainBridgePaths::try_deserialize(&mut chain_paths_data.as_slice())?;
+    let client = get_rpc_client();
+    let chain_id = 1u32.to_be_bytes();
+    let data = client.get_account_data(&pda!(&[CHAIN_PATHS_SEED, &chain_id], &portal::ID))?;
+    let paths = ChainBridgePaths::try_deserialize(&mut data.as_slice())?;
 
-    assert_eq!(chain_paths_after.paths.len(), count_before - 1);
+    assert_eq!(paths.paths.len(), 1);
 
     // Verify only the first path remains
-    assert_eq!(chain_paths_after.paths[0].source_mint, ctx.extension_mint);
     assert_eq!(
-        chain_paths_after.paths[0].destination_token,
-        ctx.m_mint.to_bytes()
+        paths.paths[0].source_mint.to_string(),
+        "mzeroXDoBpRVhnEXBra27qzAMdxgpWVY3DzQW7xMVJp"
     );
+    assert!(hex::encode(paths.paths[0].destination_token)
+        .trim_start_matches("0")
+        .eq_ignore_ascii_case("437cc33344a0B27A429f795ff6B469C72698B291"));
 
     Ok(())
 }
 
 #[test]
-fn test_09_remove_bridge_path_not_found() -> Result<()> {
-    let ctx = BridgePathTestCtx::new()?;
+fn test_06_remove_bridge_path_not_found() -> Result<()> {
     let destination_chain_id: u32 = 1;
+    let program = portal_program();
 
     // Try to remove a path that doesn't exist
-    let err = ctx
-        .portal
+    let err = program
         .request()
         .accounts(portal_accounts::RemoveBridgePath {
-            admin: ctx.portal.payer(),
-            portal_global: ctx.portal_global,
-            chain_paths: ctx.chain_paths_pda(destination_chain_id),
+            admin: program.payer(),
+            portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
+            chain_paths: pda!(
+                &[CHAIN_PATHS_SEED, &destination_chain_id.to_be_bytes()],
+                &portal::ID
+            ),
             system_program: system_program::ID,
         })
         .args(portal_instruction::RemoveBridgePath {
@@ -370,31 +213,14 @@ fn test_09_remove_bridge_path_not_found() -> Result<()> {
     Ok(())
 }
 
-// ============================================================================
-// Verify Chain Paths Are Ready for send_token Tests
-// ============================================================================
+fn portal_program() -> Program<Arc<Keypair>> {
+    let client: Client<Arc<Keypair>> = Client::new(Cluster::Localnet, get_signer());
+    client.program(portal::ID).unwrap()
+}
 
-#[test]
-fn test_10_verify_chain_paths_ready() -> Result<()> {
-    let ctx = BridgePathTestCtx::new()?;
-
-    // Verify chain 1 has the required path
-    let chain_paths_1_data = ctx.rpc.get_account_data(&ctx.chain_paths_pda(1))?;
-    let chain_paths_1 = ChainBridgePaths::try_deserialize(&mut chain_paths_1_data.as_slice())?;
-
-    assert!(
-        chain_paths_1.is_path_supported(&ctx.extension_mint, &ctx.m_mint.to_bytes()),
-        "Chain 1 should have extension_mint -> m_mint path"
-    );
-
-    // Verify chain 2 has the required path
-    let chain_paths_2_data = ctx.rpc.get_account_data(&ctx.chain_paths_pda(2))?;
-    let chain_paths_2 = ChainBridgePaths::try_deserialize(&mut chain_paths_2_data.as_slice())?;
-
-    assert!(
-        chain_paths_2.is_path_supported(&ctx.extension_mint, &ctx.m_mint.to_bytes()),
-        "Chain 2 should have extension_mint -> m_mint path"
-    );
-
-    Ok(())
+fn assert_err_contains(err: impl ToString, substrings: &[&str]) {
+    let s = err.to_string();
+    for substring in substrings {
+        assert!(s.contains(substring), "Expected '{}' in: {}", substring, s);
+    }
 }
