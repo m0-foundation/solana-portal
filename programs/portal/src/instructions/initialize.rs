@@ -45,7 +45,7 @@ impl Initialize<'_> {
             pending_admin: None,
             isolated_hub_chain_id,
             unclaimed_m_balance: 0,
-            padding: [0u8; 112],
+            padding: [0u8; 120],
         });
 
         if let Some(isolated_hub_chain_id) = isolated_hub_chain_id {
