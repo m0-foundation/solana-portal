@@ -35,7 +35,7 @@ pub struct PortalGlobal {
     pub isolated_hub_chain_id: Option<u32>,
     /// Aggregate principal amount of M tokens stored when destination_token is not whitelisted
     pub unclaimed_m_balance: u64,
-    pub padding: [u8; 112],
+    pub padding: [u8; 120],
 }
 
 impl PortalGlobal {
@@ -135,7 +135,7 @@ mod tests {
             pending_admin: None,
             isolated_hub_chain_id: None,
             unclaimed_m_balance: 0,
-            padding: [0u8; 112],
+            padding: [0u8; 120],
         };
 
         // Generate message ID using Rust function
@@ -175,7 +175,7 @@ mod tests {
                 pending_admin: None,
                 isolated_hub_chain_id: None,
                 unclaimed_m_balance: 0,
-                padding: [0u8; 112],
+                padding: [0u8; 120],
             };
 
             let rust_message_id = portal_global.generate_message_id(dest_chain_id);
