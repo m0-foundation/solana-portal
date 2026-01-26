@@ -1,3 +1,4 @@
+pub mod evm;
 pub use m0_portal_common::{ExecutorTransactions, WormholeResponse};
 use solana_sdk::hash::hashv;
 

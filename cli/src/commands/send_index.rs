@@ -20,6 +20,7 @@ use m0_portal_common::{
 };
 use solana_client::rpc_client::RpcClient;
 use solana_sdk::{
+    compute_budget::ComputeBudgetInstruction,
     instruction::{AccountMeta, Instruction as SolanaInstruction},
     pubkey::Pubkey,
     signature::Keypair,
@@ -152,9 +153,11 @@ fn send_index_via_hyperlane(
         data: instruction_data,
     };
 
+    let compute_budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(600_000);
+
     let recent_blockhash = rpc_client.get_latest_blockhash()?;
     let transaction = Transaction::new_signed_with_payer(
-        &[instruction],
+        &[compute_budget_ix, instruction],
         Some(&payer.pubkey()),
         &[payer],
         recent_blockhash,
@@ -239,9 +242,11 @@ fn send_index_via_wormhole(
     )?;
 
     // Build transaction with both instructions
+    let compute_budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(500_000);
+
     let recent_blockhash = rpc_client.get_latest_blockhash()?;
     let transaction = Transaction::new_signed_with_payer(
-        &[send_index_ix, relay_ix],
+        &[compute_budget_ix, send_index_ix, relay_ix],
         Some(&payer.pubkey()),
         &[payer],
         recent_blockhash,

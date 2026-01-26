@@ -24,9 +24,14 @@ enum Commands {
         #[arg(short, long, value_enum, default_value = "hyperlane")]
         adapter: BridgeAdapter,
     },
+    SendEvmIndex {
+        #[arg(short, long, value_enum, default_value = "hyperlane")]
+        adapter: BridgeAdapter,
+    },
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
@@ -38,6 +43,9 @@ fn main() -> Result<()> {
             adapter,
         } => {
             commands::send_index(destination_chain_id, adapter)?;
+        }
+        Commands::SendEvmIndex { adapter } => {
+            commands::send_evm_index(adapter).await?;
         }
     }
 

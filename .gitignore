@@ -6,3 +6,4 @@ test-ledger
 .yarn
 .surfpool
 surfpool_validator.log
+evm_key.txt
