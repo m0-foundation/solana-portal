@@ -7,6 +7,9 @@ pub mod payloads;
 pub mod peers;
 pub mod receive_metas;
 
+#[cfg(feature = "executor")]
+pub mod wormhole;
+
 pub use accounts::*;
 pub use adapter_accounts::*;
 use anchor_lang::prelude::*;
@@ -16,6 +19,9 @@ pub use interfaces::*;
 pub use payloads::*;
 pub use peers::*;
 pub use receive_metas::*;
+
+#[cfg(feature = "executor")]
+pub use wormhole::*;
 
 declare_program!(wormhole_post_message_shim);
 declare_program!(portal);

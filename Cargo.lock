@@ -3027,8 +3027,14 @@ dependencies = [
  "anchor-lang",
  "anchor-lang-idl",
  "anchor-spl",
+ "base64 0.22.1",
  "borsh 0.10.4",
+ "hex",
  "m0-portal-common-macros",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "solana-program",
 ]
 
 [[package]]
