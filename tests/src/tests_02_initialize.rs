@@ -47,7 +47,7 @@ fn test_03_check_globals() -> Result<()> {
     assert_eq!(global_portal.message_nonce, 0);
     assert_eq!(global_portal.pending_admin, None);
     assert_eq!(global_portal.unclaimed_m_balance, 0);
-    assert_eq!(global_portal.padding, [0u8; 112]);
+    assert_eq!(global_portal.padding, [0u8; 120]);
     assert!(!global_portal.incoming_paused);
     assert!(!global_portal.outgoing_paused);
 
