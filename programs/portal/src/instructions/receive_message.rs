@@ -124,7 +124,7 @@ impl ReceiveMessage<'_> {
             .message_account
             .set_inner(BridgeMessage { consumed: true });
 
-        // Propogate index from header on all payloads
+        // Propagate index from header on all payloads
         if message.header.index >= ctx.accounts.portal_global.m_index {
             ctx.accounts.portal_global.m_index = message.header.index;
 
