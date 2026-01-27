@@ -50,8 +50,8 @@ pub struct ChainPathsInitialized {
 }
 
 #[derive(Accounts)]
-#[instruction(destination_chain_id: u32)]
-pub struct AddBridgePath<'info> {
+#[instruction(destination_chain_id: u32, paths: Vec<BridgePath>)]
+pub struct AddBridgePaths<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
 
@@ -66,7 +66,7 @@ pub struct AddBridgePath<'info> {
         mut,
         seeds = [CHAIN_PATHS_SEED, &destination_chain_id.to_be_bytes()],
         bump = chain_paths.bump,
-        realloc = ChainBridgePaths::size(chain_paths.paths.len() + 1),
+        realloc = ChainBridgePaths::size(chain_paths.paths.len() + paths.len()),
         realloc::payer = admin,
         realloc::zero = false,
     )]
@@ -75,25 +75,33 @@ pub struct AddBridgePath<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl AddBridgePath<'_> {
-    fn validate(&self, path: &BridgePath) -> Result<()> {
-        require!(
-            !self.chain_paths.paths.contains(path),
-            BridgeError::PathAlreadyExists
-        );
+impl AddBridgePaths<'_> {
+    fn validate(&self, paths: &Vec<BridgePath>) -> Result<()> {
+        for p in paths {
+            require!(
+                !self.chain_paths.paths.contains(p),
+                BridgeError::PathAlreadyExists
+            );
+        }
 
         Ok(())
     }
 
-    #[access_control(ctx.accounts.validate(&path))]
-    pub fn handler(ctx: Context<Self>, destination_chain_id: u32, path: BridgePath) -> Result<()> {
-        ctx.accounts.chain_paths.paths.push(path.clone());
+    #[access_control(ctx.accounts.validate(&paths))]
+    pub fn handler(
+        ctx: Context<Self>,
+        destination_chain_id: u32,
+        paths: Vec<BridgePath>,
+    ) -> Result<()> {
+        for path in paths {
+            ctx.accounts.chain_paths.paths.push(path.clone());
 
-        emit!(BridgePathAdded {
-            destination_chain_id,
-            source_mint: path.source_mint,
-            destination_token: path.destination_token,
-        });
+            emit!(BridgePathAdded {
+                destination_chain_id,
+                source_mint: path.source_mint,
+                destination_token: path.destination_token,
+            });
+        }
 
         Ok(())
     }

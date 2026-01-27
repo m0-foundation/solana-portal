@@ -43,22 +43,22 @@ fn test_02_path_other_chain() -> Result<()> {
 
     program
         .request()
-        .accounts(portal_accounts::AddBridgePath {
+        .accounts(portal_accounts::AddBridgePaths {
             admin: program.payer(),
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
             chain_paths: pda!(&[CHAIN_PATHS_SEED, &chain_id], &portal::ID),
             system_program: system_program::ID,
         })
-        .args(portal_instruction::AddBridgePath {
+        .args(portal_instruction::AddBridgePaths {
             destination_chain_id: 42161,
-            path: portal::state::BridgePath {
+            paths: vec![portal::state::BridgePath {
                 source_mint: Pubkey::from_str("mzeroXDoBpRVhnEXBra27qzAMdxgpWVY3DzQW7xMVJp")?,
                 destination_token: hex::decode(
                     "000000000000000000000000437cc33344a0b27a429f795ff6b469c72698b291",
                 )?
                 .try_into()
                 .unwrap(),
-            },
+            }],
         })
         .send()?;
 
@@ -98,22 +98,22 @@ fn test_04_add_second_bridge_path() -> Result<()> {
 
     program
         .request()
-        .accounts(portal_accounts::AddBridgePath {
+        .accounts(portal_accounts::AddBridgePaths {
             admin: program.payer(),
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
             chain_paths: pda!(&[CHAIN_PATHS_SEED, &chain_id], &portal::ID),
             system_program: system_program::ID,
         })
-        .args(portal_instruction::AddBridgePath {
+        .args(portal_instruction::AddBridgePaths {
             destination_chain_id: 1,
-            path: portal::state::BridgePath {
+            paths: vec![portal::state::BridgePath {
                 source_mint: Pubkey::from_str("usdkbee86pkLyRmxfFCdkyySpxRb5ndCxVsK2BkRXwX")?,
                 destination_token: hex::decode(
                     "000000000000000000000000437cc33344a0b27a429f795ff6b469c72698b291",
                 )?
                 .try_into()
                 .unwrap(),
-            },
+            }],
         })
         .send()?;
 

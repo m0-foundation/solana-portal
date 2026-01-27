@@ -79,12 +79,12 @@ pub mod portal {
         InitializeBridgePaths::handler(ctx, destination_chain_id)
     }
 
-    pub fn add_bridge_path(
-        ctx: Context<AddBridgePath>,
+    pub fn add_bridge_paths(
+        ctx: Context<AddBridgePaths>,
         destination_chain_id: u32,
-        path: BridgePath,
+        paths: Vec<BridgePath>,
     ) -> Result<()> {
-        AddBridgePath::handler(ctx, destination_chain_id, path)
+        AddBridgePaths::handler(ctx, destination_chain_id, paths)
     }
 
     pub fn remove_bridge_path(
