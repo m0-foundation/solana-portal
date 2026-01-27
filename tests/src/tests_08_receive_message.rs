@@ -3,6 +3,7 @@ use std::str::FromStr;
 use anchor_client::{Client, Cluster};
 use anchor_lang::{system_program, AnchorDeserialize, InstructionData, ToAccountMetas};
 use anyhow::Result;
+use hyperlane_adapter::{accounts as hyperlane_accounts, instruction as hyperlane_instruction};
 use m0_portal_common::ext_swap::accounts::SwapGlobal;
 use m0_portal_common::{
     earn, ext_swap, CancelReportPayload, EarnerMerkleRootPayload, Extension, IndexPayload,
@@ -13,7 +14,6 @@ use m0_portal_common::{
     wormhole_adapter::constants::GUARDIAN_SET_SEED, wormhole_verify_vaa_shim, Payload,
     AUTHORITY_SEED,
 };
-use hyperlane_adapter::{accounts as hyperlane_accounts, instruction as hyperlane_instruction};
 use portal::state::MESSAGE_SEED;
 use solana_client::rpc_config::RpcSendTransactionConfig;
 use solana_sdk::transaction::Transaction;
@@ -24,7 +24,9 @@ use wormhole_adapter::{
     instruction as wormhole_instruction, instructions::VaaBody,
 };
 
-use crate::util::constants::{ETHEREUM_WORMHOLE_TRANSCEIVER, M_MINT, SOLANA_CHAIN_ID};
+use crate::util::constants::{
+    ETHEREUM_HYPERLANE_ADAPTER, ETHEREUM_WORMHOLE_ADAPTER, M_MINT, SOLANA_CHAIN_ID,
+};
 use crate::{get_rpc_client, get_signer, set_account};
 
 #[test]
@@ -43,7 +45,7 @@ fn test_01_receive_index_wormhole() -> Result<()> {
 
     let message_id = [42u8; 32];
     let payload = create_default_payload(message_id, SOLANA_CHAIN_ID, portal::ID.to_bytes());
-    let vaa = create_default_vaa(2, ETHEREUM_WORMHOLE_TRANSCEIVER, payload.clone());
+    let vaa = create_default_vaa(2, ETHEREUM_WORMHOLE_ADAPTER, payload.clone());
     let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
 
     // Relay message - Bridge validation is skipped with skip-validation feature flag
@@ -116,10 +118,7 @@ fn test_02_receive_index_hyperlane() -> Result<()> {
         accounts,
         data: hyperlane_instruction::ReceiveMessage {
             origin: 1,
-            sender: [
-                11, 106, 134, 128, 106, 3, 84, 200, 43, 143, 4, 158, 183, 93, 156, 151, 227, 112,
-                166, 240, 192, 207, 161, 95, 71, 144, 156, 63, 225, 200, 247, 148,
-            ],
+            sender: ETHEREUM_HYPERLANE_ADAPTER,
             message: payload.encode(),
         }
         .data(),
@@ -193,7 +192,7 @@ fn test_04_receive_invalid_peer_chain() -> Result<()> {
 
     let message_id = [42u8; 32];
     let payload = create_default_payload(message_id, SOLANA_CHAIN_ID, portal::ID.to_bytes());
-    let vaa = create_default_vaa(2334, ETHEREUM_WORMHOLE_TRANSCEIVER, payload.clone()); // Invalid chain
+    let vaa = create_default_vaa(2334, ETHEREUM_WORMHOLE_ADAPTER, payload.clone()); // Invalid chain
     let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
 
     let result = program
@@ -225,7 +224,7 @@ fn test_05_receive_invalid_destination_chain() -> Result<()> {
 
     let message_id = [42u8; 32];
     let payload = create_default_payload(message_id, SOLANA_CHAIN_ID + 1, portal::ID.to_bytes()); // Invalid chain ID
-    let vaa = create_default_vaa(2334, ETHEREUM_WORMHOLE_TRANSCEIVER, payload.clone());
+    let vaa = create_default_vaa(2334, ETHEREUM_WORMHOLE_ADAPTER, payload.clone());
     let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
 
     let result = program
@@ -257,7 +256,7 @@ fn test_06_receive_invalid_destination_peer() -> Result<()> {
 
     let message_id = [42u8; 32];
     let payload = create_default_payload(message_id, SOLANA_CHAIN_ID, [2; 32]); // Invalid peer
-    let vaa = create_default_vaa(2334, ETHEREUM_WORMHOLE_TRANSCEIVER, payload.clone());
+    let vaa = create_default_vaa(2334, ETHEREUM_WORMHOLE_ADAPTER, payload.clone());
     let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
 
     let result = program
@@ -298,7 +297,7 @@ fn test_07_receive_cancel_wormhole() -> Result<()> {
         amount_in_to_refund: 10,
     });
 
-    let vaa = create_default_vaa(2, ETHEREUM_WORMHOLE_TRANSCEIVER, payload.clone());
+    let vaa = create_default_vaa(2, ETHEREUM_WORMHOLE_ADAPTER, payload.clone());
     let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
 
     let result = program
@@ -352,7 +351,7 @@ fn test_08_change_destination_mint() -> Result<()> {
             .collect(),
     );
 
-    let vaa = create_default_vaa(2, ETHEREUM_WORMHOLE_TRANSCEIVER, payload.clone());
+    let vaa = create_default_vaa(2, ETHEREUM_WORMHOLE_ADAPTER, payload.clone());
     let mut metas = require_metas(&payload.data, whitelisted_extensions, Some(M_MINT), None)?;
 
     // Change destination mint to an different mint (should fail validation)
@@ -398,7 +397,7 @@ fn test_09_receive_merkle_root() -> Result<()> {
     });
 
     // Message coming from Arbitrum
-    let vaa = create_default_vaa(23, ETHEREUM_WORMHOLE_TRANSCEIVER, payload.clone());
+    let vaa = create_default_vaa(23, ETHEREUM_WORMHOLE_ADAPTER, payload.clone());
     let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
 
     let result = program
