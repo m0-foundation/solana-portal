@@ -1,6 +1,10 @@
 use anchor_lang::prelude::*;
-use anchor_spl::associated_token::spl_associated_token_account::solana_program::keccak;
+use anchor_spl::{
+    associated_token::spl_associated_token_account::solana_program::keccak, token_2022::Token2022,
+    token_interface::Mint,
+};
 use m0_portal_common::{
+    earn::{self, accounts::EarnGlobal, program::Earn},
     portal::{self, accounts::PortalGlobal, program::Portal},
     wormhole_verify_vaa_shim::{self, cpi::accounts::VerifyHash, program::WormholeVerifyVaaShim},
     BridgeError,
@@ -65,6 +69,24 @@ pub struct ReceiveMessage<'info> {
 
     pub wormhole_verify_vaa_shim: Program<'info, WormholeVerifyVaaShim>,
 
+    #[account(
+        mut,
+        seeds = [GLOBAL_SEED],
+        seeds::program = earn::ID,
+        bump = earn_global.bump,
+    )]
+    pub earn_global: Account<'info, EarnGlobal>,
+
+    #[account(
+        mut,
+        address = portal_global.m_mint @ BridgeError::InvalidMint,
+    )]
+    pub m_mint: InterfaceAccount<'info, Mint>,
+
+    pub m_token_program: Program<'info, Token2022>,
+
+    pub earn_program: Program<'info, Earn>,
+
     pub portal_program: Program<'info, Portal>,
 
     pub system_program: Program<'info, System>,
@@ -118,6 +140,10 @@ impl ReceiveMessage<'_> {
                     adapter_authority: ctx.accounts.wormhole_adapter_authority.to_account_info(),
                     message_account: ctx.accounts.message_account.to_account_info(),
                     portal_authority: ctx.accounts.portal_authority.to_account_info(),
+                    earn_global: ctx.accounts.earn_global.to_account_info(),
+                    m_mint: ctx.accounts.m_mint.to_account_info(),
+                    m_token_program: ctx.accounts.m_token_program.to_account_info(),
+                    earn_program: ctx.accounts.earn_program.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info(),
                 },
                 &[&[AUTHORITY_SEED, &[ctx.bumps.wormhole_adapter_authority]]],

@@ -21,17 +21,17 @@ pub use send_report::*;
 pub use send_token::*;
 pub use transfer_admin::*;
 
-use crate::state::AUTHORITY_SEED;
+use crate::state::{PortalGlobal, AUTHORITY_SEED};
 
 pub fn send_message<'info>(
     bridge_adapter: AccountInfo<'info>,
     sender: AccountInfo<'info>,
+    portal_global: &mut Account<'info, PortalGlobal>,
     portal_authority: AccountInfo<'info>,
     portal_authority_bump: u8,
     system_program: AccountInfo<'info>,
     remaining_accounts: Vec<AccountInfo<'info>>,
     destination_chain_id: u32,
-    message_id: [u8; 32],
     payload: PayloadData,
     payload_type: u8,
 ) -> Result<()> {
@@ -59,6 +59,7 @@ pub fn send_message<'info>(
                 wormhole_adapter::cpi::accounts::SendMessage {
                     payer: sender,
                     wormhole_global,
+                    portal_global: portal_global.to_account_info(),
                     portal_authority,
                     bridge,
                     message: message_account,
@@ -74,7 +75,7 @@ pub fn send_message<'info>(
                 &[&[AUTHORITY_SEED, &[portal_authority_bump]]],
             ),
             destination_chain_id,
-            message_id,
+            portal_global.generate_message_id(destination_chain_id),
             payload.encode(),
             payload_type,
         )
@@ -106,6 +107,7 @@ pub fn send_message<'info>(
                 hyperlane_adapter::cpi::accounts::SendMessage {
                     payer: sender,
                     hyperlane_global,
+                    portal_global: portal_global.to_account_info(),
                     portal_authority,
                     mailbox_outbox,
                     dispatch_authority,
@@ -124,7 +126,7 @@ pub fn send_message<'info>(
                 &[&[AUTHORITY_SEED, &[portal_authority_bump]]],
             ),
             destination_chain_id,
-            message_id,
+            portal_global.generate_message_id(destination_chain_id),
             payload.encode(),
             payload_type,
         )

@@ -614,6 +614,74 @@
           "address": "EFaNWErqAtVWufdNb7yofSHHfWFos843DFpu4JBw24at"
         },
         {
+          "name": "earn_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                11,
+                134,
+                11,
+                7,
+                229,
+                245,
+                33,
+                49,
+                225,
+                170,
+                183,
+                171,
+                210,
+                177,
+                147,
+                110,
+                166,
+                55,
+                182,
+                49,
+                97,
+                242,
+                35,
+                170,
+                152,
+                135,
+                152,
+                108,
+                102,
+                78,
+                112,
+                208
+              ]
+            }
+          }
+        },
+        {
+          "name": "m_mint",
+          "writable": true
+        },
+        {
+          "name": "m_token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "earn_program",
+          "address": "mz2vDzjbQDUDXBH6FPF5s4odCJ4y8YLE5QWaZ8XdZ9Z"
+        },
+        {
           "name": "portal_program",
           "address": "MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce"
         },
@@ -705,6 +773,61 @@
                 ]
               }
             ]
+          }
+        },
+        {
+          "name": "portal_global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                96,
+                71,
+                38,
+                195,
+                17,
+                0,
+                131,
+                79,
+                49,
+                225,
+                51,
+                140,
+                91,
+                229,
+                193,
+                101,
+                155,
+                214,
+                243,
+                111,
+                176,
+                88,
+                151,
+                248,
+                178,
+                69,
+                151,
+                27,
+                53,
+                202,
+                23
+              ]
+            }
           }
         },
         {
@@ -1235,6 +1358,19 @@
   ],
   "accounts": [
     {
+      "name": "EarnGlobal",
+      "discriminator": [
+        229,
+        50,
+        25,
+        132,
+        207,
+        93,
+        185,
+        23
+      ]
+    },
+    {
       "name": "PortalGlobal",
       "discriminator": [
         83,
@@ -1277,6 +1413,43 @@
     }
   ],
   "types": [
+    {
+      "name": "EarnGlobal",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "m_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "portal_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "ext_swap_global_account",
+            "type": "pubkey"
+          },
+          {
+            "name": "earner_merkle_root",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
     {
       "name": "InstructionGroup",
       "type": {
@@ -1413,6 +1586,10 @@
           {
             "name": "chain_id",
             "type": "u32"
+          },
+          {
+            "name": "m_mint",
+            "type": "pubkey"
           },
           {
             "name": "admin",

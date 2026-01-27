@@ -87,8 +87,9 @@ fn test_02_receive_index_hyperlane() -> Result<()> {
             payload_type: 1,
             destination_chain_id: 1399811149,
             destination_peer: portal::ID.to_bytes(),
+            index: 0,
         },
-        data: PayloadData::Index(IndexPayload { index: 0 }),
+        data: PayloadData::Index(IndexPayload {}),
     };
 
     let mut accounts = hyperlane_accounts::ReceiveMessage {
@@ -429,8 +430,9 @@ fn create_default_payload(
             payload_type: 1,
             destination_chain_id,
             destination_peer,
+            index: 0,
         },
-        data: PayloadData::Index(IndexPayload { index: 0 }),
+        data: PayloadData::Index(IndexPayload {}),
     }
 }
 
