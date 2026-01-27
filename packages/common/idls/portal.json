@@ -47,16 +47,16 @@
       "args": []
     },
     {
-      "name": "add_bridge_path",
+      "name": "add_bridge_paths",
       "discriminator": [
-        161,
-        105,
-        130,
-        57,
-        245,
-        226,
-        124,
-        236
+        55,
+        71,
+        77,
+        148,
+        164,
+        233,
+        15,
+        185
       ],
       "accounts": [
         {
@@ -124,16 +124,13 @@
           "type": "u32"
         },
         {
-          "name": "source_mint",
-          "type": "pubkey"
-        },
-        {
-          "name": "destination_token",
+          "name": "paths",
           "type": {
-            "array": [
-              "u8",
-              32
-            ]
+            "vec": {
+              "defined": {
+                "name": "BridgePath"
+              }
+            }
           }
         }
       ]
@@ -179,146 +176,6 @@
         }
       ],
       "args": []
-    },
-    {
-      "name": "claim_m_balance",
-      "discriminator": [
-        40,
-        231,
-        208,
-        20,
-        70,
-        24,
-        144,
-        159
-      ],
-      "accounts": [
-        {
-          "name": "admin",
-          "signer": true,
-          "relations": [
-            "portal_global"
-          ]
-        },
-        {
-          "name": "portal_global",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  108,
-                  111,
-                  98,
-                  97,
-                  108
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "portal_authority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority_m_token_account",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "portal_authority"
-              },
-              {
-                "kind": "account",
-                "path": "m_token_program"
-              },
-              {
-                "kind": "account",
-                "path": "m_mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
-        },
-        {
-          "name": "m_mint"
-        },
-        {
-          "name": "destination_token_account",
-          "docs": [
-            "Destination token account for claimed M tokens (admin specifies any valid M token account)"
-          ],
-          "writable": true
-        },
-        {
-          "name": "m_token_program"
-        }
-      ],
-      "args": [
-        {
-          "name": "amount",
-          "type": {
-            "option": "u64"
-          }
-        }
-      ]
     },
     {
       "name": "enable_cross_spoke_transfers",
@@ -476,19 +333,19 @@
       ]
     },
     {
-      "name": "initialize_chain_paths",
+      "name": "initialize_bridge_paths",
       "docs": [
         "Bridge Path Configuration Instructions"
       ],
       "discriminator": [
-        58,
-        17,
-        209,
+        88,
+        20,
+        96,
+        22,
         169,
-        47,
-        79,
-        27,
-        53
+        6,
+        26,
+        82
       ],
       "accounts": [
         {
@@ -948,16 +805,11 @@
           "type": "u32"
         },
         {
-          "name": "source_mint",
-          "type": "pubkey"
-        },
-        {
-          "name": "destination_token",
+          "name": "path",
           "type": {
-            "array": [
-              "u8",
-              32
-            ]
+            "defined": {
+              "name": "BridgePath"
+            }
           }
         }
       ]
@@ -1592,9 +1444,6 @@
         },
         {
           "name": "chain_paths",
-          "docs": [
-            "Chain-specific bridge path configuration"
-          ],
           "pda": {
             "seeds": [
               {
@@ -1979,6 +1828,348 @@
         }
       ],
       "args": []
+    },
+    {
+      "name": "wrap_unclaimed",
+      "discriminator": [
+        123,
+        209,
+        241,
+        179,
+        169,
+        75,
+        253,
+        250
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": [
+            "portal_global"
+          ]
+        },
+        {
+          "name": "portal_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "swap_global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                60,
+                242,
+                167,
+                56,
+                11,
+                17,
+                54,
+                97,
+                114,
+                227,
+                114,
+                39,
+                167,
+                101,
+                13,
+                161,
+                190,
+                235,
+                218,
+                112,
+                220,
+                127,
+                89,
+                126,
+                174,
+                151,
+                23,
+                37,
+                130,
+                35,
+                190
+              ]
+            }
+          }
+        },
+        {
+          "name": "extension_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "extension_program"
+            }
+          }
+        },
+        {
+          "name": "portal_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority_m_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "portal_authority"
+              },
+              {
+                "kind": "account",
+                "path": "m_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "m_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "m_mint"
+        },
+        {
+          "name": "extension_mint"
+        },
+        {
+          "name": "recipient_token_account",
+          "writable": true
+        },
+        {
+          "name": "extension_m_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "extension_m_vault_authority"
+              },
+              {
+                "kind": "account",
+                "path": "m_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "m_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "extension_mint_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "extension_program"
+            }
+          }
+        },
+        {
+          "name": "extension_m_vault_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "extension_program"
+            }
+          }
+        },
+        {
+          "name": "m_token_program"
+        },
+        {
+          "name": "extension_token_program"
+        },
+        {
+          "name": "extension_program"
+        },
+        {
+          "name": "swap_program",
+          "address": "MSwapi3WhNKMUGm9YrxGhypgUEt7wYQH3ZgG32XoWzH"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": {
+            "option": "u64"
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -2610,7 +2801,7 @@
           },
           {
             "name": "remaining_unclaimed",
-            "type": "u128"
+            "type": "u64"
           }
         ]
       }
@@ -2623,10 +2814,6 @@
           {
             "name": "source_chain_id",
             "type": "u32"
-          },
-          {
-            "name": "bridge_adapter",
-            "type": "pubkey"
           },
           {
             "name": "destination_token",
@@ -2657,7 +2844,7 @@
           },
           {
             "name": "principal_amount",
-            "type": "u128"
+            "type": "u64"
           },
           {
             "name": "message_id",
@@ -2723,10 +2910,16 @@
           },
           {
             "name": "m_index",
+            "docs": [
+              "The lastest index value to propagate to other chains"
+            ],
             "type": "u128"
           },
           {
             "name": "message_nonce",
+            "docs": [
+              "To ensure bridge message ID uniqueness"
+            ],
             "type": "u64"
           },
           {
@@ -2737,6 +2930,9 @@
           },
           {
             "name": "isolated_hub_chain_id",
+            "docs": [
+              "This portal is an isolated spoke"
+            ],
             "type": {
               "option": "u32"
             }
@@ -2746,14 +2942,14 @@
             "docs": [
               "Aggregate principal amount of M tokens stored when destination_token is not whitelisted"
             ],
-            "type": "u128"
+            "type": "u64"
           },
           {
             "name": "padding",
             "type": {
               "array": [
                 "u8",
-                112
+                120
               ]
             }
           }
