@@ -1,5 +1,8 @@
 use anchor_lang::prelude::*;
-use anchor_spl::{token_2022::Token2022, token_interface::Mint};
+use anchor_spl::{
+    token_2022::{self, Token2022},
+    token_interface::Mint,
+};
 use m0_portal_common::{
     earn::{self, accounts::EarnGlobal, program::Earn},
     pda,
@@ -190,14 +193,18 @@ impl<'info> ReceiveMessageMetas<'info> {
             AccountMeta::new(portal_global, false).into(),
             AccountMeta::new_readonly(portal_authority, false).into(),
             AccountMeta::new(message_account, false).into(),
+            AccountMeta::new(pda!(&[GLOBAL_SEED], &earn::ID), false).into(),
+            AccountMeta::new(ctx.accounts.account_metas_data.m_mint, false).into(),
+            AccountMeta::new_readonly(token_2022::ID, false).into(),
+            AccountMeta::new_readonly(earn::ID, false).into(),
             AccountMeta::new_readonly(portal::ID, false).into(),
             AccountMeta::new_readonly(system_program::ID, false).into(),
         ];
 
         let required_remaining = require_metas(
             &payload.data,
-            Some(ctx.accounts.account_metas_data.extensions.clone()),
-            Some(ctx.accounts.account_metas_data.m_mint),
+            ctx.accounts.account_metas_data.m_mint,
+            ctx.accounts.account_metas_data.extensions.clone(),
             None,
         )?;
 

@@ -5,7 +5,6 @@ use anchor_spl::{
 };
 
 use crate::{
-    earn,
     ext_swap::{self, constants::GLOBAL_SEED},
     order_book::{self, constants::ORDER_SEED_PREFIX},
     pda,
@@ -21,15 +20,12 @@ use crate::{
 /// Accounts will be passed as remaining accounts to the receive_message instruction on Portal.
 pub fn require_metas(
     payload: &PayloadData,
-    extensions: Option<Vec<Extension>>,
-    m_mint: Option<Pubkey>,
+    m_mint: Pubkey,
+    extensions: Vec<Extension>,
     orderbook_token_in: Option<&AccountInfo>,
 ) -> Result<Vec<AccountMeta>> {
     match payload {
         PayloadData::TokenTransfer(token_transfer) => {
-            let extensions = extensions.ok_or(BridgeError::MissingOptionalAccount)?;
-            let m_mint = m_mint.ok_or(BridgeError::MissingOptionalAccount)?;
-
             if extensions.is_empty() {
                 msg!("No whitelisted extensions");
                 return err!(BridgeError::InvalidSwapConfig);
@@ -61,7 +57,6 @@ pub fn require_metas(
             let extension_mint_auth = pda!(&[MINT_AUTHORITY_SEED], &extension_pid);
             let extension_global = pda!(&[GLOBAL_SEED], &extension_pid);
             let swap_global = pda!(&[GLOBAL_SEED], &ext_swap::ID);
-            let m_global = pda!(&[GLOBAL_SEED], &earn::ID);
 
             // Token accounts
             let recipient_token_account = get_associated_token_address_with_program_id(
@@ -81,10 +76,6 @@ pub fn require_metas(
             );
 
             Ok(vec![
-                AccountMeta::new(m_global, false),
-                AccountMeta::new(m_mint, false),
-                AccountMeta::new_readonly(earn::ID, false),
-                AccountMeta::new_readonly(token_2022::ID, false),
                 AccountMeta::new(extension_mint, false),
                 AccountMeta::new(recipient_token_account, false),
                 AccountMeta::new(authority_m_token_account, false),
@@ -98,17 +89,7 @@ pub fn require_metas(
                 AccountMeta::new_readonly(ext_swap::ID, false),
             ])
         }
-        PayloadData::Index(_) | PayloadData::EarnerMerkleRoot(_) => {
-            let m_global = pda!(&[GLOBAL_SEED], &earn::ID);
-            let m_mint = m_mint.ok_or(BridgeError::MissingOptionalAccount)?;
-
-            Ok(vec![
-                AccountMeta::new(m_global, false),
-                AccountMeta::new(m_mint, false),
-                AccountMeta::new_readonly(earn::ID, false),
-                AccountMeta::new_readonly(token_2022::ID, false),
-            ])
-        }
+        PayloadData::Index(_) | PayloadData::EarnerMerkleRoot(_) => Ok(vec![]),
         PayloadData::FillReport(_) | PayloadData::CancelReport(_) => {
             // Extract common fields and determine recipient based on report type
             let (token_in, order_id, recipient) = match payload {
@@ -125,11 +106,10 @@ pub fn require_metas(
                 .map(|account| *account.owner)
                 .or_else(|| {
                     // Check if token is an extension and get its token program
-                    extensions.and_then(|exts| {
-                        exts.iter()
-                            .find(|ext| ext.mint == token_in)
-                            .map(|ext| ext.token_program)
-                    })
+                    extensions
+                        .iter()
+                        .find(|ext| ext.mint == token_in)
+                        .map(|ext| ext.token_program)
                 })
                 // Default to SPL Token program if no other info is available
                 .unwrap_or(token::ID);
