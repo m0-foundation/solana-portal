@@ -102,8 +102,8 @@ action "set_hyperlane_peer_ethereum" "svm::process_instructions" {
         instruction_args = [
             {
                 address = variable.evm_hyperlane_adapter
-                m0_chain_id = 11155111
-                adapter_chain_id = 11155111
+                m0_chain_id = index([1, 11155111], input.chain_id_idx)
+                adapter_chain_id = index([1, 11155111], input.chain_id_idx)
             }
         ]
     }
@@ -125,8 +125,8 @@ action "set_hyperlane_peer_arbitrum" "svm::process_instructions" {
         instruction_args = [
             {
                 address = variable.evm_hyperlane_adapter
-                m0_chain_id = 421614
-                adapter_chain_id = 421614
+                m0_chain_id = index([42161, 421614], input.chain_id_idx)
+                adapter_chain_id = index([42161, 421614], input.chain_id_idx)
             }
         ]
     }

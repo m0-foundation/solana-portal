@@ -71,11 +71,11 @@ fn test_01_index_update_wormhole() -> Result<()> {
     // Index should match the program’s current m_index (you send current index)
     let global_bytes = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &portal::ID))?;
     let portal_global = PortalGlobal::try_deserialize(&mut global_bytes.as_slice())?;
-
-    match payload.data {
-        PayloadData::Index(index_payload) => assert_eq!(index_payload.index, portal_global.m_index),
-        _ => panic!("Expected IndexPayload"),
-    }
+    assert_eq!(payload.header.index, portal_global.m_index);
+    assert!(
+        matches!(payload.data, PayloadData::Index(_)),
+        "Expected IndexPayload"
+    );
 
     Ok(())
 }
@@ -147,16 +147,16 @@ fn test_03_index_update_hyperlane() -> Result<()> {
     // Index should match the program’s current m_index (you send current index)
     let global_bytes = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &portal::ID))?;
     let portal_global = PortalGlobal::try_deserialize(&mut global_bytes.as_slice())?;
-
-    match payload.data {
-        PayloadData::Index(index_payload) => assert_eq!(index_payload.index, portal_global.m_index),
-        _ => panic!("Expected IndexPayload"),
-    }
+    assert_eq!(payload.header.index, portal_global.m_index);
+    assert!(
+        matches!(payload.data, PayloadData::Index(_)),
+        "Expected IndexPayload"
+    );
 
     // Recipient should be registered peer
     assert_eq!(
         hex::encode(recipient),
-        "0b6a86806a0354c82b8f049eb75d9c97e370a6f0c0cfa15f47909c3fe1c8f794"
+        "000000000000000000000000fc44dadd758a7737ac9200059e9fcd1521d75a07"
     );
 
     Ok(())
