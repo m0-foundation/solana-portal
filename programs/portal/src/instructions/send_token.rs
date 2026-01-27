@@ -204,7 +204,6 @@ impl SendToken<'_> {
             destination_token,
             sender: ctx.accounts.sender.key().to_bytes(),
             recipient,
-            index: ctx.accounts.portal_global.m_index,
         });
 
         // Send message to bridge adapter

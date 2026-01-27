@@ -36,9 +36,7 @@ impl SendIndex<'_> {
         ctx: Context<'_, '_, '_, 'info, SendIndex<'info>>,
         destination_chain_id: u32,
     ) -> Result<()> {
-        let payload = PayloadData::Index(IndexPayload {
-            index: ctx.accounts.portal_global.m_index,
-        });
+        let payload = PayloadData::Index(IndexPayload {});
 
         send_message(
             ctx.accounts.bridge_adapter.to_account_info(),
