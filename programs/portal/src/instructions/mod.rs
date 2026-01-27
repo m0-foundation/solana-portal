@@ -84,22 +84,26 @@ pub fn send_message<'info>(
             return err!(BridgeError::InvalidRemainingAccounts);
         }
 
-        // Delegate account validation to hyperlane adapter
-        let hyperlane_global = remaining_accounts[0].clone();
-        let mailbox_outbox = remaining_accounts[1].clone();
-        let dispatch_authority = remaining_accounts[2].clone();
-        let hyperlane_user_global = remaining_accounts[3].clone();
-        let unique_message = remaining_accounts[4].clone();
-        let dispatched_message = remaining_accounts[5].clone();
-        let igp_program_id = remaining_accounts[6].clone();
-        let igp_program_data = remaining_accounts[7].clone();
-        let igp_gas_payment = remaining_accounts[8].clone();
-        let igp_account = remaining_accounts[9].clone();
-        let mailbox_program = remaining_accounts[10].clone();
-        let spl_noop_program = remaining_accounts[11].clone();
-
-        // Account is optional
+        // Account at index 12 is optional
         let igp_overhead_account = remaining_accounts.get(12).cloned();
+
+        // Delegate account validation to hyperlane adapter
+        let [
+            hyperlane_global,
+            mailbox_outbox,
+            dispatch_authority,
+            hyperlane_user_global,
+            unique_message,
+            dispatched_message,
+            igp_program_id,
+            igp_program_data,
+            igp_gas_payment,
+            igp_account,
+            mailbox_program,
+            spl_noop_program,
+        ]: [AccountInfo; 12] = remaining_accounts
+            .try_into()
+            .map_err(|_| BridgeError::InvalidRemainingAccounts)?;
 
         hyperlane_adapter::cpi::send_message(
             CpiContext::new_with_signer(
