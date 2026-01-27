@@ -18,7 +18,9 @@ pub enum BridgeAdapter {
 
 #[derive(Subcommand)]
 enum Commands {
-    ResolveExecute { tx_hash: String },
+    ResolveExecute {
+        tx_hash: String,
+    },
     SendIndex {
         destination_chain_id: u32,
         #[arg(short, long, value_enum, default_value = "hyperlane")]
@@ -27,6 +29,10 @@ enum Commands {
     SendEvmIndex {
         #[arg(short, long, value_enum, default_value = "hyperlane")]
         adapter: BridgeAdapter,
+    },
+    ProcessHyperlaneMessage {
+        message_id_hex: String,
+        raw_hex: String,
     },
 }
 
@@ -46,6 +52,12 @@ async fn main() -> Result<()> {
         }
         Commands::SendEvmIndex { adapter } => {
             commands::send_evm_index(adapter).await?;
+        }
+        Commands::ProcessHyperlaneMessage {
+            message_id_hex,
+            raw_hex,
+        } => {
+            commands::process_hyperlane_message(message_id_hex, raw_hex)?;
         }
     }
 

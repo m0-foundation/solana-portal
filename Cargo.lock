@@ -4279,6 +4279,7 @@ dependencies = [
  "bs58",
  "clap",
  "executor-account-resolver-svm",
+ "hex",
  "m0-portal-common",
  "reqwest",
  "serde",
