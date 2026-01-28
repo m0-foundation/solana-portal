@@ -84,9 +84,6 @@ pub fn send_message<'info>(
             return err!(BridgeError::InvalidRemainingAccounts);
         }
 
-        // Account at index 12 is optional
-        let igp_overhead_account = remaining_accounts.get(12).cloned();
-
         // Delegate account validation to hyperlane adapter
         let [
             hyperlane_global,
@@ -101,9 +98,13 @@ pub fn send_message<'info>(
             igp_account,
             mailbox_program,
             spl_noop_program,
-        ]: [AccountInfo; 12] = remaining_accounts
+        ]: [AccountInfo; 12] = remaining_accounts[..12]
+            .to_vec()
             .try_into()
             .map_err(|_| BridgeError::InvalidRemainingAccounts)?;
+
+        // Account at index 12 is optional
+        let igp_overhead_account = remaining_accounts.get(12).cloned();
 
         hyperlane_adapter::cpi::send_message(
             CpiContext::new_with_signer(

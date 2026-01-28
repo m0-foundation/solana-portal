@@ -372,7 +372,6 @@ fn test_08_change_destination_mint() -> Result<()> {
             skip_preflight: true,
             ..Default::default()
         });
-    println!("result err: {:?}", result);
 
     assert!(result.is_err());
     let err = result.err().unwrap().to_string();
