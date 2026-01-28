@@ -1,5 +1,3 @@
-use std::cmp::max;
-
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::spl_associated_token_account::solana_program::keccak;
 
@@ -33,15 +31,6 @@ pub struct PortalGlobal {
 }
 
 impl PortalGlobal {
-    pub fn update_index(&mut self, message_id: [u8; 32], new_index: u128) {
-        self.m_index = max(new_index, self.m_index);
-
-        emit!(MTokenIndexReceived {
-            index: new_index,
-            message_id,
-        });
-    }
-
     pub fn generate_message_id(&mut self, destination_chain_id: u32) -> [u8; 32] {
         self.message_nonce += 1;
 
@@ -68,12 +57,6 @@ pub struct BridgeMessage {
 
 impl BridgeMessage {
     pub const SIZE: usize = BridgeMessage::INIT_SPACE + BridgeMessage::DISCRIMINATOR.len();
-}
-
-#[event]
-pub struct MTokenIndexReceived {
-    pub index: u128,
-    pub message_id: [u8; 32],
 }
 
 #[cfg(test)]

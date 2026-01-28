@@ -16,6 +16,7 @@ pub const ETHEREUM_HYPERLANE_ADAPTER: [u8; 32] = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 252, 68, 218, 221, 117, 138, 119, 55, 172, 146, 0, 5, 158,
     159, 205, 21, 33, 215, 90, 7,
 ];
+
 pub const SOLANA_CHAIN_ID: u32 = 1399811149;
 
 pub const M_MINT: Pubkey = pubkey!("mzerojk9tg56ebsrEAhfkyc9VgKjTW2zDqp6C5mhjzH");

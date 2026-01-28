@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use anchor_client::{Client, Cluster};
 use anchor_lang::{system_program, AnchorDeserialize, InstructionData, ToAccountMetas};
+use anchor_spl::token_2022;
 use anyhow::Result;
 use hyperlane_adapter::{accounts as hyperlane_accounts, instruction as hyperlane_instruction};
 use m0_portal_common::ext_swap::accounts::SwapGlobal;
@@ -46,7 +47,7 @@ fn test_01_receive_index_wormhole() -> Result<()> {
     let message_id = [42u8; 32];
     let payload = create_default_payload(message_id, SOLANA_CHAIN_ID, portal::ID.to_bytes());
     let vaa = create_default_vaa(2, ETHEREUM_WORMHOLE_ADAPTER, payload.clone());
-    let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
+    let metas = require_metas(&payload.data, M_MINT, vec![], None)?;
 
     // Relay message - Bridge validation is skipped with skip-validation feature flag
     let signature = program
@@ -89,8 +90,9 @@ fn test_02_receive_index_hyperlane() -> Result<()> {
             payload_type: 1,
             destination_chain_id: 1399811149,
             destination_peer: portal::ID.to_bytes(),
+            index: 0,
         },
-        data: PayloadData::Index(IndexPayload { index: 0 }),
+        data: PayloadData::Index(IndexPayload {}),
     };
 
     let mut accounts = hyperlane_accounts::ReceiveMessage {
@@ -103,10 +105,14 @@ fn test_02_receive_index_hyperlane() -> Result<()> {
         hyperlane_process_authority: Pubkey::default(),
         hyperlane_adapter_authority: pda!(&[AUTHORITY_SEED], &hyperlane_adapter::ID),
         hyperlane_global: pda!(&[GLOBAL_SEED], &hyperlane_adapter::ID),
+        earn_global: pda!(&[GLOBAL_SEED], &earn::ID),
+        m_mint: M_MINT,
+        m_token_program: token_2022::ID,
+        earn_program: earn::ID,
     }
     .to_account_metas(None);
 
-    let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
+    let metas = require_metas(&payload.data, M_MINT, vec![], None)?;
     accounts.extend_from_slice(&metas);
 
     // Remove hyperlane's mailbox process authority
@@ -161,7 +167,7 @@ fn test_03_receive_invalid_peer_address() -> Result<()> {
     let message_id = [42u8; 32];
     let payload = create_default_payload(message_id, SOLANA_CHAIN_ID, portal::ID.to_bytes());
     let vaa = create_default_vaa(2, [4; 32], payload.clone()); // Invalid emitter address
-    let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
+    let metas = require_metas(&payload.data, M_MINT, vec![], None)?;
 
     let result = program
         .request()
@@ -193,7 +199,7 @@ fn test_04_receive_invalid_peer_chain() -> Result<()> {
     let message_id = [42u8; 32];
     let payload = create_default_payload(message_id, SOLANA_CHAIN_ID, portal::ID.to_bytes());
     let vaa = create_default_vaa(2334, ETHEREUM_WORMHOLE_ADAPTER, payload.clone()); // Invalid chain
-    let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
+    let metas = require_metas(&payload.data, M_MINT, vec![], None)?;
 
     let result = program
         .request()
@@ -225,7 +231,7 @@ fn test_05_receive_invalid_destination_chain() -> Result<()> {
     let message_id = [42u8; 32];
     let payload = create_default_payload(message_id, SOLANA_CHAIN_ID + 1, portal::ID.to_bytes()); // Invalid chain ID
     let vaa = create_default_vaa(2334, ETHEREUM_WORMHOLE_ADAPTER, payload.clone());
-    let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
+    let metas = require_metas(&payload.data, M_MINT, vec![], None)?;
 
     let result = program
         .request()
@@ -257,7 +263,7 @@ fn test_06_receive_invalid_destination_peer() -> Result<()> {
     let message_id = [42u8; 32];
     let payload = create_default_payload(message_id, SOLANA_CHAIN_ID, [2; 32]); // Invalid peer
     let vaa = create_default_vaa(2334, ETHEREUM_WORMHOLE_ADAPTER, payload.clone());
-    let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
+    let metas = require_metas(&payload.data, M_MINT, vec![], None)?;
 
     let result = program
         .request()
@@ -298,7 +304,7 @@ fn test_07_receive_cancel_wormhole() -> Result<()> {
     });
 
     let vaa = create_default_vaa(2, ETHEREUM_WORMHOLE_ADAPTER, payload.clone());
-    let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
+    let metas = require_metas(&payload.data, M_MINT, vec![], None)?;
 
     let result = program
         .request()
@@ -338,24 +344,21 @@ fn test_08_change_destination_mint() -> Result<()> {
         destination_token: Pubkey::new_unique().to_bytes(),
         amount: 1_000_000,
         sender: get_signer().pubkey().to_bytes(),
-        index: 0,
     });
 
     let data_swap = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &ext_swap::ID))?;
     let swap_global = SwapGlobal::deserialize(&mut &data_swap[8..])?;
-    let whitelisted_extensions = Some(
-        swap_global
-            .whitelisted_extensions
-            .iter()
-            .map(|&ext| Extension::from(ext))
-            .collect(),
-    );
+    let whitelisted_extensions = swap_global
+        .whitelisted_extensions
+        .iter()
+        .map(|&ext| Extension::from(ext))
+        .collect();
 
     let vaa = create_default_vaa(2, ETHEREUM_WORMHOLE_ADAPTER, payload.clone());
-    let mut metas = require_metas(&payload.data, whitelisted_extensions, Some(M_MINT), None)?;
+    let mut metas = require_metas(&payload.data, M_MINT, whitelisted_extensions, None)?;
 
     // Change destination mint to an different mint (should fail validation)
-    metas[4].pubkey = Pubkey::from_str("usdkbee86pkLyRmxfFCdkyySpxRb5ndCxVsK2BkRXwX").unwrap();
+    metas[0].pubkey = Pubkey::from_str("usdkbee86pkLyRmxfFCdkyySpxRb5ndCxVsK2BkRXwX").unwrap();
 
     let result = program
         .request()
@@ -393,12 +396,11 @@ fn test_09_receive_merkle_root() -> Result<()> {
     payload.header.payload_type = 5;
     payload.data = PayloadData::EarnerMerkleRoot(EarnerMerkleRootPayload {
         merkle_root: [7u8; 32],
-        index: 1_700_000_000,
     });
 
     // Message coming from Arbitrum
     let vaa = create_default_vaa(23, ETHEREUM_WORMHOLE_ADAPTER, payload.clone());
-    let metas = require_metas(&payload.data, None, Some(M_MINT), None)?;
+    let metas = require_metas(&payload.data, M_MINT, vec![], None)?;
 
     let result = program
         .request()
@@ -428,8 +430,9 @@ fn create_default_payload(
             payload_type: 1,
             destination_chain_id,
             destination_peer,
+            index: 0,
         },
-        data: PayloadData::Index(IndexPayload { index: 0 }),
+        data: PayloadData::Index(IndexPayload {}),
     }
 }
 
@@ -464,5 +467,9 @@ fn create_receive_message_accounts(
         wormhole_verify_vaa_shim: wormhole_verify_vaa_shim::ID,
         portal_program: portal::ID,
         system_program: system_program::ID,
+        earn_global: pda!(&[GLOBAL_SEED], &earn::ID),
+        m_mint: M_MINT,
+        m_token_program: token_2022::ID,
+        earn_program: earn::ID,
     }
 }

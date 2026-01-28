@@ -63,14 +63,12 @@ impl SendReport<'_> {
         send_message(
             ctx.accounts.bridge_adapter.to_account_info(),
             ctx.accounts.sender.to_account_info(),
+            &mut ctx.accounts.portal_global,
             ctx.accounts.portal_authority.to_account_info(),
             ctx.bumps.portal_authority,
             ctx.accounts.system_program.to_account_info(),
             ctx.remaining_accounts.to_vec(),
             origin_chain_id,
-            ctx.accounts
-                .portal_global
-                .generate_message_id(origin_chain_id),
             payload,
             PayloadData::FILL_REPORT_DISCRIMINANT,
         )?;
@@ -106,14 +104,12 @@ impl SendReport<'_> {
         send_message(
             ctx.accounts.bridge_adapter.to_account_info(),
             ctx.accounts.sender.to_account_info(),
+            &mut ctx.accounts.portal_global,
             ctx.accounts.portal_authority.to_account_info(),
             ctx.bumps.portal_authority,
             ctx.accounts.system_program.to_account_info(),
             ctx.remaining_accounts.to_vec(),
             origin_chain_id,
-            ctx.accounts
-                .portal_global
-                .generate_message_id(origin_chain_id),
             payload,
             PayloadData::CANCEL_REPORT_DISCRIMINANT,
         )?;

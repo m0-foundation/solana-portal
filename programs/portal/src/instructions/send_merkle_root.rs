@@ -47,21 +47,18 @@ impl SendMerkleRoot<'_> {
         destination_chain_id: u32,
     ) -> Result<()> {
         let payload = PayloadData::EarnerMerkleRoot(EarnerMerkleRootPayload {
-            index: ctx.accounts.portal_global.m_index,
             merkle_root: ctx.accounts.earn_global.earner_merkle_root,
         });
 
         send_message(
             ctx.accounts.bridge_adapter.to_account_info(),
             ctx.accounts.sender.to_account_info(),
+            &mut ctx.accounts.portal_global,
             ctx.accounts.portal_authority.to_account_info(),
             ctx.bumps.portal_authority,
             ctx.accounts.system_program.to_account_info(),
             ctx.remaining_accounts.to_vec(),
             destination_chain_id,
-            ctx.accounts
-                .portal_global
-                .generate_message_id(destination_chain_id),
             payload,
             PayloadData::EARNER_MERKLE_ROOT_DISCRIMINANT,
         )

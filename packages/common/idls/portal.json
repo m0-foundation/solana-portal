@@ -464,6 +464,74 @@
           }
         },
         {
+          "name": "earn_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                11,
+                134,
+                11,
+                7,
+                229,
+                245,
+                33,
+                49,
+                225,
+                170,
+                183,
+                171,
+                210,
+                177,
+                147,
+                110,
+                166,
+                55,
+                182,
+                49,
+                97,
+                242,
+                35,
+                170,
+                152,
+                135,
+                152,
+                108,
+                102,
+                78,
+                112,
+                208
+              ]
+            }
+          }
+        },
+        {
+          "name": "m_mint",
+          "writable": true
+        },
+        {
+          "name": "m_token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "earn_program",
+          "address": "mz2vDzjbQDUDXBH6FPF5s4odCJ4y8YLE5QWaZ8XdZ9Z"
+        },
+        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
@@ -641,6 +709,10 @@
               32
             ]
           }
+        },
+        {
+          "name": "amount_in_to_refund",
+          "type": "u128"
         },
         {
           "name": "origin_chain_id",
@@ -1674,6 +1746,10 @@
             }
           },
           {
+            "name": "amount_in_to_refund",
+            "type": "u128"
+          },
+          {
             "name": "message_id",
             "type": {
               "array": [
@@ -1724,6 +1800,10 @@
                 32
               ]
             }
+          },
+          {
+            "name": "amount_in_to_refund",
+            "type": "u128"
           }
         ]
       }
@@ -2032,10 +2112,6 @@
           },
           {
             "name": "amount",
-            "type": "u128"
-          },
-          {
-            "name": "index",
             "type": "u128"
           },
           {

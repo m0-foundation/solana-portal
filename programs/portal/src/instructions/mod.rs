@@ -21,17 +21,17 @@ pub use send_report::*;
 pub use send_token::*;
 pub use transfer_admin::*;
 
-use crate::state::AUTHORITY_SEED;
+use crate::state::{PortalGlobal, AUTHORITY_SEED};
 
 pub fn send_message<'info>(
     bridge_adapter: AccountInfo<'info>,
     sender: AccountInfo<'info>,
+    portal_global: &mut Account<'info, PortalGlobal>,
     portal_authority: AccountInfo<'info>,
     portal_authority_bump: u8,
     system_program: AccountInfo<'info>,
     remaining_accounts: Vec<AccountInfo<'info>>,
     destination_chain_id: u32,
-    message_id: [u8; 32],
     payload: PayloadData,
     payload_type: u8,
 ) -> Result<()> {
@@ -59,6 +59,7 @@ pub fn send_message<'info>(
                 wormhole_adapter::cpi::accounts::SendMessage {
                     payer: sender,
                     wormhole_global,
+                    portal_global: portal_global.to_account_info(),
                     portal_authority,
                     bridge,
                     message: message_account,
@@ -74,7 +75,7 @@ pub fn send_message<'info>(
                 &[&[AUTHORITY_SEED, &[portal_authority_bump]]],
             ),
             destination_chain_id,
-            message_id,
+            portal_global.generate_message_id(destination_chain_id),
             payload.encode(),
             payload_type,
         )
@@ -84,20 +85,25 @@ pub fn send_message<'info>(
         }
 
         // Delegate account validation to hyperlane adapter
-        let hyperlane_global = remaining_accounts[0].clone();
-        let mailbox_outbox = remaining_accounts[1].clone();
-        let dispatch_authority = remaining_accounts[2].clone();
-        let hyperlane_user_global = remaining_accounts[3].clone();
-        let unique_message = remaining_accounts[4].clone();
-        let dispatched_message = remaining_accounts[5].clone();
-        let igp_program_id = remaining_accounts[6].clone();
-        let igp_program_data = remaining_accounts[7].clone();
-        let igp_gas_payment = remaining_accounts[8].clone();
-        let igp_account = remaining_accounts[9].clone();
-        let mailbox_program = remaining_accounts[10].clone();
-        let spl_noop_program = remaining_accounts[11].clone();
+        let [
+            hyperlane_global,
+            mailbox_outbox,
+            dispatch_authority,
+            hyperlane_user_global,
+            unique_message,
+            dispatched_message,
+            igp_program_id,
+            igp_program_data,
+            igp_gas_payment,
+            igp_account,
+            mailbox_program,
+            spl_noop_program,
+        ]: [AccountInfo; 12] = remaining_accounts[..12]
+            .to_vec()
+            .try_into()
+            .map_err(|_| BridgeError::InvalidRemainingAccounts)?;
 
-        // Account is optional
+        // Account at index 12 is optional
         let igp_overhead_account = remaining_accounts.get(12).cloned();
 
         hyperlane_adapter::cpi::send_message(
@@ -106,6 +112,7 @@ pub fn send_message<'info>(
                 hyperlane_adapter::cpi::accounts::SendMessage {
                     payer: sender,
                     hyperlane_global,
+                    portal_global: portal_global.to_account_info(),
                     portal_authority,
                     mailbox_outbox,
                     dispatch_authority,
@@ -124,7 +131,7 @@ pub fn send_message<'info>(
                 &[&[AUTHORITY_SEED, &[portal_authority_bump]]],
             ),
             destination_chain_id,
-            message_id,
+            portal_global.generate_message_id(destination_chain_id),
             payload.encode(),
             payload_type,
         )

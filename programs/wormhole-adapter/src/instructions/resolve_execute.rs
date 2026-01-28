@@ -2,8 +2,14 @@ use anchor_lang::{
     prelude::*, solana_program::entrypoint::MAX_PERMITTED_DATA_INCREASE, system_program,
     InstructionData,
 };
-use anchor_spl::associated_token::spl_associated_token_account::solana_program::{
-   system_instruction::MAX_PERMITTED_DATA_LENGTH,
+use anchor_spl::{
+    associated_token::spl_associated_token_account::solana_program::system_instruction::MAX_PERMITTED_DATA_LENGTH,
+    token_2022,
+};
+use executor_account_resolver_svm::{
+    find_account, missing_account, InstructionGroup, InstructionGroups, MissingAccounts, Resolver,
+    SerializableInstruction, RESOLVER_PUBKEY_GUARDIAN_SET, RESOLVER_PUBKEY_PAYER,
+    RESOLVER_PUBKEY_SHIM_VAA_SIGS, RESOLVER_RESULT_ACCOUNT, RESOLVER_RESULT_ACCOUNT_SEED,
 };
 use m0_portal_common::{
     earn::{self, accounts::EarnGlobal},
@@ -11,11 +17,6 @@ use m0_portal_common::{
     pda,
     portal::{self, constants::MESSAGE_SEED},
     require_metas, wormhole_verify_vaa_shim, BridgeError, Extension,
-};
-use executor_account_resolver_svm::{
-    find_account, missing_account, InstructionGroup, InstructionGroups, MissingAccounts, Resolver,
-    SerializableInstruction, RESOLVER_PUBKEY_GUARDIAN_SET, RESOLVER_PUBKEY_PAYER,
-    RESOLVER_PUBKEY_SHIM_VAA_SIGS, RESOLVER_RESULT_ACCOUNT, RESOLVER_RESULT_ACCOUNT_SEED,
 };
 use wormhole_svm_definitions::{zero_copy::GuardianSet, GUARDIAN_SET_SEED};
 
@@ -42,46 +43,26 @@ impl ResolveExecuteVaa {
 
         let result_account = pda!(&[RESOLVER_RESULT_ACCOUNT_SEED], &crate::ID);
         let global = pda!(&[GLOBAL_SEED], &crate::ID);
-        let mut m_mint: Option<Pubkey> = None;
-        let mut whitelisted_extensions: Option<Vec<Extension>> = None;
-        let mut orderbook_token_in: Option<&AccountInfo> = None;
+        let earn_global = pda!(&[GLOBAL_SEED], &earn::ID);
+        let swap_global = pda!(&[GLOBAL_SEED], &ext_swap::ID);
+
+        let mut fill_report_token_in: Option<Pubkey> = None;
 
         // Check for missing accounts
         {
-            let mut accounts_required = vec![System::id(), result_account, global];
+            let mut accounts_required = vec![
+                System::id(),
+                result_account,
+                global,
+                earn_global,
+                swap_global,
+            ];
 
             match vaa.payload.data {
-                m0_portal_common::PayloadData::TokenTransfer(_) => {
-                    let earn_global = pda!(&[GLOBAL_SEED], &earn::ID);
-                    let earn_global_data: Option<EarnGlobal> =
-                        deserialize_account(ctx.remaining_accounts, earn_global).ok();
-
-                    if let Some(ref earn_global) = earn_global_data {
-                        m_mint = Some(earn_global.m_mint);
-                    }
-
-                    let swap_global = pda!(&[GLOBAL_SEED], &ext_swap::ID);
-                    let swap_global_data: Option<SwapGlobal> =
-                        deserialize_account(ctx.remaining_accounts, swap_global).ok();
-
-                    if let Some(ref swap_global) = swap_global_data {
-                        whitelisted_extensions = Some(
-                            swap_global
-                                .whitelisted_extensions
-                                .iter()
-                                .map(|&ext| Extension::from(ext))
-                                .collect(),
-                        );
-                    }
-
-                    accounts_required.extend([earn_global, swap_global]);
-                }
                 m0_portal_common::PayloadData::FillReport(ref report) => {
+                    // Need mint account to see which token program owns it
                     accounts_required.push(report.token_in.into());
-
-                    // Need mint account to see token program
-                    orderbook_token_in =
-                        find_account(ctx.remaining_accounts, report.token_in.into());
+                    fill_report_token_in = Some(report.token_in.into());
                 }
                 _ => {}
             }
@@ -184,6 +165,10 @@ impl ResolveExecuteVaa {
             Account::<ExecutorAccountResolverResult>::try_from(return_account)?
         };
 
+        // Parse Earn global to get m_mint
+        let earn_global_data: EarnGlobal = deserialize_account(ctx.remaining_accounts, earn_global)
+            .expect("earn global account should be present");
+
         // Receive instruction on Wormhole adapter
         let mut receive_message_ix = SerializableInstruction {
             program_id: crate::ID,
@@ -202,16 +187,30 @@ impl ResolveExecuteVaa {
                 AccountMeta::new_readonly(guardian_set, false).into(),
                 AccountMeta::new_readonly(RESOLVER_PUBKEY_SHIM_VAA_SIGS, false).into(),
                 AccountMeta::new_readonly(wormhole_verify_vaa_shim::ID, false).into(),
+                AccountMeta::new(pda!(&[GLOBAL_SEED], &earn::ID), false).into(),
+                AccountMeta::new(earn_global_data.m_mint, false).into(),
+                AccountMeta::new_readonly(token_2022::ID, false).into(),
+                AccountMeta::new_readonly(earn::ID, false).into(),
                 AccountMeta::new_readonly(portal::ID, false).into(),
                 AccountMeta::new_readonly(system_program::ID, false).into(),
             ],
         };
 
+        // Parse SwapGlobal for whitelisted extensions
+        let swap_global_data: SwapGlobal = deserialize_account(ctx.remaining_accounts, swap_global)
+            .expect("swap global account should be present");
+
+        let whitelisted_extensions = swap_global_data
+            .whitelisted_extensions
+            .iter()
+            .map(|&ext| Extension::from(ext))
+            .collect();
+
         let required_remaining = require_metas(
             &vaa.payload.data,
+            earn_global_data.m_mint,
             whitelisted_extensions,
-            m_mint,
-            orderbook_token_in,
+            fill_report_token_in.and_then(|mint| find_account(ctx.remaining_accounts, mint)),
         )?;
 
         // Add expected remaining accounts based on payload type

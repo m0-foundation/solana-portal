@@ -1,5 +1,10 @@
 use anchor_lang::prelude::*;
+use anchor_spl::{
+    token_2022::{self, Token2022},
+    token_interface::Mint,
+};
 use m0_portal_common::{
+    earn::{self, accounts::EarnGlobal, program::Earn},
     pda,
     portal::{self, accounts::PortalGlobal, constants::MESSAGE_SEED, program::Portal},
     require_metas, BridgeError, Payload, AUTHORITY_SEED,
@@ -73,6 +78,24 @@ pub struct ReceiveMessage<'info> {
     /// CHECK: Initialized and verified in CPI to Portal
     pub message_account: AccountInfo<'info>,
 
+    #[account(
+        mut,
+        seeds = [GLOBAL_SEED],
+        seeds::program = earn::ID,
+        bump = earn_global.bump,
+    )]
+    pub earn_global: Account<'info, EarnGlobal>,
+
+    #[account(
+        mut,
+        address = portal_global.m_mint @ BridgeError::InvalidMint,
+    )]
+    pub m_mint: InterfaceAccount<'info, Mint>,
+
+    pub m_token_program: Program<'info, Token2022>,
+
+    pub earn_program: Program<'info, Earn>,
+
     pub portal_program: Program<'info, Portal>,
 
     pub system_program: Program<'info, System>,
@@ -108,6 +131,10 @@ impl ReceiveMessage<'_> {
                     message_account: ctx.accounts.message_account.to_account_info(),
                     portal_authority: ctx.accounts.portal_authority.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info(),
+                    earn_global: ctx.accounts.earn_global.to_account_info(),
+                    m_mint: ctx.accounts.m_mint.to_account_info(),
+                    m_token_program: ctx.accounts.m_token_program.to_account_info(),
+                    earn_program: ctx.accounts.earn_program.to_account_info(),
                     portal_global: ctx.accounts.portal_global.to_account_info(),
                 },
                 &[
@@ -166,14 +193,18 @@ impl<'info> ReceiveMessageMetas<'info> {
             AccountMeta::new(portal_global, false).into(),
             AccountMeta::new_readonly(portal_authority, false).into(),
             AccountMeta::new(message_account, false).into(),
+            AccountMeta::new(pda!(&[GLOBAL_SEED], &earn::ID), false).into(),
+            AccountMeta::new(ctx.accounts.account_metas_data.m_mint, false).into(),
+            AccountMeta::new_readonly(token_2022::ID, false).into(),
+            AccountMeta::new_readonly(earn::ID, false).into(),
             AccountMeta::new_readonly(portal::ID, false).into(),
             AccountMeta::new_readonly(system_program::ID, false).into(),
         ];
 
         let required_remaining = require_metas(
             &payload.data,
-            Some(ctx.accounts.account_metas_data.extensions.clone()),
-            Some(ctx.accounts.account_metas_data.m_mint),
+            ctx.accounts.account_metas_data.m_mint,
+            ctx.accounts.account_metas_data.extensions.clone(),
             None,
         )?;
 

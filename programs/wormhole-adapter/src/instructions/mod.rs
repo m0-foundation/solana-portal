@@ -8,8 +8,8 @@ pub mod set_peer;
 pub mod transfer_admin;
 
 use anchor_lang::prelude::*;
-use m0_portal_common::{BridgeError, Payload, PayloadData, PayloadHeader, TokenTransferPayload};
 pub use initialize::*;
+use m0_portal_common::{BridgeError, Payload, PayloadData, PayloadHeader, TokenTransferPayload};
 pub use pause::*;
 pub use receive_message::*;
 pub use resolve_execute::*;
@@ -71,12 +71,12 @@ impl VaaBody {
                         destination_chain_id: 1399811149, // M0 chain id for Solana
                         destination_peer: source_ntt_manager.try_into().unwrap(),
                         payload_type: PayloadData::TOKEN_TRANSFER_DISCRIMINANT,
+                        index: u64::from_be_bytes(index.try_into().unwrap()) as u128,
                     },
                     data: PayloadData::TokenTransfer(TokenTransferPayload {
                         amount: u64::from_be_bytes(amount_bytes.try_into().unwrap()) as u128,
                         destination_token: destination_token.try_into().unwrap(),
                         recipient: to.try_into().unwrap(),
-                        index: u64::from_be_bytes(index.try_into().unwrap()) as u128,
                         sender: [0u8; 32], // NTT does not provide sender info
                     }),
                 }
@@ -145,11 +145,12 @@ mod tests {
         assert_eq!(vaa.sequence, 371);
         assert_eq!(vaa.consistency_level, 1);
 
+        assert_eq!(vaa.payload.header.index, 1062794965833);
+
         // payload verification
         match vaa.payload.data {
             PayloadData::TokenTransfer(ref payload) => {
                 assert_eq!(payload.amount, 2);
-                assert_eq!(payload.index, 1062794965833);
                 assert_eq!(
                     Pubkey::new_from_array(payload.destination_token).to_string(),
                     "mzeroXDoBpRVhnEXBra27qzAMdxgpWVY3DzQW7xMVJp"

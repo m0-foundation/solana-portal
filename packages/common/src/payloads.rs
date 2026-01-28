@@ -14,10 +14,11 @@ pub struct PayloadHeader {
     pub destination_chain_id: u32,
     pub destination_peer: [u8; 32],
     pub message_id: [u8; 32],
+    pub index: u128,
 }
 
 impl PayloadHeader {
-    pub const SIZE: usize = 1 + 4 + 32 + 32;
+    pub const SIZE: usize = 1 + 4 + 32 + 32 + 16;
 
     pub fn encode(&self) -> Vec<u8> {
         let mut data = Vec::new();
@@ -25,6 +26,7 @@ impl PayloadHeader {
         data.extend_from_slice(&self.destination_chain_id.to_be_bytes());
         data.extend_from_slice(&self.destination_peer);
         data.extend_from_slice(&self.message_id);
+        data.extend_from_slice(&self.index.to_be_bytes());
         data
     }
 
@@ -33,6 +35,7 @@ impl PayloadHeader {
         let (chain_id_bytes, data) = data.split_at(4);
         let (destination_peer_bytes, data) = data.split_at(32);
         let (message_id_bytes, data) = data.split_at(32);
+        let (index_bytes, data) = data.split_at(16);
 
         (
             PayloadHeader {
@@ -40,6 +43,7 @@ impl PayloadHeader {
                 destination_chain_id: u32::from_be_bytes(chain_id_bytes.try_into().unwrap()),
                 destination_peer: destination_peer_bytes.try_into().unwrap(),
                 message_id: message_id_bytes.try_into().unwrap(),
+                index: u128::from_be_bytes(index_bytes.try_into().unwrap()),
             },
             data,
         )
@@ -71,13 +75,11 @@ impl PayloadData {
                 data.extend_from_slice(&payload.destination_token);
                 data.extend_from_slice(&payload.sender);
                 data.extend_from_slice(&payload.recipient);
-                data.extend_from_slice(&payload.index.to_be_bytes());
                 data
             }
-            PayloadData::Index(payload) => payload.index.to_be_bytes().to_vec(),
+            PayloadData::Index(_payload) => vec![],
             PayloadData::EarnerMerkleRoot(payload) => {
                 let mut data = vec![];
-                data.extend_from_slice(&payload.index.to_be_bytes());
                 data.extend_from_slice(&payload.merkle_root);
                 data
             }
@@ -107,20 +109,16 @@ impl PayloadData {
                 let (amount_bytes, data) = data.split_at(16);
                 let (destination_token_bytes, data) = data.split_at(32);
                 let (sender_bytes, data) = data.split_at(32);
-                let (recipient_bytes, data) = data.split_at(32);
-                let (index_bytes, _) = data.split_at(16);
+                let (recipient_bytes, _) = data.split_at(32);
 
                 Ok(PayloadData::TokenTransfer(TokenTransferPayload {
                     amount: u128::from_be_bytes(amount_bytes.try_into().unwrap()),
                     destination_token: destination_token_bytes.try_into().unwrap(),
                     sender: sender_bytes.try_into().unwrap(),
                     recipient: recipient_bytes.try_into().unwrap(),
-                    index: u128::from_be_bytes(index_bytes.try_into().unwrap()),
                 }))
             }
-            Self::INDEX_DISCRIMINANT => Ok(PayloadData::Index(IndexPayload {
-                index: u128::from_be_bytes(data.try_into().unwrap()),
-            })),
+            Self::INDEX_DISCRIMINANT => Ok(PayloadData::Index(IndexPayload {})),
             Self::FILL_REPORT_DISCRIMINANT => {
                 let (order_id_bytes, data) = data.split_at(32);
                 let (amount_in_to_release_bytes, data) = data.split_at(16);
@@ -141,11 +139,9 @@ impl PayloadData {
                 }))
             }
             Self::EARNER_MERKLE_ROOT_DISCRIMINANT => {
-                let (index_bytes, data) = data.split_at(16);
                 let (merkle_root_bytes, _) = data.split_at(32);
 
                 Ok(PayloadData::EarnerMerkleRoot(EarnerMerkleRootPayload {
-                    index: u128::from_be_bytes(index_bytes.try_into().unwrap()),
                     merkle_root: merkle_root_bytes.try_into().unwrap(),
                 }))
             }
@@ -194,13 +190,11 @@ pub struct TokenTransferPayload {
     pub destination_token: [u8; 32],
     pub sender: [u8; 32],
     pub recipient: [u8; 32],
-    pub index: u128,
 }
 
 impl Into<EarnerMerkleRootPayload> for TokenTransferPayload {
     fn into(self) -> EarnerMerkleRootPayload {
         EarnerMerkleRootPayload {
-            index: self.index,
             merkle_root: [0; 32],
         }
     }
@@ -224,20 +218,16 @@ pub struct CancelReportPayload {
 }
 
 #[derive(Debug, Clone)]
-pub struct IndexPayload {
-    pub index: u128,
-}
+pub struct IndexPayload {}
 
 #[derive(Debug, Clone)]
 pub struct EarnerMerkleRootPayload {
-    pub index: u128,
     pub merkle_root: [u8; 32],
 }
 
 impl Into<EarnerMerkleRootPayload> for IndexPayload {
     fn into(self) -> EarnerMerkleRootPayload {
         EarnerMerkleRootPayload {
-            index: self.index,
             merkle_root: [0; 32],
         }
     }
@@ -246,6 +236,7 @@ impl Into<EarnerMerkleRootPayload> for IndexPayload {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use hex;
 
     #[test]
     fn test_token_transfer_encode_decode() {
@@ -254,6 +245,7 @@ mod tests {
             destination_chain_id: 56,
             destination_peer: [5u8; 32],
             message_id: [4u8; 32],
+            index: 42,
         };
 
         let payload_data = TokenTransferPayload {
@@ -261,7 +253,6 @@ mod tests {
             destination_token: [1u8; 32],
             sender: [2u8; 32],
             recipient: [3u8; 32],
-            index: 42,
         };
 
         let payload = Payload {
@@ -277,11 +268,11 @@ mod tests {
                 assert_eq!(decoded_payload.destination_token, [1u8; 32]);
                 assert_eq!(decoded_payload.sender, [2u8; 32]);
                 assert_eq!(decoded_payload.recipient, [3u8; 32]);
-                assert_eq!(decoded_payload.index, 42);
                 assert_eq!(decoded.header.message_id, [4u8; 32]);
                 assert_eq!(decoded.header.destination_chain_id, 56);
                 assert_eq!(decoded.header.destination_peer, [5u8; 32]);
                 assert_eq!(decoded.header.payload_type, 0);
+                assert_eq!(decoded.header.index, 42);
             }
             _ => panic!("Expected TokenTransfer payload"),
         }
@@ -294,9 +285,10 @@ mod tests {
             destination_chain_id: 56,
             destination_peer: [6u8; 32],
             message_id: [5u8; 32],
+            index: 123,
         };
 
-        let payload_data = IndexPayload { index: 123 };
+        let payload_data = IndexPayload {};
 
         let payload = Payload {
             header: header.clone(),
@@ -306,12 +298,12 @@ mod tests {
         let decoded = Payload::decode(&encoded).unwrap();
 
         match decoded.data {
-            PayloadData::Index(decoded_payload) => {
-                assert_eq!(decoded_payload.index, 123);
+            PayloadData::Index(_decoded_payload) => {
                 assert_eq!(decoded.header.message_id, [5u8; 32]);
                 assert_eq!(decoded.header.destination_chain_id, 56);
                 assert_eq!(decoded.header.destination_peer, [6u8; 32]);
                 assert_eq!(decoded.header.payload_type, 1);
+                assert_eq!(decoded.header.index, 123);
             }
             _ => panic!("Expected Index payload"),
         }
@@ -324,6 +316,7 @@ mod tests {
             destination_chain_id: 56,
             destination_peer: [10u8; 32],
             message_id: [9u8; 32],
+            index: 100,
         };
 
         let payload_data = FillReportPayload {
@@ -352,6 +345,7 @@ mod tests {
                 assert_eq!(decoded.header.destination_chain_id, 56);
                 assert_eq!(decoded.header.destination_peer, [10u8; 32]);
                 assert_eq!(decoded.header.payload_type, 4);
+                assert_eq!(decoded.header.index, 100);
             }
             _ => panic!("Expected FillReport payload"),
         }
@@ -364,10 +358,10 @@ mod tests {
             destination_chain_id: 56,
             destination_peer: [12u8; 32],
             message_id: [11u8; 32],
+            index: 999,
         };
 
         let payload_data = EarnerMerkleRootPayload {
-            index: 999,
             merkle_root: [10u8; 32],
         };
 
@@ -380,12 +374,12 @@ mod tests {
 
         match decoded.data {
             PayloadData::EarnerMerkleRoot(decoded_payload) => {
-                assert_eq!(decoded_payload.index, 999);
                 assert_eq!(decoded_payload.merkle_root, [10u8; 32]);
                 assert_eq!(decoded.header.message_id, [11u8; 32]);
                 assert_eq!(decoded.header.destination_chain_id, 56);
                 assert_eq!(decoded.header.destination_peer, [12u8; 32]);
                 assert_eq!(decoded.header.payload_type, 5);
+                assert_eq!(decoded.header.index, 999);
             }
             _ => panic!("Expected EarnerMerkleRoot payload"),
         }
@@ -398,6 +392,7 @@ mod tests {
             destination_chain_id: 56,
             destination_peer: [14u8; 32],
             message_id: [13u8; 32],
+            index: 200,
         };
         let payload_data = CancelReportPayload {
             order_id: [15u8; 32],
@@ -421,8 +416,29 @@ mod tests {
                 assert_eq!(decoded.header.destination_chain_id, 56);
                 assert_eq!(decoded.header.destination_peer, [14u8; 32]);
                 assert_eq!(decoded.header.payload_type, 6);
+                assert_eq!(decoded.header.index, 200);
             }
             _ => panic!("Expected CancelReport payload"),
+        }
+    }
+
+    #[test]
+    fn test_real_payload_from_hex() {
+        // https://explorer.hyperlane.xyz/message/0x49f6f1fd9ca3ffaad311c10b2a7525e592404bf29509f36b500fa98af6e5581d
+        let bytes = hex::decode("01536f6c4e0b6a86806a0354c82b8f049eb75d9c97e370a6f0c0cfa15f47909c3fe1c8f79463e803c2e733cc00d9a5767b7b7541c251d5f8b39d6f6b6094130d4d6a7d6ada0000000000000000000000f2e01aa03a").unwrap();
+        let decoded = Payload::decode(&bytes).unwrap();
+
+        match decoded.data {
+            PayloadData::Index(_decoded_payload) => {
+                // https://sepolia.etherscan.io/tx/0x329da4dadf8e521612d7becbebb65b7ad3c1aa4b7f8462c7992ba9c159a5ffc1#eventlog
+                assert!(hex::encode(decoded.header.message_id).eq_ignore_ascii_case(
+                    "63E803C2E733CC00D9A5767B7B7541C251D5F8B39D6F6B6094130D4D6A7D6ADA"
+                ));
+                assert_eq!(decoded.header.destination_chain_id, 1399811150);
+                assert_eq!(decoded.header.payload_type, 1);
+                assert_eq!(decoded.header.index, 1043141926970);
+            }
+            _ => panic!("Expected Index payload"),
         }
     }
 }

@@ -4,43 +4,12 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use m0_portal_common_macros::ExtractAccounts;
 
 use crate::{
-    earn,
     ext_swap::{self, accounts::SwapGlobal},
-    order_book, BridgeError, CancelReportPayload, EarnerMerkleRootPayload, FillReportPayload,
-    TokenTransferPayload,
+    order_book, BridgeError, CancelReportPayload, FillReportPayload, TokenTransferPayload,
 };
 
 #[derive(ExtractAccounts)]
-pub struct IndexPayloadAccounts<'info> {
-    pub m_global: AccountInfo<'info>,
-    pub m_mint: AccountInfo<'info>,
-    pub earn_program: AccountInfo<'info>,
-    pub m_token_program: AccountInfo<'info>,
-}
-
-impl EarnerMerkleRootPayload {
-    pub fn parse_and_validate_accounts<'info>(
-        &self,
-        remaining_accounts: Vec<AccountInfo<'info>>,
-    ) -> Result<IndexPayloadAccounts<'info>> {
-        let accounts = IndexPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
-
-        if accounts.earn_program.key != &earn::ID {
-            return err!(BridgeError::InvalidRemainingAccount);
-        }
-
-        Ok(accounts)
-    }
-}
-
-#[derive(ExtractAccounts)]
 pub struct TokenTransferPayloadAccounts<'info> {
-    // Shared with IndexPayloadAccounts
-    pub m_global: AccountInfo<'info>,
-    pub m_mint: AccountInfo<'info>,
-    pub earn_program: AccountInfo<'info>,
-    pub m_token_program: AccountInfo<'info>,
-    // Remaining accounts specific to TokenTransferPayload
     pub extension_mint: AccountInfo<'info>,
     pub recipient_token_account: AccountInfo<'info>,
     pub authority_m_token_account: AccountInfo<'info>,
@@ -58,7 +27,6 @@ impl TokenTransferPayload {
     pub fn parse_and_validate_accounts<'info>(
         &self,
         remaining_accounts: Vec<AccountInfo<'info>>,
-        expected_m_mint: Pubkey,
     ) -> Result<TokenTransferPayloadAccounts<'info>> {
         let accounts =
             TokenTransferPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
@@ -70,10 +38,6 @@ impl TokenTransferPayload {
             accounts.extension_token_program.key,
         );
         if accounts.recipient_token_account.key() != recipient_token_account {
-            return err!(BridgeError::InvalidRemainingAccount);
-        }
-
-        if accounts.earn_program.key != &earn::ID {
             return err!(BridgeError::InvalidRemainingAccount);
         }
 
@@ -94,10 +58,6 @@ impl TokenTransferPayload {
                     return err!(BridgeError::InvalidRemainingAccount);
                 }
             }
-        }
-
-        if accounts.m_mint.key() != expected_m_mint {
-            return err!(BridgeError::InvalidMint);
         }
 
         Ok(accounts)

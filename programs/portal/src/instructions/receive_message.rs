@@ -1,14 +1,17 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface;
+use anchor_spl::{
+    token_2022::Token2022,
+    token_interface::{self, Mint},
+};
 use m0_portal_common::{
-    earn::{self, cpi::accounts::PropagateIndex},
+    earn::{self, accounts::EarnGlobal, cpi::accounts::PropagateIndex, program::Earn},
     ext_swap,
     order_book::{
         self,
         types::{CancelReport, FillReport},
     },
-    BridgeAdapter, BridgeError, CancelReportPayload, EarnerMerkleRootPayload, FillReportPayload,
-    Payload, PayloadData, TokenTransferPayload,
+    BridgeAdapter, BridgeError, CancelReportPayload, FillReportPayload, Payload, PayloadData,
+    TokenTransferPayload,
 };
 
 use crate::state::{
@@ -46,6 +49,24 @@ pub struct ReceiveMessage<'info> {
     )]
     /// CHECK: account does not hold data
     pub portal_authority: UncheckedAccount<'info>,
+
+    #[account(
+        mut,
+        seeds = [GLOBAL_SEED],
+        seeds::program = earn::ID,
+        bump = earn_global.bump,
+    )]
+    pub earn_global: Account<'info, EarnGlobal>,
+
+    #[account(
+        mut,
+        address = portal_global.m_mint @ BridgeError::InvalidMint,
+    )]
+    pub m_mint: InterfaceAccount<'info, Mint>,
+
+    pub m_token_program: Program<'info, Token2022>,
+
+    pub earn_program: Program<'info, Earn>,
 
     pub system_program: Program<'info, System>,
 }
@@ -103,12 +124,20 @@ impl ReceiveMessage<'_> {
             .message_account
             .set_inner(BridgeMessage { consumed: true });
 
+        // Propagate index from header on all payloads
+        if message.header.index >= ctx.accounts.portal_global.m_index {
+            ctx.accounts.portal_global.m_index = message.header.index;
+
+            Self::propagate_index(&ctx, &message)?;
+
+            emit!(MTokenIndexReceived {
+                index: message.header.index,
+                message_id,
+            });
+        }
+
         match message.data {
             PayloadData::TokenTransfer(payload) => {
-                ctx.accounts
-                    .portal_global
-                    .update_index(message_id, payload.index);
-
                 return Self::handle_token_transfer_payload(
                     ctx,
                     source_chain_id,
@@ -116,21 +145,6 @@ impl ReceiveMessage<'_> {
                     message.header.message_id,
                 );
             }
-            PayloadData::Index(payload) => {
-                ctx.accounts
-                    .portal_global
-                    .update_index(message_id, payload.index);
-
-                return Self::handle_index_payload(&ctx, payload.into());
-            }
-            PayloadData::EarnerMerkleRoot(payload) => {
-                ctx.accounts
-                    .portal_global
-                    .update_index(message_id, payload.index);
-
-                return Self::handle_index_payload(&ctx, payload);
-            }
-
             PayloadData::FillReport(fill_report) => {
                 return Self::handle_fill_report_payload(
                     ctx,
@@ -147,40 +161,43 @@ impl ReceiveMessage<'_> {
                     message.header.message_id,
                 );
             }
+            PayloadData::Index(_) | PayloadData::EarnerMerkleRoot(_) => {
+                // No-op as handled by propagate_index above
+                return Ok(());
+            }
         }
     }
 
-    fn handle_index_payload<'info>(
+    fn propagate_index<'info>(
         ctx: &Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
-        payload: EarnerMerkleRootPayload,
+        message: &Payload,
     ) -> Result<()> {
-        let accounts = payload.parse_and_validate_accounts(ctx.remaining_accounts.to_vec())?;
         let authority_seed: &[&[&[u8]]] = &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]];
 
         let propogate_ctx = CpiContext::new_with_signer(
-            accounts.earn_program.to_account_info(),
+            ctx.accounts.earn_program.to_account_info(),
             PropagateIndex {
                 signer: ctx.accounts.portal_authority.to_account_info(),
-                global_account: accounts.m_global,
-                m_mint: accounts.m_mint,
-                token_program: accounts.m_token_program,
+                global_account: ctx.accounts.earn_global.to_account_info(),
+                m_mint: ctx.accounts.m_mint.to_account_info(),
+                token_program: ctx.accounts.m_token_program.to_account_info(),
             },
             authority_seed,
         );
 
-        msg!(
-            "Index update: {}, Merkle update: {}",
-            payload.index,
-            !payload.merkle_root.is_empty()
-        );
+        let merkle_root = match &message.data {
+            PayloadData::EarnerMerkleRoot(payload) => payload.merkle_root,
+            _ => [0u8; 32],
+        };
 
         earn::cpi::propagate_index(
             propogate_ctx,
-            payload
+            message
+                .header
                 .index
                 .try_into()
                 .expect("could not cast index to u64"),
-            payload.merkle_root,
+            merkle_root,
         )
     }
 
@@ -197,19 +214,12 @@ impl ReceiveMessage<'_> {
             }
         }
 
-        if payload.index > 0 {
-            Self::handle_index_payload(&ctx, payload.clone().into())?;
-        }
-
-        let accounts = payload.parse_and_validate_accounts(
-            ctx.remaining_accounts.to_vec(),
-            ctx.accounts.portal_global.m_mint,
-        )?;
+        let accounts = payload.parse_and_validate_accounts(ctx.remaining_accounts.to_vec())?;
 
         // Get the principal amount of $M tokens to transfer using the multiplier
         let principal = m0_portal_common::amount_to_principal_down(
             payload.amount,
-            m0_portal_common::get_scaled_ui_config(&accounts.m_mint)?
+            m0_portal_common::get_scaled_ui_config(&ctx.accounts.m_mint.to_account_info())?
                 .new_multiplier
                 .into(),
         );
@@ -217,9 +227,9 @@ impl ReceiveMessage<'_> {
         // Mint to authority account which will wrap it to the recipient
         token_interface::mint_to(
             CpiContext::new_with_signer(
-                accounts.m_token_program.to_account_info(),
+                ctx.accounts.m_token_program.to_account_info(),
                 token_interface::MintTo {
-                    mint: accounts.m_mint.to_account_info(),
+                    mint: ctx.accounts.m_mint.to_account_info(),
                     to: accounts.authority_m_token_account.clone(),
                     authority: ctx.accounts.portal_authority.to_account_info(),
                 },
@@ -238,14 +248,14 @@ impl ReceiveMessage<'_> {
                     swap_global: accounts.swap_global,
                     to_global: accounts.extension_global,
                     to_mint: accounts.extension_mint,
-                    m_mint: accounts.m_mint,
+                    m_mint: ctx.accounts.m_mint.to_account_info(),
                     m_token_account: accounts.authority_m_token_account,
                     to_token_account: accounts.recipient_token_account,
                     to_m_vault_auth: accounts.extension_m_vault_authority,
                     to_mint_authority: accounts.extension_mint_authority,
                     to_m_vault: accounts.extension_m_vault,
                     to_token_program: accounts.extension_token_program,
-                    m_token_program: accounts.m_token_program,
+                    m_token_program: ctx.accounts.m_token_program.to_account_info(),
                     to_ext_program: accounts.extension_program,
                     system_program: ctx.accounts.system_program.to_account_info(),
                 },
@@ -261,7 +271,6 @@ impl ReceiveMessage<'_> {
             sender: payload.sender,
             recipient: payload.recipient,
             amount: payload.amount,
-            index: payload.index,
             message_id: message_id,
         });
 
@@ -381,7 +390,6 @@ pub struct TokenReceived {
     pub sender: [u8; 32],
     pub recipient: [u8; 32],
     pub amount: u128,
-    pub index: u128,
     pub message_id: [u8; 32],
 }
 
@@ -405,5 +413,11 @@ pub struct CancelReportReceived {
     pub order_sender: [u8; 32],
     pub token_in: [u8; 32],
     pub amount_in_to_refund: u128,
+    pub message_id: [u8; 32],
+}
+
+#[event]
+pub struct MTokenIndexReceived {
+    pub index: u128,
     pub message_id: [u8; 32],
 }

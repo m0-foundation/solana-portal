@@ -3,7 +3,10 @@ use anchor_lang::prelude::{
     program::{get_return_data, invoke_signed},
     *,
 };
-use m0_portal_common::{portal, BridgeError, Payload, PayloadData, PayloadHeader, AUTHORITY_SEED};
+use m0_portal_common::{
+    portal::{self, accounts::PortalGlobal},
+    BridgeError, Payload, PayloadData, PayloadHeader, AUTHORITY_SEED,
+};
 use std::vec;
 
 use crate::{
@@ -28,6 +31,13 @@ pub struct SendMessage<'info> {
         bump = hyperlane_global.bump,
     )]
     pub hyperlane_global: Account<'info, HyperlaneGlobal>,
+
+    #[account(
+        seeds = [GLOBAL_SEED],
+        seeds::program = portal::ID,
+        bump = portal_global.bump,
+    )]
+    pub portal_global: Account<'info, PortalGlobal>,
 
     #[account(
         seeds = [AUTHORITY_SEED],
@@ -161,6 +171,7 @@ impl SendMessage<'_> {
                     destination_chain_id: m0_destination_chain_id,
                     destination_peer: peer.address,
                     payload_type,
+                    index: ctx.accounts.portal_global.m_index,
                 },
                 data: PayloadData::decode(payload_type, &payload)?,
             }
