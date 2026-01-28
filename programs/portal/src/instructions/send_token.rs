@@ -229,7 +229,7 @@ impl SendToken<'_> {
             destination_token,
             sender: ctx.accounts.sender.key(),
             recipient,
-            amount: m_amount as u128,
+            amount: scaled_m_amount,
             index: ctx.accounts.portal_global.m_index,
             bridge_adapter: ctx.accounts.bridge_adapter.key(),
         });
