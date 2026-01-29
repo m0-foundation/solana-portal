@@ -42,7 +42,7 @@ async fn main() -> Result<()> {
 
     match cli.command {
         Commands::ResolveExecute { tx_hash } => {
-            commands::resolve_execute(tx_hash)?;
+            commands::resolve_execute(tx_hash).await?;
         }
         Commands::SendIndex {
             destination_chain_id,

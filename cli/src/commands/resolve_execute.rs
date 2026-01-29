@@ -37,14 +37,14 @@ const EXECUTOR_API_URL: &str = "https://executor-testnet.labsapis.com/v0/status/
 const RESOLVER_PUBKEY_SHIM_VAA_SIGS: Pubkey =
     Pubkey::new_from_array(*b"shim_vaa_sigs_000000000000000000");
 
-pub fn resolve_execute(tx_hash: String) -> Result<()> {
+pub async fn resolve_execute(tx_hash: String) -> Result<()> {
     let rpc_client = RpcClient::new(RPC_URL);
     let payer = load_keypair()?;
 
     // Fetch VAA and the post instruction using the Wormhole API
-    let vaa_body = fetch_vaa_body(&tx_hash)?;
+    let vaa_body = fetch_vaa_body(&tx_hash).await?;
     let (instruction, guardian_set) =
-        extract_target_instruction(&rpc_client, &fetch_executor_transactions(&tx_hash)?)?;
+        extract_target_instruction(&rpc_client, &fetch_executor_transactions(&tx_hash).await?)?;
 
     // Simulate until all accounts are resolved and result PDA is populated
     let result_pda = pda!(
@@ -75,12 +75,14 @@ fn load_keypair() -> Result<Keypair> {
     Keypair::read_from_file(&key_path).map_err(|e| anyhow::anyhow!("Failed to read keypair: {}", e))
 }
 
-fn fetch_vaa_body(tx_hash: &str) -> Result<Vec<u8>> {
-    let response: WormholeResponse = reqwest::blocking::Client::new()
+async fn fetch_vaa_body(tx_hash: &str) -> Result<Vec<u8>> {
+    let response: WormholeResponse = reqwest::Client::new()
         .get(format!("{}?txHash={}", WORMHOLE_API_URL, tx_hash))
         .send()
+        .await
         .context("Failed to fetch VAA")?
         .json()
+        .await
         .context("Failed to parse VAA response")?;
 
     let vaa_bytes = BASE64_STANDARD.decode(
@@ -95,13 +97,15 @@ fn fetch_vaa_body(tx_hash: &str) -> Result<Vec<u8>> {
     Ok(vaa_bytes[header_len..].to_vec())
 }
 
-fn fetch_executor_transactions(tx_hash: &str) -> Result<ExecutorTransactions> {
-    reqwest::blocking::Client::new()
+async fn fetch_executor_transactions(tx_hash: &str) -> Result<ExecutorTransactions> {
+    reqwest::Client::new()
         .post(EXECUTOR_API_URL)
         .json(&serde_json::json!({ "txHash": tx_hash }))
         .send()
+        .await
         .context("Failed to fetch executor txs")?
         .json()
+        .await
         .context("Failed to parse executor txs")
 }
 
