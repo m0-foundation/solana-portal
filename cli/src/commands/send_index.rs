@@ -1,9 +1,7 @@
 use anchor_lang::{system_program, AccountDeserialize};
 use anyhow::{Context, Result};
 use m0_portal_common::{
-    build_relay_instruction,
-    consts::WORMHOLE_BRIDGE_PROGRAM_ID_DEVNET,
-    get_current_sequence, get_wormhole_chain_id,
+    build_relay_instruction, get_current_sequence_blocking, get_wormhole_chain_id,
     hyperlane_adapter::{
         self,
         accounts::{HyperlaneGlobal, HyperlaneUserGlobal},
@@ -158,7 +156,8 @@ fn send_index_via_wormhole(
     ];
 
     let current_sequence =
-        get_current_sequence(DEVNET_RPC_URL, &WORMHOLE_BRIDGE_PROGRAM_ID_DEVNET)?;
+        get_current_sequence_blocking(rpc_client, true).expect("Failed to get current sequence");
+
     println!("Requesting relay for sequence {}", current_sequence);
 
     let relay_ix = build_relay_instruction(

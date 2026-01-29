@@ -1,12 +1,14 @@
+use anchor_client::solana_client::nonblocking::rpc_client::RpcClient;
+use anchor_client::solana_client::rpc_client::RpcClient as BlockingRpcClient;
 use anchor_lang::solana_program::{
     hash::hashv,
     instruction::{AccountMeta, Instruction},
 };
 use anchor_lang::{prelude::*, system_program};
-use base64::{engine::general_purpose::STANDARD, Engine};
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    consts::{WORMHOLE_BRIDGE_PROGRAM_ID, WORMHOLE_BRIDGE_PROGRAM_ID_DEVNET},
     pda,
     wormhole_adapter::{self, constants::EMITTER_SEED},
 };
@@ -106,88 +108,45 @@ pub fn get_wormhole_chain_id(m0_chain_id: u32) -> Option<u16> {
     }
 }
 
-/// Fetch the current sequence number from the Wormhole SequenceTracker account.
-pub fn get_current_sequence(
-    rpc_url: &str,
-    wormhole_program_id: &Pubkey,
-) -> std::result::Result<u64, ExecutorQuoteError> {
+fn get_sequence_account(devnet: bool) -> Pubkey {
     let emitter = pda!(&[EMITTER_SEED], &wormhole_adapter::ID);
-    let sequence_account = pda!(&[b"Sequence", &emitter.to_bytes()], wormhole_program_id);
-    println!("Emitter: {}", emitter);
-
-    #[derive(Serialize)]
-    struct RpcRequest {
-        jsonrpc: &'static str,
-        id: u32,
-        method: &'static str,
-        params: (String, RpcConfig),
-    }
-
-    #[derive(Serialize)]
-    struct RpcConfig {
-        encoding: &'static str,
-    }
-
-    #[derive(Deserialize)]
-    struct RpcResponse {
-        result: Option<RpcResult>,
-    }
-
-    #[derive(Deserialize)]
-    struct RpcResult {
-        value: Option<AccountValue>,
-    }
-
-    #[derive(Deserialize)]
-    struct AccountValue {
-        data: (String, String),
-    }
-
-    let request = RpcRequest {
-        jsonrpc: "2.0",
-        id: 1,
-        method: "getAccountInfo",
-        params: (
-            sequence_account.to_string(),
-            RpcConfig { encoding: "base64" },
-        ),
-    };
-
-    let response = reqwest::blocking::Client::new()
-        .post(rpc_url)
-        .json(&request)
-        .send()
-        .map_err(|e| ExecutorQuoteError::RequestFailed(e.to_string()))?;
-
-    let rpc_response: RpcResponse = response
-        .json()
-        .map_err(|e| ExecutorQuoteError::ParseFailed(e.to_string()))?;
-
-    let data_base64 = rpc_response
-        .result
-        .and_then(|r| r.value)
-        .map(|v| v.data.0)
-        .ok_or_else(|| ExecutorQuoteError::RequestFailed("Sequence account not found".into()))?;
-
-    let data = STANDARD
-        .decode(&data_base64)
-        .map_err(|e| ExecutorQuoteError::ParseFailed(format!("base64 decode failed: {}", e)))?;
-
-    // SequenceTracker stores a single u64
-    if data.len() >= 16 {
-        Ok(u64::from_le_bytes(
-            data[8..16].try_into().unwrap_or_default(),
-        ))
-    } else if data.len() >= 8 {
-        Ok(u64::from_le_bytes(
-            data[0..8].try_into().unwrap_or_default(),
-        ))
+    let wormhole_pid = if devnet {
+        WORMHOLE_BRIDGE_PROGRAM_ID_DEVNET
     } else {
-        Err(ExecutorQuoteError::ParseFailed(format!(
-            "sequence data too short: expected at least 8 bytes, got {}",
-            data.len()
-        )))
-    }
+        WORMHOLE_BRIDGE_PROGRAM_ID
+    };
+    pda!(&[b"Sequence", &emitter.to_bytes()], &wormhole_pid)
+}
+
+fn parse_sequence(data: &[u8]) -> std::result::Result<u64, ExecutorQuoteError> {
+    Ok(u64::from_le_bytes(data[..8].try_into().map_err(|_| {
+        ExecutorQuoteError::ParseFailed("Invalid sequence data".to_string())
+    })?))
+}
+
+pub async fn get_current_sequence(
+    rpc_client: &RpcClient,
+    devnet: bool,
+) -> std::result::Result<u64, ExecutorQuoteError> {
+    let sequence_data = rpc_client
+        .get_account_data(&get_sequence_account(devnet))
+        .await
+        .map_err(|e| {
+            ExecutorQuoteError::RequestFailed(format!("Failed to get sequence account: {}", e))
+        })?;
+    parse_sequence(&sequence_data)
+}
+
+pub fn get_current_sequence_blocking(
+    rpc_client: &BlockingRpcClient,
+    devnet: bool,
+) -> std::result::Result<u64, ExecutorQuoteError> {
+    let sequence_data = rpc_client
+        .get_account_data(&get_sequence_account(devnet))
+        .map_err(|e| {
+            ExecutorQuoteError::RequestFailed(format!("Failed to get sequence account: {}", e))
+        })?;
+    parse_sequence(&sequence_data)
 }
 
 /// Error type for executor quote operations.
