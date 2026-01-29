@@ -1,7 +1,7 @@
-use anchor_lang::prelude::{
+use anchor_lang::prelude::*;
+use anchor_lang::solana_program::{
     instruction::Instruction,
     program::{get_return_data, invoke_signed},
-    *,
 };
 use m0_portal_common::{
     portal::{self, accounts::PortalGlobal},

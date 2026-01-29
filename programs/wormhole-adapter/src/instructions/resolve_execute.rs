@@ -6,11 +6,6 @@ use anchor_spl::{
     associated_token::spl_associated_token_account::solana_program::system_instruction::MAX_PERMITTED_DATA_LENGTH,
     token_2022,
 };
-use executor_account_resolver_svm::{
-    find_account, missing_account, InstructionGroup, InstructionGroups, MissingAccounts, Resolver,
-    SerializableInstruction, RESOLVER_PUBKEY_GUARDIAN_SET, RESOLVER_PUBKEY_PAYER,
-    RESOLVER_PUBKEY_SHIM_VAA_SIGS, RESOLVER_RESULT_ACCOUNT, RESOLVER_RESULT_ACCOUNT_SEED,
-};
 use m0_portal_common::{
     earn::{self, accounts::EarnGlobal},
     ext_swap::{self, accounts::SwapGlobal},
@@ -22,6 +17,11 @@ use wormhole_svm_definitions::{zero_copy::GuardianSet, GUARDIAN_SET_SEED};
 
 use crate::{
     consts::{AUTHORITY_SEED, CORE_BRIDGE_PROGRAM_ID},
+    executor::{
+        find_account, missing_account, InstructionGroup, InstructionGroups, MissingAccounts,
+        Resolver, SerializableInstruction, RESOLVER_PUBKEY_GUARDIAN_SET, RESOLVER_PUBKEY_PAYER,
+        RESOLVER_PUBKEY_SHIM_VAA_SIGS, RESOLVER_RESULT_ACCOUNT, RESOLVER_RESULT_ACCOUNT_SEED,
+    },
     instruction::ReceiveMessage,
     instructions::VaaBody,
     state::{WormholeGlobal, GLOBAL_SEED},

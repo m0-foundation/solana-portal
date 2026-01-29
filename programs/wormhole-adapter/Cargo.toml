@@ -10,10 +10,6 @@ name = "wormhole_adapter"
 
 [features]
 default = ["mainnet", "legacy-ntt"]
-cpi = ["no-entrypoint"]
-no-entrypoint = []
-no-idl = []
-no-log-ix-name = []
 idl-build = [
     "anchor-lang/idl-build",
     "anchor-spl/idl-build",
@@ -23,13 +19,16 @@ mainnet = []
 devnet = []
 legacy-ntt = []
 skip-validation = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
 
 [dependencies]
 anchor-lang.workspace = true
 anchor-spl.workspace = true
 m0-portal-common = { path = "../../packages/common" }
 cfg-if.workspace = true
-executor-account-resolver-svm = { version = "0.0.1", git = "https://github.com/wormholelabs-xyz/executor-account-resolver-svm", rev = "c180f40149bbb48e019e95d5a5daa1512fe063ac" }
 wormhole-svm-definitions = { git = "https://github.com/wormhole-foundation/wormhole.git", rev = "0231deba271494519717c8b5e583ce89e428de4c", features = [
     "borsh",
 ] }

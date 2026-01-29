@@ -118,6 +118,7 @@ impl TestCtx {
                 bump: 255,
                 user: Pubkey::default(),
             }),
+            false,
         ))
     }
 }
@@ -225,7 +226,7 @@ fn test_01_send_token_wormhole_unauthorized_unwrapper() -> Result<()> {
             destination_chain_id: 2,
             recipient: ctx.portal.payer().to_bytes(),
         })
-        .accounts(WormholeRemainingAccounts::account_metas())
+        .accounts(WormholeRemainingAccounts::account_metas(false))
         .send()
         .unwrap_err();
 
@@ -321,7 +322,7 @@ fn test_03_send_token_wormhole_insufficient_funds() -> Result<()> {
             destination_chain_id: 2,
             recipient: ctx.portal.payer().to_bytes(),
         })
-        .accounts(WormholeRemainingAccounts::account_metas())
+        .accounts(WormholeRemainingAccounts::account_metas(false))
         .send()
         .unwrap_err();
 
@@ -390,7 +391,7 @@ fn test_04_send_token_wormhole_success() -> Result<()> {
             destination_chain_id: 1,
             recipient: ctx.portal.payer().to_bytes(),
         })
-        .accounts(WormholeRemainingAccounts::account_metas())
+        .accounts(WormholeRemainingAccounts::account_metas(false))
         .send()?;
 
     let tx = ctx.rpc.get_transaction(&sig, UiTransactionEncoding::Json)?;
@@ -544,7 +545,7 @@ fn test_06_send_token_invalid_m_mint() -> Result<()> {
             destination_chain_id: 2,
             recipient: ctx.portal.payer().to_bytes(),
         })
-        .accounts(WormholeRemainingAccounts::account_metas())
+        .accounts(WormholeRemainingAccounts::account_metas(false))
         .send()
         .unwrap_err();
 

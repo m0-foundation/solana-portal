@@ -10,11 +10,12 @@ programs
 ├── hyperlane-adapter
 └── wormhole-adapter
 packages
-├── common
+├── m0-portal-common
 └── m0-portal-common-macros
 runbooks
 ├── deployment
 ├── initialize
+├── pause
 └── set_peers
 tests
 ```

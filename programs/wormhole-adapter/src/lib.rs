@@ -1,13 +1,14 @@
 #![allow(unexpected_cfgs)]
 
 pub mod consts;
+mod executor;
 pub mod instructions;
 pub mod state;
 
 use anchor_lang::prelude::*;
-use m0_portal_common::Peer;
-use executor_account_resolver_svm::{InstructionGroups, Resolver, RESOLVER_EXECUTE_VAA_V1};
+use executor::{InstructionGroups, Resolver, RESOLVER_EXECUTE_VAA_V1};
 use instructions::*;
+use m0_portal_common::Peer;
 
 #[cfg(not(feature = "no-entrypoint"))]
 solana_security_txt::security_txt! {

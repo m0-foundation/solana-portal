@@ -2,10 +2,11 @@ use anchor_lang::AccountDeserialize;
 use anyhow::Result;
 use hyperlane_adapter::state::HyperlaneGlobal;
 use m0_portal_common::{
-    hyperlane_adapter::{
-        accounts::AccountMetasData,
-        constants::{DEFAULT_IGP_ACCOUNT, DEFAULT_IGP_PROGRAM_ID, DEFAULT_OVERHEAD_IGP_ACCOUNT},
+    consts::{
+        HYPERLANE_DEFAULT_IGP_ACCOUNT, HYPERLANE_DEFAULT_IGP_PROGRAM_ID,
+        HYPERLANE_DEFAULT_OVERHEAD_IGP_ACCOUNT,
     },
+    hyperlane_adapter::accounts::AccountMetasData,
     pda,
     portal::{self, accounts::PortalGlobal},
 };
@@ -50,12 +51,12 @@ fn test_03_check_globals() -> Result<()> {
     assert!(!global_portal.outgoing_paused);
 
     // Assert all fields of global_hp
-    assert_eq!(global_hp.igp_program_id, DEFAULT_IGP_PROGRAM_ID);
+    assert_eq!(global_hp.igp_program_id, HYPERLANE_DEFAULT_IGP_PROGRAM_ID);
     assert_eq!(global_hp.igp_gas_amount, 50000);
-    assert_eq!(global_hp.igp_account, DEFAULT_IGP_ACCOUNT);
+    assert_eq!(global_hp.igp_account, HYPERLANE_DEFAULT_IGP_ACCOUNT);
     assert_eq!(
         global_hp.igp_overhead_account,
-        Some(DEFAULT_OVERHEAD_IGP_ACCOUNT)
+        Some(HYPERLANE_DEFAULT_OVERHEAD_IGP_ACCOUNT)
     );
     assert_eq!(global_hp.ism, None);
     assert_eq!(global_hp.pending_admin, None);

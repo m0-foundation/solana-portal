@@ -1,7 +1,7 @@
 [package]
 name = "m0-portal-common"
 description = "Shared common utilities for M0 portal"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT"
 
@@ -11,16 +11,16 @@ crate-type = ["lib"]
 
 [features]
 idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build", "anchor-lang-idl"]
-executor = ["hex", "solana-program", "serde", "serde_json", "reqwest", "base64"]
+executor = ["hex", "serde", "serde_json", "reqwest", "base64"]
 
 [dependencies]
 anchor-lang.workspace = true
 anchor-spl.workspace = true
+spl-token-2022 = { version = "7.0", features = ["no-entrypoint"] }
 m0-portal-common-macros = { path = "../common-macros", version = "0.1.0" }
 borsh.workspace = true
 anchor-lang-idl = { version = "0.1.2", optional = true }
 
-solana-program = { version = "2.0", optional = true }
 hex = { version = "0.4", optional = true }
 base64 = { version = "0.22", optional = true }
 serde = { version = "1.0", features = ["derive"], optional = true }

@@ -1,10 +1,10 @@
-use anchor_lang::{prelude::*, system_program};
-use base64::{engine::general_purpose::STANDARD, Engine};
-use serde::{Deserialize, Serialize};
-use solana_program::{
+use anchor_lang::solana_program::{
     hash::hashv,
     instruction::{AccountMeta, Instruction},
 };
+use anchor_lang::{prelude::*, system_program};
+use base64::{engine::general_purpose::STANDARD, Engine};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     pda,

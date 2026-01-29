@@ -42,7 +42,7 @@ fn test_01_index_update_wormhole() -> Result<()> {
         .args(instruction::SendIndex {
             destination_chain_id: 1,
         })
-        .accounts(WormholeRemainingAccounts::account_metas())
+        .accounts(WormholeRemainingAccounts::account_metas(false))
         .send()?;
 
     let transaction = rpc_client.get_transaction(&signature, UiTransactionEncoding::Json)?;
@@ -55,14 +55,14 @@ fn test_01_index_update_wormhole() -> Result<()> {
     assert!(event_meta.sequence > 50);
     assert!(event_meta.timestamp > 0);
 
-    let message_account = WormholeRemainingAccounts::new().message_account;
+    let message_account = WormholeRemainingAccounts::new(false).message_account;
     let account_data = rpc_client.get_account_data(&message_account)?;
 
     // Emitter chain and address
     assert_eq!(account_data[57..59], [1, 0]);
     assert_eq!(
         account_data[59..91],
-        WormholeRemainingAccounts::new().emitter.to_bytes()
+        WormholeRemainingAccounts::new(false).emitter.to_bytes()
     );
 
     let payload =
@@ -99,7 +99,7 @@ fn test_02_index_update_wormhole_bad_dest() -> Result<()> {
         .args(instruction::SendIndex {
             destination_chain_id: 5,
         })
-        .accounts(WormholeRemainingAccounts::account_metas())
+        .accounts(WormholeRemainingAccounts::account_metas(false))
         .send()
         .unwrap_err();
 
@@ -119,7 +119,7 @@ fn test_03_index_update_hyperlane() -> Result<()> {
     let data_hyp = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &hyperlane_adapter::ID))?;
     let global_hp = HyperlaneGlobal::try_deserialize(&mut data_hyp.as_slice())?;
 
-    let accounts = HyperlaneRemainingAccounts::new(&program.payer(), &global_hp, None);
+    let accounts = HyperlaneRemainingAccounts::new(&program.payer(), &global_hp, None, false);
 
     // Send index update
     program
@@ -173,7 +173,7 @@ fn test_04_index_update_hyperlane_repeat_msgid() -> Result<()> {
     let global_hp = HyperlaneGlobal::try_deserialize(&mut data_hyp.as_slice())?;
 
     // user_global already exists, so message ID will be repeated
-    let accounts = HyperlaneRemainingAccounts::new(&program.payer(), &global_hp, None);
+    let accounts = HyperlaneRemainingAccounts::new(&program.payer(), &global_hp, None, false);
 
     // Send index update
     let err = program
@@ -215,7 +215,8 @@ fn test_05_index_update_hyperlane_bad_dest() -> Result<()> {
     ))?;
     let user_hp = HyperlaneUserGlobal::try_deserialize(&mut user_data_hyp.as_slice())?;
 
-    let accounts = HyperlaneRemainingAccounts::new(&program.payer(), &global_hp, Some(&user_hp));
+    let accounts =
+        HyperlaneRemainingAccounts::new(&program.payer(), &global_hp, Some(&user_hp), false);
 
     // Send index update
     let err = program
@@ -258,7 +259,7 @@ fn test_06_missing_account() -> Result<()> {
         .args(instruction::SendIndex {
             destination_chain_id: 1,
         })
-        .accounts(WormholeRemainingAccounts::account_metas()[1..].to_vec())
+        .accounts(WormholeRemainingAccounts::account_metas(false)[1..].to_vec())
         .send()
         .unwrap_err();
 
@@ -287,7 +288,7 @@ fn test_07_send_merkle_root() -> Result<()> {
         .args(instruction::SendMerkleRoot {
             destination_chain_id: 1,
         })
-        .accounts(WormholeRemainingAccounts::account_metas())
+        .accounts(WormholeRemainingAccounts::account_metas(false))
         .send()?;
 
     Ok(())
