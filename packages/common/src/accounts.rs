@@ -48,7 +48,7 @@ impl TokenTransferPayload {
         // Enforce destination token if found in whitelist
         {
             let data = accounts.swap_global.try_borrow_data()?;
-            let extensions = SwapGlobal::deserialize(&mut &data[..])?.whitelisted_extensions;
+            let extensions = SwapGlobal::try_deserialize(&mut &data[..])?.whitelisted_extensions;
             let expected_extension = extensions
                 .iter()
                 .find(|ext| ext.mint.eq(&self.destination_token.into()));
