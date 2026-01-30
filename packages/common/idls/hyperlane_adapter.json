@@ -2395,14 +2395,14 @@
           },
           {
             "name": "unclaimed_m_balance",
-            "type": "u128"
+            "type": "u64"
           },
           {
             "name": "padding",
             "type": {
               "array": [
                 "u8",
-                112
+                120
               ]
             }
           }
