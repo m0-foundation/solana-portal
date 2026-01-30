@@ -17,13 +17,12 @@ use crate::{
 #[instruction(recent_slot: u64)]
 pub struct SetLookupTable<'info> {
     #[account(mut)]
-    pub admin: Signer<'info>,
+    pub payer: Signer<'info>,
 
     #[account(
         mut,
         seeds = [GLOBAL_SEED],
         bump = wormhole_global.bump,
-        has_one = admin,
     )]
     pub wormhole_global: Account<'info, WormholeGlobal>,
 
@@ -57,7 +56,7 @@ impl SetLookupTable<'_> {
     pub fn handler(ctx: Context<Self>, recent_slot: u64) -> Result<()> {
         let (ix, _) = create_lookup_table(
             ctx.accounts.wormhole_global.key(),
-            ctx.accounts.admin.key(),
+            ctx.accounts.payer.key(),
             recent_slot,
         );
 
@@ -66,7 +65,7 @@ impl SetLookupTable<'_> {
             &[
                 ctx.accounts.lut_address.to_account_info(),
                 ctx.accounts.wormhole_global.to_account_info(),
-                ctx.accounts.admin.to_account_info(),
+                ctx.accounts.payer.to_account_info(),
                 ctx.accounts.system_program.to_account_info(),
             ],
         )?;
@@ -80,7 +79,7 @@ impl SetLookupTable<'_> {
         let ix = extend_lookup_table(
             ctx.accounts.lut_address.key(),
             ctx.accounts.wormhole_global.key(),
-            Some(ctx.accounts.admin.key()),
+            Some(ctx.accounts.payer.key()),
             vec![
                 pda!(&[GLOBAL_SEED], &crate::ID),
                 pda!(&[GLOBAL_SEED], &portal::ID),
@@ -105,7 +104,7 @@ impl SetLookupTable<'_> {
             &[
                 ctx.accounts.lut_address.to_account_info(),
                 ctx.accounts.wormhole_global.to_account_info(),
-                ctx.accounts.admin.to_account_info(),
+                ctx.accounts.payer.to_account_info(),
                 ctx.accounts.system_program.to_account_info(),
             ],
             &[&[GLOBAL_SEED, &[ctx.accounts.wormhole_global.bump]]],
