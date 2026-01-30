@@ -1,5 +1,8 @@
 use anchor_lang::solana_program::program::{invoke, invoke_signed};
 use anchor_lang::{prelude::*, system_program};
+use anchor_spl::associated_token::get_associated_token_address_with_program_id;
+use anchor_spl::{token, token_2022};
+use m0_portal_common::portal::accounts::PortalGlobal;
 use m0_portal_common::{earn, ext_swap, pda, portal, wormhole_verify_vaa_shim};
 use solana_address_lookup_table_interface::instruction::{
     create_lookup_table, extend_lookup_table,
@@ -23,6 +26,13 @@ pub struct SetLookupTable<'info> {
         has_one = admin,
     )]
     pub wormhole_global: Account<'info, WormholeGlobal>,
+
+    #[account(
+        seeds = [GLOBAL_SEED],
+        seeds::program = portal::ID,
+        bump = portal_global.bump,
+    )]
+    pub portal_global: Account<'info, PortalGlobal>,
 
     /// CHECK: lut account validated by lut program
     #[account(
@@ -61,6 +71,12 @@ impl SetLookupTable<'_> {
             ],
         )?;
 
+        let authority_m_token_account = get_associated_token_address_with_program_id(
+            &pda!(&[AUTHORITY_SEED], &portal::ID),
+            &ctx.accounts.portal_global.m_mint,
+            &token_2022::ID,
+        );
+
         let ix = extend_lookup_table(
             ctx.accounts.lut_address.key(),
             ctx.accounts.wormhole_global.key(),
@@ -74,6 +90,12 @@ impl SetLookupTable<'_> {
                 pda!(&[AUTHORITY_SEED], &portal::ID),
                 portal::ID,
                 wormhole_verify_vaa_shim::ID,
+                system_program::ID,
+                ext_swap::ID,
+                ctx.accounts.portal_global.m_mint,
+                authority_m_token_account,
+                token::ID,
+                token_2022::ID,
                 system_program::ID,
             ],
         );
