@@ -16,6 +16,7 @@ use m0_portal_common::{
 
 use crate::state::{
     BridgeMessage, PortalGlobal, AUTHORITY_SEED, ETHEREUM_CHAIN_ID, GLOBAL_SEED, MESSAGE_SEED,
+    SEPOLIA_CHAIN_ID,
 };
 
 #[derive(Accounts)]
@@ -101,7 +102,7 @@ impl ReceiveMessage<'_> {
 
         // Only accept Earner Merkle Root payloads from the mainnet hub
         if let PayloadData::EarnerMerkleRoot(_payload) = &message.data {
-            if source_chain_id != ETHEREUM_CHAIN_ID {
+            if source_chain_id != ETHEREUM_CHAIN_ID && source_chain_id != SEPOLIA_CHAIN_ID {
                 msg!("Chain {} is not a hub", source_chain_id);
                 return err!(BridgeError::InvalidSourceChain);
             }
