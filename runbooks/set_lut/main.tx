@@ -20,7 +20,6 @@ action "recent_slot_data" "std::send_http_request" {
 
 variable "recent_slot" {
     value = jq(action.recent_slot_data.response_body,  ".result")
-    editable = true
 }
 
 action "set_lut" "svm::process_instructions" {
@@ -28,7 +27,7 @@ action "set_lut" "svm::process_instructions" {
     instruction {
         program_idl = variable.wormhole_adapter_program.idl
         instruction_name = "set_lut"
-        admin {
+        payer {
             public_key = signer.caller.public_key
         }
         instruction_args = [variable.recent_slot]

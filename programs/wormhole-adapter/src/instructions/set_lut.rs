@@ -1,5 +1,8 @@
 use anchor_lang::solana_program::program::{invoke, invoke_signed};
 use anchor_lang::{prelude::*, system_program};
+use anchor_spl::associated_token::get_associated_token_address_with_program_id;
+use anchor_spl::{token, token_2022};
+use m0_portal_common::portal::accounts::PortalGlobal;
 use m0_portal_common::{earn, ext_swap, pda, portal, wormhole_verify_vaa_shim};
 use solana_address_lookup_table_interface::instruction::{
     create_lookup_table, extend_lookup_table,
@@ -14,15 +17,21 @@ use crate::{
 #[instruction(recent_slot: u64)]
 pub struct SetLookupTable<'info> {
     #[account(mut)]
-    pub admin: Signer<'info>,
+    pub payer: Signer<'info>,
 
     #[account(
         mut,
         seeds = [GLOBAL_SEED],
         bump = wormhole_global.bump,
-        has_one = admin,
     )]
     pub wormhole_global: Account<'info, WormholeGlobal>,
+
+    #[account(
+        seeds = [GLOBAL_SEED],
+        seeds::program = portal::ID,
+        bump = portal_global.bump,
+    )]
+    pub portal_global: Account<'info, PortalGlobal>,
 
     /// CHECK: lut account validated by lut program
     #[account(
@@ -47,7 +56,7 @@ impl SetLookupTable<'_> {
     pub fn handler(ctx: Context<Self>, recent_slot: u64) -> Result<()> {
         let (ix, _) = create_lookup_table(
             ctx.accounts.wormhole_global.key(),
-            ctx.accounts.admin.key(),
+            ctx.accounts.payer.key(),
             recent_slot,
         );
 
@@ -56,15 +65,21 @@ impl SetLookupTable<'_> {
             &[
                 ctx.accounts.lut_address.to_account_info(),
                 ctx.accounts.wormhole_global.to_account_info(),
-                ctx.accounts.admin.to_account_info(),
+                ctx.accounts.payer.to_account_info(),
                 ctx.accounts.system_program.to_account_info(),
             ],
         )?;
 
+        let authority_m_token_account = get_associated_token_address_with_program_id(
+            &pda!(&[AUTHORITY_SEED], &portal::ID),
+            &ctx.accounts.portal_global.m_mint,
+            &token_2022::ID,
+        );
+
         let ix = extend_lookup_table(
             ctx.accounts.lut_address.key(),
             ctx.accounts.wormhole_global.key(),
-            Some(ctx.accounts.admin.key()),
+            Some(ctx.accounts.payer.key()),
             vec![
                 pda!(&[GLOBAL_SEED], &crate::ID),
                 pda!(&[GLOBAL_SEED], &portal::ID),
@@ -75,6 +90,12 @@ impl SetLookupTable<'_> {
                 portal::ID,
                 wormhole_verify_vaa_shim::ID,
                 system_program::ID,
+                ext_swap::ID,
+                ctx.accounts.portal_global.m_mint,
+                authority_m_token_account,
+                token::ID,
+                token_2022::ID,
+                system_program::ID,
             ],
         );
 
@@ -83,7 +104,7 @@ impl SetLookupTable<'_> {
             &[
                 ctx.accounts.lut_address.to_account_info(),
                 ctx.accounts.wormhole_global.to_account_info(),
-                ctx.accounts.admin.to_account_info(),
+                ctx.accounts.payer.to_account_info(),
                 ctx.accounts.system_program.to_account_info(),
             ],
             &[&[GLOBAL_SEED, &[ctx.accounts.wormhole_global.bump]]],
