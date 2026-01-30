@@ -456,6 +456,12 @@ pub struct CancelReportReceived {
 }
 
 #[event]
+pub struct MTokenIndexReceived {
+    pub index: u128,
+    pub message_id: [u8; 32],
+}
+
+#[event]
 pub struct MBalanceStored {
     pub source_chain_id: u32,
     pub destination_token: [u8; 32],

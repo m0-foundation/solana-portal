@@ -106,11 +106,6 @@ impl ChainBridgePaths {
     }
 }
 
-#[event]
-pub struct MTokenIndexReceived {
-    pub index: u128,
-    pub message_id: [u8; 32],
-}
 #[cfg(test)]
 mod tests {
     use super::*;
