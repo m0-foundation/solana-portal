@@ -1,6 +1,6 @@
 use crate::util::constants::{WH_EVENT_DISCRIMINATOR, WH_SHIM_POST_MESSAGE_DISCRIMINATOR};
 use anyhow::Result;
-use common::Payload;
+use m0_portal_common::Payload;
 use solana_sdk::bs58;
 use solana_transaction_status_client_types::{
     option_serializer::OptionSerializer, EncodedConfirmedTransactionWithStatusMeta, UiInstruction,

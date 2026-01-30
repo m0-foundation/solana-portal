@@ -1,13 +1,15 @@
 use anchor_client::{Client, Cluster};
 use anchor_lang::{system_program, AccountDeserialize};
 use anyhow::Result;
-use common::{pda, Peer};
 use hyperlane_adapter::state::HyperlaneGlobal;
+use m0_portal_common::{pda, Peer};
 use portal::state::GLOBAL_SEED;
 use std::vec;
 use wormhole_adapter::{accounts, instruction, state::WormholeGlobal};
 
-use crate::{get_rpc_client, get_signer, run_surfpool_cmd};
+use crate::{
+    get_rpc_client, get_signer, run_surfpool_cmd, util::constants::ETHEREUM_WORMHOLE_ADAPTER,
+};
 
 #[test]
 fn test_01_set_peers() -> Result<()> {
@@ -29,19 +31,12 @@ fn test_02_check_globals() -> Result<()> {
     assert!(global_wh.peers.len() > 0);
     assert!(global_hp.peers.len() > 0);
 
-    assert_eq!(
-        global_wh.peers.0[0].address,
-        [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 99, 25, 106, 9, 21, 117, 173, 249, 158, 35, 6,
-            229, 233, 14, 11, 229, 21, 72, 65
-        ]
-    );
+    assert_eq!(global_wh.peers.0[0].address, ETHEREUM_WORMHOLE_ADAPTER);
 
     assert_eq!(global_wh.peers.0[0].m0_chain_id, 1);
     assert_eq!(global_hp.peers.0[0].m0_chain_id, 1);
     assert_eq!(global_wh.peers.0[1].m0_chain_id, 42161);
-    assert_eq!(global_wh.peers.0[2].m0_chain_id, 10);
-    assert_eq!(global_wh.peers.0[3].m0_chain_id, 8453);
+    assert_eq!(global_wh.peers.0[2].m0_chain_id, 8453);
 
     Ok(())
 }

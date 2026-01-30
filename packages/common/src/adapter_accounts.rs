@@ -1,22 +1,28 @@
-use anchor_lang::prelude::{sysvar::SysvarId, AccountMeta, Clock, Pubkey};
+use std::str::FromStr;
 
+use anchor_lang::prelude::{AccountMeta, Clock, Pubkey};
+use anchor_lang::solana_program::sysvar::SysvarId;
+
+use crate::consts::{
+    HYPERLANE_MAILBOX_PROGRAM_ID, HYPERLANE_MAILBOX_PROGRAM_ID_TESTNET, WORMHOLE_BRIDGE_CONFIG,
+    WORMHOLE_BRIDGE_CONFIG_DEVNET, WORMHOLE_BRIDGE_FEE_COLLECTOR,
+    WORMHOLE_BRIDGE_FEE_COLLECTOR_DEVNET, WORMHOLE_BRIDGE_PROGRAM_ID,
+    WORMHOLE_BRIDGE_PROGRAM_ID_DEVNET,
+};
 use crate::{
     hyperlane_adapter::{
         self,
         accounts::{HyperlaneGlobal, HyperlaneUserGlobal},
         constants::{
             DASH_SEED, DISPATCHED_MESSAGE_SEED, DISPATCH_SEED_1, DISPATCH_SEED_2, GAS_PAYMENT_SEED,
-            HYPERLANE_IGP_SEED, HYPERLANE_SEED, MAILBOX_PROGRAM_ID, OUTBOX_SEED, PROGRAM_DATA_SEED,
-            SPL_NOOP, UNIQUE_MESSAGE_SEED,
+            HYPERLANE_IGP_SEED, HYPERLANE_SEED, OUTBOX_SEED, PROGRAM_DATA_SEED,
+            UNIQUE_MESSAGE_SEED,
         },
     },
     pda,
     wormhole_adapter::{
         self,
-        constants::{
-            CORE_BRIDGE_CONFIG, CORE_BRIDGE_FEE_COLLECTOR, CORE_BRIDGE_PROGRAM_ID, EMITTER_SEED,
-            EVENT_AUTHORITY_SEED, GLOBAL_SEED, SEQUENCE_SEED,
-        },
+        constants::{EMITTER_SEED, EVENT_AUTHORITY_SEED, GLOBAL_SEED, SEQUENCE_SEED},
     },
     wormhole_post_message_shim,
 };
@@ -35,21 +41,32 @@ pub struct WormholeRemainingAccounts {
 }
 
 impl WormholeRemainingAccounts {
-    pub fn new() -> Self {
+    pub fn new(devnet: bool) -> Self {
         let emitter = pda!(&[EMITTER_SEED], &wormhole_adapter::ID);
+
+        let (bridge_config, bridge_program_id, fee_collector) = if devnet {
+            (
+                WORMHOLE_BRIDGE_CONFIG_DEVNET,
+                WORMHOLE_BRIDGE_PROGRAM_ID_DEVNET,
+                WORMHOLE_BRIDGE_FEE_COLLECTOR_DEVNET,
+            )
+        } else {
+            (
+                WORMHOLE_BRIDGE_CONFIG,
+                WORMHOLE_BRIDGE_PROGRAM_ID,
+                WORMHOLE_BRIDGE_FEE_COLLECTOR,
+            )
+        };
 
         Self {
             wormhole_global: pda!(&[GLOBAL_SEED], &wormhole_adapter::ID),
-            bridge: CORE_BRIDGE_CONFIG,
+            bridge: bridge_config,
             message_account: pda!(&[&emitter.to_bytes()], &wormhole_post_message_shim::ID),
             emitter,
-            sequence: pda!(
-                &[SEQUENCE_SEED, &emitter.to_bytes()],
-                &CORE_BRIDGE_PROGRAM_ID
-            ),
-            fee_collector: CORE_BRIDGE_FEE_COLLECTOR,
+            sequence: pda!(&[SEQUENCE_SEED, &emitter.to_bytes()], &bridge_program_id),
+            fee_collector: fee_collector,
             clock: Clock::id(),
-            wormhole_program: CORE_BRIDGE_PROGRAM_ID,
+            wormhole_program: bridge_program_id,
             wormhole_post_message_shim_ea: pda!(
                 &[EVENT_AUTHORITY_SEED],
                 &wormhole_post_message_shim::ID
@@ -58,8 +75,8 @@ impl WormholeRemainingAccounts {
         }
     }
 
-    pub fn account_metas() -> Vec<AccountMeta> {
-        Self::new().to_account_metas()
+    pub fn account_metas(devnet: bool) -> Vec<AccountMeta> {
+        Self::new(devnet).to_account_metas()
     }
 
     pub fn to_account_metas(&self) -> Vec<AccountMeta> {
@@ -99,7 +116,14 @@ impl HyperlaneRemainingAccounts {
         payer: &Pubkey,
         global: &HyperlaneGlobal,
         user_global: Option<&HyperlaneUserGlobal>,
+        testnet: bool,
     ) -> Self {
+        let mailbox_program_id = if testnet {
+            HYPERLANE_MAILBOX_PROGRAM_ID_TESTNET
+        } else {
+            HYPERLANE_MAILBOX_PROGRAM_ID
+        };
+
         let hyperlane_user_global = pda!(
             &[GLOBAL_SEED, DASH_SEED, payer.as_ref()],
             &hyperlane_adapter::ID
@@ -121,7 +145,7 @@ impl HyperlaneRemainingAccounts {
             hyperlane_global: pda!(&[GLOBAL_SEED], &hyperlane_adapter::ID),
             mailbox_outbox: pda!(
                 &[HYPERLANE_SEED, DASH_SEED, OUTBOX_SEED],
-                &MAILBOX_PROGRAM_ID
+                &mailbox_program_id
             ),
             dispatch_authority: pda!(
                 &[DISPATCH_SEED_1, DASH_SEED, DISPATCH_SEED_2],
@@ -137,7 +161,7 @@ impl HyperlaneRemainingAccounts {
                     DASH_SEED,
                     unique_message.as_ref(),
                 ],
-                &MAILBOX_PROGRAM_ID
+                &mailbox_program_id
             ),
             igp_program_id: global.igp_program_id,
             igp_program_data: pda!(
@@ -156,8 +180,9 @@ impl HyperlaneRemainingAccounts {
             ),
             igp_account: global.igp_account,
             igp_overhead_account: global.igp_overhead_account,
-            mailbox_program: MAILBOX_PROGRAM_ID,
-            spl_noop_program: SPL_NOOP,
+            mailbox_program: mailbox_program_id,
+            spl_noop_program: Pubkey::from_str("noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV")
+                .unwrap(),
         }
     }
 
@@ -165,8 +190,9 @@ impl HyperlaneRemainingAccounts {
         payer: &Pubkey,
         global: &HyperlaneGlobal,
         user_global: Option<&HyperlaneUserGlobal>,
+        testnet: bool,
     ) -> Vec<AccountMeta> {
-        Self::new(payer, global, user_global).to_account_metas()
+        Self::new(payer, global, user_global, testnet).to_account_metas()
     }
 
     pub fn to_account_metas(&self) -> Vec<AccountMeta> {

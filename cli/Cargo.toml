@@ -7,6 +7,7 @@ edition = "2021"
 name = "portal-cli"
 path = "src/main.rs"
 
+
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }
 reqwest = { version = "0.12", features = ["json", "blocking"] }
@@ -15,9 +16,10 @@ serde_json = "1.0"
 anyhow = "1.0"
 base64 = "0.21"
 bs58 = "0.5"
+hex = "0.4"
 anchor-client.workspace = true
 anchor-lang.workspace = true
-common = { path = "../packages/common" }
+m0-portal-common = { path = "../packages/common", features = ["executor"] }
 wormhole-adapter = { path = "../programs/wormhole-adapter" }
 solana-rpc-client-types = "2.0"
 solana-rpc-client = "2.0"
@@ -27,3 +29,5 @@ solana-transaction-status-client-types = "2.0"
 bincode = "1.3"
 executor-account-resolver-svm = { version = "0.0.1", git = "https://github.com/wormholelabs-xyz/executor-account-resolver-svm", rev = "c180f40149bbb48e019e95d5a5daa1512fe063ac" }
 borsh.workspace = true
+alloy = { version = "0.7", features = ["full"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

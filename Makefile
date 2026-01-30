@@ -27,3 +27,8 @@ build-mainnet:
 
 localnet:
 	surfpool start -r deployment -r initialize -a test4MzZzYk2NAP1222FSuKqq83GuXY5tHakqREDHPo --rpc-url https://hatty-73mn84-fast-mainnet.helius-rpc.com
+
+publish-common:
+	cd packages/common && \
+	cargo build && \
+	cargo publish --allow-dirty

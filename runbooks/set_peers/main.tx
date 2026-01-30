@@ -11,14 +11,14 @@ variable "hyperlane_adapter_program" {
     value = svm::get_program_from_anchor_project("hyperlane_adapter")
 }
 
-variable "evm_transeiver_address" {
-    description = "Peer address on EVM chains: 0x0763196a091575adf99e2306e5e90e0be5154841 (transeiver address)"
-    value = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 99, 25, 106, 9, 21, 117, 173, 249, 158, 35, 6, 229, 233, 14, 11, 229, 21, 72, 65]
+variable "evm_wormhole_adapter" {
+    description = "Wormhole adapter on EVM chains: 0x6b2A7bFa5F1C03EbFae779Df6988b8aC14CA4155"
+    value = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 107, 42, 123, 250, 95, 28, 3, 235, 250, 231, 121, 223, 105, 136, 184, 172, 20, 202, 65, 85]
 }
 
-variable "peer_address" {
-    description = "Peer address on EVM chains"
-    value = [11, 106, 134, 128, 106, 3, 84, 200, 43, 143, 4, 158, 183, 93, 156, 151,227, 112, 166, 240, 192, 207, 161, 95, 71, 144, 156, 63, 225, 200, 247, 148]
+variable "evm_hyperlane_adapter" {
+    description = "Hyperlane adapter on EVM chains: 0xFc44dadD758A7737aC9200059e9FCd1521d75a07"
+    value = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 252, 68, 218, 221, 117, 138, 119, 55, 172, 146, 0, 5, 158, 159, 205, 21, 33, 215, 90, 7]
 }
 
 action "set_wormhole_peer_ethereum" "svm::process_instructions" {
@@ -32,7 +32,7 @@ action "set_wormhole_peer_ethereum" "svm::process_instructions" {
         }
         instruction_args = [
             {
-                address = variable.evm_transeiver_address
+                address = variable.evm_wormhole_adapter
                 adapter_chain_id = index([2, 10002], input.chain_id_idx)
                 m0_chain_id = index([1, 11155111], input.chain_id_idx)
             }
@@ -55,32 +55,9 @@ action "set_wormhole_peer_arbitrum" "svm::process_instructions" {
         }
         instruction_args = [
             {
-                address = variable.evm_transeiver_address
+                address = variable.evm_wormhole_adapter
                 adapter_chain_id = index([23, 10003], input.chain_id_idx)
                 m0_chain_id = index([42161, 421614], input.chain_id_idx)
-            }
-        ]
-    }
-    pre_condition {
-        behavior = "skip"
-        assertion = input.wormhole_adapter == "true"
-    }
-}
-
-action "set_wormhole_peer_optimism" "svm::process_instructions" {
-    description = "Set Wormhole Adapter peer for Optimism"
-    signers = [signer.caller]
-    instruction {
-        program_idl = variable.wormhole_adapter_program.idl
-        instruction_name = "set_peer"
-        admin {
-            public_key = signer.caller.public_key
-        }
-        instruction_args = [
-            {
-                address = variable.evm_transeiver_address
-                adapter_chain_id = index([24, 10005], input.chain_id_idx)
-                m0_chain_id = index([10, 11155420], input.chain_id_idx)
             }
         ]
     }
@@ -101,7 +78,7 @@ action "set_wormhole_peer_base" "svm::process_instructions" {
         }
         instruction_args = [
             {
-                address = variable.evm_transeiver_address
+                address = variable.evm_wormhole_adapter
                 adapter_chain_id = index([30, 10004], input.chain_id_idx)
                 m0_chain_id = index([8453, 84532], input.chain_id_idx)
             }
@@ -124,9 +101,32 @@ action "set_hyperlane_peer_ethereum" "svm::process_instructions" {
         }
         instruction_args = [
             {
-                address = variable.peer_address
+                address = variable.evm_hyperlane_adapter
                 m0_chain_id = index([1, 11155111], input.chain_id_idx)
                 adapter_chain_id = index([1, 11155111], input.chain_id_idx)
+            }
+        ]
+    }
+    pre_condition {
+        behavior = "skip"
+        assertion = input.hyperlane_adapter == "true"
+    }
+}
+
+action "set_hyperlane_peer_arbitrum" "svm::process_instructions" {
+    description = "Set Hyperlane Adapter peer for Arbitrum"
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.hyperlane_adapter_program.idl
+        instruction_name = "set_peer"
+        admin {
+            public_key = signer.caller.public_key
+        }
+        instruction_args = [
+            {
+                address = variable.evm_hyperlane_adapter
+                m0_chain_id = index([42161, 421614], input.chain_id_idx)
+                adapter_chain_id = index([42161, 421614], input.chain_id_idx)
             }
         ]
     }

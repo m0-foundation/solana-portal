@@ -3,7 +3,7 @@ use anchor_spl::{
     token_2022::{spl_token_2022::instruction::AuthorityType, Token2022},
     token_interface::{self, Mint},
 };
-use common::{portal, Peers, AUTHORITY_SEED};
+use m0_portal_common::{portal, Peers, AUTHORITY_SEED};
 
 use crate::state::{WormholeGlobal, GLOBAL_SEED};
 
@@ -52,7 +52,8 @@ impl Initialize<'_> {
         ctx.accounts.wormhole_global.set_inner(WormholeGlobal {
             bump: ctx.bumps.wormhole_global,
             admin: ctx.accounts.admin.key(),
-            paused: false,
+            outgoing_paused: false,
+            incoming_paused: false,
             chain_id,
             peers: Peers::default(),
             pending_admin: None,

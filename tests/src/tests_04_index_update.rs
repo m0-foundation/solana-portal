@@ -1,7 +1,7 @@
 use anchor_client::{Client, Cluster};
 use anchor_lang::{system_program, AccountDeserialize};
 use anyhow::Result;
-use common::{
+use m0_portal_common::{
     earn,
     hyperlane_adapter::{
         self,
@@ -42,7 +42,7 @@ fn test_01_index_update_wormhole() -> Result<()> {
         .args(instruction::SendIndex {
             destination_chain_id: 1,
         })
-        .accounts(WormholeRemainingAccounts::account_metas())
+        .accounts(WormholeRemainingAccounts::account_metas(false))
         .send()?;
 
     let transaction = rpc_client.get_transaction(&signature, UiTransactionEncoding::Json)?;
@@ -55,14 +55,14 @@ fn test_01_index_update_wormhole() -> Result<()> {
     assert!(event_meta.sequence > 50);
     assert!(event_meta.timestamp > 0);
 
-    let message_account = WormholeRemainingAccounts::new().message_account;
+    let message_account = WormholeRemainingAccounts::new(false).message_account;
     let account_data = rpc_client.get_account_data(&message_account)?;
 
     // Emitter chain and address
     assert_eq!(account_data[57..59], [1, 0]);
     assert_eq!(
         account_data[59..91],
-        WormholeRemainingAccounts::new().emitter.to_bytes()
+        WormholeRemainingAccounts::new(false).emitter.to_bytes()
     );
 
     let payload =
@@ -71,11 +71,11 @@ fn test_01_index_update_wormhole() -> Result<()> {
     // Index should match the program’s current m_index (you send current index)
     let global_bytes = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &portal::ID))?;
     let portal_global = PortalGlobal::try_deserialize(&mut global_bytes.as_slice())?;
-
-    match payload.data {
-        PayloadData::Index(index_payload) => assert_eq!(index_payload.index, portal_global.m_index),
-        _ => panic!("Expected IndexPayload"),
-    }
+    assert_eq!(payload.header.index, portal_global.m_index);
+    assert!(
+        matches!(payload.data, PayloadData::Index(_)),
+        "Expected IndexPayload"
+    );
 
     Ok(())
 }
@@ -99,7 +99,7 @@ fn test_02_index_update_wormhole_bad_dest() -> Result<()> {
         .args(instruction::SendIndex {
             destination_chain_id: 5,
         })
-        .accounts(WormholeRemainingAccounts::account_metas())
+        .accounts(WormholeRemainingAccounts::account_metas(false))
         .send()
         .unwrap_err();
 
@@ -119,7 +119,7 @@ fn test_03_index_update_hyperlane() -> Result<()> {
     let data_hyp = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &hyperlane_adapter::ID))?;
     let global_hp = HyperlaneGlobal::try_deserialize(&mut data_hyp.as_slice())?;
 
-    let accounts = HyperlaneRemainingAccounts::new(&program.payer(), &global_hp, None);
+    let accounts = HyperlaneRemainingAccounts::new(&program.payer(), &global_hp, None, false);
 
     // Send index update
     program
@@ -147,16 +147,16 @@ fn test_03_index_update_hyperlane() -> Result<()> {
     // Index should match the program’s current m_index (you send current index)
     let global_bytes = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &portal::ID))?;
     let portal_global = PortalGlobal::try_deserialize(&mut global_bytes.as_slice())?;
-
-    match payload.data {
-        PayloadData::Index(index_payload) => assert_eq!(index_payload.index, portal_global.m_index),
-        _ => panic!("Expected IndexPayload"),
-    }
+    assert_eq!(payload.header.index, portal_global.m_index);
+    assert!(
+        matches!(payload.data, PayloadData::Index(_)),
+        "Expected IndexPayload"
+    );
 
     // Recipient should be registered peer
     assert_eq!(
         hex::encode(recipient),
-        "0b6a86806a0354c82b8f049eb75d9c97e370a6f0c0cfa15f47909c3fe1c8f794"
+        "000000000000000000000000fc44dadd758a7737ac9200059e9fcd1521d75a07"
     );
 
     Ok(())
@@ -173,7 +173,7 @@ fn test_04_index_update_hyperlane_repeat_msgid() -> Result<()> {
     let global_hp = HyperlaneGlobal::try_deserialize(&mut data_hyp.as_slice())?;
 
     // user_global already exists, so message ID will be repeated
-    let accounts = HyperlaneRemainingAccounts::new(&program.payer(), &global_hp, None);
+    let accounts = HyperlaneRemainingAccounts::new(&program.payer(), &global_hp, None, false);
 
     // Send index update
     let err = program
@@ -215,7 +215,8 @@ fn test_05_index_update_hyperlane_bad_dest() -> Result<()> {
     ))?;
     let user_hp = HyperlaneUserGlobal::try_deserialize(&mut user_data_hyp.as_slice())?;
 
-    let accounts = HyperlaneRemainingAccounts::new(&program.payer(), &global_hp, Some(&user_hp));
+    let accounts =
+        HyperlaneRemainingAccounts::new(&program.payer(), &global_hp, Some(&user_hp), false);
 
     // Send index update
     let err = program
@@ -258,7 +259,7 @@ fn test_06_missing_account() -> Result<()> {
         .args(instruction::SendIndex {
             destination_chain_id: 1,
         })
-        .accounts(WormholeRemainingAccounts::account_metas()[1..].to_vec())
+        .accounts(WormholeRemainingAccounts::account_metas(false)[1..].to_vec())
         .send()
         .unwrap_err();
 
@@ -287,7 +288,7 @@ fn test_07_send_merkle_root() -> Result<()> {
         .args(instruction::SendMerkleRoot {
             destination_chain_id: 1,
         })
-        .accounts(WormholeRemainingAccounts::account_metas())
+        .accounts(WormholeRemainingAccounts::account_metas(false))
         .send()?;
 
     Ok(())

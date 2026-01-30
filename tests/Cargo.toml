@@ -17,7 +17,7 @@ reqwest = { version = "0.12", features = ["json", "blocking"] }
 hex = "0.4"
 once_cell = "1.20"
 ctor = "0.2"
-common = { path = "../packages/common" }
+m0-portal-common = { path = "../packages/common" }
 portal = { path = "../programs/portal" }
 wormhole-adapter = { path = "../programs/wormhole-adapter" }
 hyperlane-adapter = { path = "../programs/hyperlane-adapter" }

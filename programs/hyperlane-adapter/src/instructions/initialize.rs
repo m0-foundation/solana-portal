@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::{
+use m0_portal_common::{
     earn::{self, accounts::EarnGlobal},
     Peers,
 };
@@ -61,7 +61,8 @@ impl Initialize<'_> {
             admin: ctx.accounts.admin.key(),
             chain_id,
             ism: None,
-            paused: false,
+            outgoing_paused: false,
+            incoming_paused: false,
             peers: Peers::default(),
             pending_admin: None,
             igp_program_id: DEFAULT_IGP_PROGRAM_ID,

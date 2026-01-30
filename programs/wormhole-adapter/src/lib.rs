@@ -1,13 +1,14 @@
 #![allow(unexpected_cfgs)]
 
 pub mod consts;
+mod executor;
 pub mod instructions;
 pub mod state;
 
 use anchor_lang::prelude::*;
-use common::Peer;
-use executor_account_resolver_svm::{InstructionGroups, Resolver, RESOLVER_EXECUTE_VAA_V1};
+use executor::{InstructionGroups, Resolver, RESOLVER_EXECUTE_VAA_V1};
 use instructions::*;
+use m0_portal_common::Peer;
 
 #[cfg(not(feature = "no-entrypoint"))]
 solana_security_txt::security_txt! {
@@ -36,12 +37,20 @@ pub mod wormhole_adapter {
         SetLookupTable::handler(ctx, recent_slot)
     }
 
-    pub fn pause(ctx: Context<Pause>) -> Result<()> {
-        Pause::handler(ctx)
+    pub fn pause_outgoing(ctx: Context<ManagePause>) -> Result<()> {
+        ManagePause::handler(ctx, Some(true), None)
     }
 
-    pub fn unpause(ctx: Context<Unpause>) -> Result<()> {
-        Unpause::handler(ctx)
+    pub fn unpause_outgoing(ctx: Context<ManagePause>) -> Result<()> {
+        ManagePause::handler(ctx, Some(false), None)
+    }
+
+    pub fn pause_incoming(ctx: Context<ManagePause>) -> Result<()> {
+        ManagePause::handler(ctx, None, Some(true))
+    }
+
+    pub fn unpause_incoming(ctx: Context<ManagePause>) -> Result<()> {
+        ManagePause::handler(ctx, None, Some(false))
     }
 
     pub fn propose_admin(ctx: Context<ProposeAdmin>, new_admin: Pubkey) -> Result<()> {

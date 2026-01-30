@@ -1,11 +1,15 @@
 pub mod accounts;
 pub mod adapter_accounts;
+pub mod consts;
 pub mod conversions;
 pub mod errors;
 pub mod interfaces;
 pub mod payloads;
 pub mod peers;
 pub mod receive_metas;
+
+#[cfg(feature = "executor")]
+pub mod wormhole;
 
 pub use accounts::*;
 pub use adapter_accounts::*;
@@ -16,6 +20,9 @@ pub use interfaces::*;
 pub use payloads::*;
 pub use peers::*;
 pub use receive_metas::*;
+
+#[cfg(feature = "executor")]
+pub use wormhole::*;
 
 declare_program!(wormhole_post_message_shim);
 declare_program!(portal);

@@ -1,7 +1,7 @@
-use std::cmp::max;
-
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::spl_associated_token_account::solana_program::keccak;
+
+pub const ETHEREUM_CHAIN_ID: u32 = 1;
 
 #[constant]
 pub const GLOBAL_SEED: &[u8] = b"global";
@@ -10,7 +10,7 @@ pub const M_VAULT_SEED: &[u8] = b"m_vault";
 #[constant]
 pub const MINT_AUTHORITY_SEED: &[u8] = b"mint_authority";
 #[constant]
-pub use common::interfaces::AUTHORITY_SEED;
+pub use m0_portal_common::interfaces::AUTHORITY_SEED;
 #[constant]
 pub const MESSAGE_SEED: &[u8] = b"message";
 
@@ -19,8 +19,10 @@ pub const MESSAGE_SEED: &[u8] = b"message";
 pub struct PortalGlobal {
     pub bump: u8,
     pub chain_id: u32,
+    pub m_mint: Pubkey,
     pub admin: Pubkey,
-    pub paused: bool,
+    pub outgoing_paused: bool,
+    pub incoming_paused: bool,
     pub m_index: u128,
     pub message_nonce: u64,
     pub pending_admin: Option<Pubkey>,
@@ -29,15 +31,6 @@ pub struct PortalGlobal {
 }
 
 impl PortalGlobal {
-    pub fn update_index(&mut self, message_id: [u8; 32], new_index: u128) {
-        self.m_index = max(new_index, self.m_index);
-
-        emit!(MTokenIndexReceived {
-            index: new_index,
-            message_id,
-        });
-    }
-
     pub fn generate_message_id(&mut self, destination_chain_id: u32) -> [u8; 32] {
         self.message_nonce += 1;
 
@@ -66,12 +59,6 @@ impl BridgeMessage {
     pub const SIZE: usize = BridgeMessage::INIT_SPACE + BridgeMessage::DISCRIMINATOR.len();
 }
 
-#[event]
-pub struct MTokenIndexReceived {
-    pub index: u128,
-    pub message_id: [u8; 32],
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -88,7 +75,9 @@ mod tests {
             bump: 0,
             chain_id,
             admin: Pubkey::default(),
-            paused: false,
+            m_mint: Pubkey::default(),
+            outgoing_paused: false,
+            incoming_paused: false,
             m_index: 0,
             message_nonce: nonce_value - 1, // Will be incremented
             pending_admin: None,
@@ -125,7 +114,9 @@ mod tests {
                 bump: 0,
                 chain_id,
                 admin: Pubkey::default(),
-                paused: false,
+                m_mint: Pubkey::default(),
+                outgoing_paused: false,
+                incoming_paused: false,
                 m_index: 0,
                 message_nonce: nonce - 1,
                 pending_admin: None,

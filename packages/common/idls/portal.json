@@ -171,6 +171,61 @@
           }
         },
         {
+          "name": "earn_global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                11,
+                134,
+                11,
+                7,
+                229,
+                245,
+                33,
+                49,
+                225,
+                170,
+                183,
+                171,
+                210,
+                177,
+                147,
+                110,
+                166,
+                55,
+                182,
+                49,
+                97,
+                242,
+                35,
+                170,
+                152,
+                135,
+                152,
+                108,
+                102,
+                78,
+                112,
+                208
+              ]
+            }
+          }
+        },
+        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
@@ -189,16 +244,58 @@
       ]
     },
     {
-      "name": "pause",
+      "name": "pause_incoming",
       "discriminator": [
-        211,
-        22,
-        221,
-        251,
-        74,
-        121,
-        193,
-        47
+        159,
+        50,
+        214,
+        15,
+        183,
+        226,
+        174,
+        196
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": [
+            "portal_global"
+          ]
+        },
+        {
+          "name": "portal_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "pause_outgoing",
+      "discriminator": [
+        254,
+        51,
+        37,
+        160,
+        105,
+        61,
+        204,
+        223
       ],
       "accounts": [
         {
@@ -367,6 +464,74 @@
           }
         },
         {
+          "name": "earn_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                11,
+                134,
+                11,
+                7,
+                229,
+                245,
+                33,
+                49,
+                225,
+                170,
+                183,
+                171,
+                210,
+                177,
+                147,
+                110,
+                166,
+                55,
+                182,
+                49,
+                97,
+                242,
+                35,
+                170,
+                152,
+                135,
+                152,
+                108,
+                102,
+                78,
+                112,
+                208
+              ]
+            }
+          }
+        },
+        {
+          "name": "m_mint",
+          "writable": true
+        },
+        {
+          "name": "m_token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "earn_program",
+          "address": "mz2vDzjbQDUDXBH6FPF5s4odCJ4y8YLE5QWaZ8XdZ9Z"
+        },
+        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
@@ -388,6 +553,170 @@
         {
           "name": "payload",
           "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "send_cancel_report",
+      "discriminator": [
+        104,
+        117,
+        129,
+        240,
+        158,
+        223,
+        191,
+        180
+      ],
+      "accounts": [
+        {
+          "name": "sender",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "order_book_global",
+          "docs": [
+            "Only order_book can send fill reports"
+          ],
+          "writable": true,
+          "signer": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                96,
+                115,
+                204,
+                66,
+                167,
+                34,
+                205,
+                173,
+                199,
+                58,
+                223,
+                176,
+                231,
+                81,
+                240,
+                166,
+                247,
+                251,
+                65,
+                73,
+                214,
+                228,
+                4,
+                158,
+                133,
+                255,
+                10,
+                15,
+                109,
+                72,
+                196
+              ]
+            }
+          }
+        },
+        {
+          "name": "portal_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "portal_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "bridge_adapter"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "order_id",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "order_sender",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "token_in",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "amount_in_to_refund",
+          "type": "u128"
+        },
+        {
+          "name": "origin_chain_id",
+          "type": "u32"
         }
       ]
     },
@@ -433,38 +762,38 @@
             "program": {
               "kind": "const",
               "value": [
-                50,
-                164,
-                153,
-                208,
-                221,
-                249,
-                235,
-                104,
-                241,
+                5,
+                96,
+                115,
+                204,
                 66,
-                230,
-                169,
-                193,
-                47,
-                193,
-                222,
-                114,
-                9,
-                233,
-                21,
-                116,
-                117,
-                138,
-                135,
-                155,
-                46,
-                31,
-                77,
-                43,
-                101,
-                79,
-                49
+                167,
+                34,
+                205,
+                173,
+                199,
+                58,
+                223,
+                176,
+                231,
+                81,
+                240,
+                166,
+                247,
+                251,
+                65,
+                73,
+                214,
+                228,
+                4,
+                158,
+                133,
+                255,
+                10,
+                15,
+                109,
+                72,
+                196
               ]
             }
           }
@@ -880,7 +1209,10 @@
         },
         {
           "name": "m_mint",
-          "writable": true
+          "writable": true,
+          "relations": [
+            "portal_global"
+          ]
         },
         {
           "name": "extension_mint",
@@ -1129,16 +1461,58 @@
       ]
     },
     {
-      "name": "unpause",
+      "name": "unpause_incoming",
       "discriminator": [
-        169,
+        40,
+        3,
         144,
-        4,
-        38,
-        10,
-        141,
-        188,
-        255
+        42,
+        253,
+        44,
+        153,
+        249
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": [
+            "portal_global"
+          ]
+        },
+        {
+          "name": "portal_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "unpause_outgoing",
+      "discriminator": [
+        255,
+        24,
+        174,
+        235,
+        25,
+        115,
+        35,
+        11
       ],
       "accounts": [
         {
@@ -1227,6 +1601,32 @@
   ],
   "events": [
     {
+      "name": "CancelReportReceived",
+      "discriminator": [
+        139,
+        163,
+        1,
+        52,
+        99,
+        85,
+        7,
+        143
+      ]
+    },
+    {
+      "name": "CancelReportSent",
+      "discriminator": [
+        7,
+        35,
+        17,
+        164,
+        221,
+        120,
+        12,
+        31
+      ]
+    },
+    {
       "name": "FillReportReceived",
       "discriminator": [
         101,
@@ -1301,6 +1701,109 @@
           {
             "name": "consumed",
             "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CancelReportReceived",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "source_chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "bridge_adapter",
+            "type": "pubkey"
+          },
+          {
+            "name": "order_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "order_sender",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "token_in",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "amount_in_to_refund",
+            "type": "u128"
+          },
+          {
+            "name": "message_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "CancelReportSent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "destination_chain_id",
+            "type": "u32"
+          },
+          {
+            "name": "bridge_adapter",
+            "type": "pubkey"
+          },
+          {
+            "name": "order_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "order_sender",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "token_in",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "amount_in_to_refund",
+            "type": "u128"
           }
         ]
       }
@@ -1488,11 +1991,19 @@
             "type": "u32"
           },
           {
+            "name": "m_mint",
+            "type": "pubkey"
+          },
+          {
             "name": "admin",
             "type": "pubkey"
           },
           {
-            "name": "paused",
+            "name": "outgoing_paused",
+            "type": "bool"
+          },
+          {
+            "name": "incoming_paused",
             "type": "bool"
           },
           {
@@ -1601,10 +2112,6 @@
           },
           {
             "name": "amount",
-            "type": "u128"
-          },
-          {
-            "name": "index",
             "type": "u128"
           },
           {

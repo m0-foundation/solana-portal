@@ -54,4 +54,4 @@ environments:
     hyperlane_adapter: false
     build_dir: target/verifiable
     chain_id_idx: 0
-    pause_action: pause
+    pause_action: pause_outgoing

@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_2022::spl_token_2022::{
+use spl_token_2022::{
     extension::{
         scaled_ui_amount::ScaledUiAmountConfig, BaseStateWithExtensions, StateWithExtensions,
     },
@@ -20,6 +20,20 @@ pub fn amount_to_principal_down(amount: u128, multiplier: f64) -> u128 {
         .checked_mul(INDEX_SCALE_U64 as u128)
         .expect("overflow")
         .checked_div(index)
+        .expect("underflow")
+}
+
+pub fn principal_to_amount_down(principal: u64, multiplier: f64) -> u128 {
+    if multiplier == 1.0 {
+        return principal as u128;
+    }
+
+    let index = (multiplier * INDEX_SCALE_F64).trunc() as u128;
+
+    index
+        .checked_mul(principal as u128)
+        .expect("overflow")
+        .checked_div(INDEX_SCALE_U64 as u128)
         .expect("underflow")
 }
 

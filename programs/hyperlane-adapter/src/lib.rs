@@ -5,7 +5,7 @@ mod instructions;
 pub mod state;
 
 use anchor_lang::prelude::*;
-use common::Peer;
+use m0_portal_common::Peer;
 use consts::{
     HANDLE_ACCOUNT_METAS_DISCRIMINATOR, HANDLE_DISCRIMINATOR, ISM_DISCRIMINATOR,
     ISM_METAS_DISCRIMINATOR,
@@ -35,12 +35,20 @@ pub mod hyperlane_adapter {
         Initialize::handler(ctx, chain_id)
     }
 
-    pub fn pause(ctx: Context<Pause>) -> Result<()> {
-        Pause::handler(ctx)
+    pub fn pause_outgoing(ctx: Context<ManagePause>) -> Result<()> {
+        ManagePause::handler(ctx, Some(true), None)
     }
 
-    pub fn unpause(ctx: Context<Unpause>) -> Result<()> {
-        Unpause::handler(ctx)
+    pub fn unpause_outgoing(ctx: Context<ManagePause>) -> Result<()> {
+        ManagePause::handler(ctx, Some(false), None)
+    }
+
+    pub fn pause_incoming(ctx: Context<ManagePause>) -> Result<()> {
+        ManagePause::handler(ctx, None, Some(true))
+    }
+
+    pub fn unpause_incoming(ctx: Context<ManagePause>) -> Result<()> {
+        ManagePause::handler(ctx, None, Some(false))
     }
 
     pub fn propose_admin(ctx: Context<ProposeAdmin>, new_admin: Pubkey) -> Result<()> {

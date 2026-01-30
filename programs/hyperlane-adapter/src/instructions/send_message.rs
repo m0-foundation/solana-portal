@@ -1,9 +1,12 @@
-use anchor_lang::prelude::{
+use anchor_lang::prelude::*;
+use anchor_lang::solana_program::{
     instruction::Instruction,
     program::{get_return_data, invoke_signed},
-    *,
 };
-use common::{portal, BridgeError, Payload, PayloadData, PayloadHeader, AUTHORITY_SEED};
+use m0_portal_common::{
+    portal::{self, accounts::PortalGlobal},
+    BridgeError, Payload, PayloadData, PayloadHeader, AUTHORITY_SEED,
+};
 use std::vec;
 
 use crate::{
@@ -21,13 +24,20 @@ pub struct SendMessage<'info> {
     payer: Signer<'info>,
 
     #[account(
-        constraint = !hyperlane_global.paused @ BridgeError::Paused,
+        constraint = !hyperlane_global.outgoing_paused @ BridgeError::Paused,
         has_one = igp_program_id @ BridgeError::InvalidIgpAccount,
         has_one = igp_account @ BridgeError::InvalidIgpAccount,
         seeds = [GLOBAL_SEED],
         bump = hyperlane_global.bump,
     )]
     pub hyperlane_global: Account<'info, HyperlaneGlobal>,
+
+    #[account(
+        seeds = [GLOBAL_SEED],
+        seeds::program = portal::ID,
+        bump = portal_global.bump,
+    )]
+    pub portal_global: Account<'info, PortalGlobal>,
 
     #[account(
         seeds = [AUTHORITY_SEED],
@@ -161,6 +171,7 @@ impl SendMessage<'_> {
                     destination_chain_id: m0_destination_chain_id,
                     destination_peer: peer.address,
                     payload_type,
+                    index: ctx.accounts.portal_global.m_index,
                 },
                 data: PayloadData::decode(payload_type, &payload)?,
             }

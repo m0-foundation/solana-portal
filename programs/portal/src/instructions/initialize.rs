@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use m0_portal_common::earn::{self, accounts::EarnGlobal};
 
 use crate::state::{PortalGlobal, GLOBAL_SEED};
 
@@ -16,6 +17,13 @@ pub struct Initialize<'info> {
     )]
     pub portal_global: Account<'info, PortalGlobal>,
 
+    #[account(
+        seeds = [GLOBAL_SEED],
+        seeds::program = earn::ID,
+        bump = earn_global.bump,
+    )]
+    pub earn_global: Account<'info, EarnGlobal>,
+
     pub system_program: Program<'info, System>,
 }
 
@@ -29,7 +37,9 @@ impl Initialize<'_> {
             admin: ctx.accounts.admin.key(),
             bump: ctx.bumps.portal_global,
             m_index: 0,
-            paused: false,
+            m_mint: ctx.accounts.earn_global.m_mint,
+            outgoing_paused: false,
+            incoming_paused: false,
             chain_id,
             message_nonce: 0,
             pending_admin: None,

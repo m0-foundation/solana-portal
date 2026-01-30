@@ -1,7 +1,9 @@
 [package]
-name = "common-macros"
+name = "m0-portal-common-macros"
+description = "Shared procedural macros for M0 portal"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
 
 [lib]
 proc-macro = true

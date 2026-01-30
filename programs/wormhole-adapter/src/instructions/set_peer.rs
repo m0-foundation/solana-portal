@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use common::Peer;
+use m0_portal_common::Peer;
 
 use crate::state::{WormholeGlobal, GLOBAL_SEED};
 

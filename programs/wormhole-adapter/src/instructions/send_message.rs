@@ -2,8 +2,8 @@ use anchor_lang::{
     prelude::*,
     system_program::{transfer, Transfer},
 };
-use common::{
-    portal,
+use m0_portal_common::{
+    portal::{self, accounts::PortalGlobal},
     wormhole_post_message_shim::{self, program::WormholePostMessageShim, types::Finality},
     BridgeError, Payload, PayloadData, PayloadHeader, AUTHORITY_SEED,
 };
@@ -22,11 +22,18 @@ pub struct SendMessage<'info> {
     payer: Signer<'info>,
 
     #[account(
-        constraint = !wormhole_global.paused @ BridgeError::Paused,
+        constraint = !wormhole_global.outgoing_paused @ BridgeError::Paused,
         seeds = [GLOBAL_SEED],
         bump = wormhole_global.bump,
     )]
     pub wormhole_global: Account<'info, WormholeGlobal>,
+
+    #[account(
+        seeds = [GLOBAL_SEED],
+        seeds::program = portal::ID,
+        bump = portal_global.bump,
+    )]
+    pub portal_global: Account<'info, PortalGlobal>,
 
     #[account(
         seeds = [AUTHORITY_SEED],
@@ -140,6 +147,7 @@ impl SendMessage<'_> {
                 destination_chain_id: m0_destination_chain_id,
                 destination_peer: peer.address,
                 payload_type,
+                index: ctx.accounts.portal_global.m_index,
             },
             data: PayloadData::decode(payload_type, &payload)?,
         }

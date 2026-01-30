@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
-use common::{
+use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface};
+use m0_portal_common::{
     ext_swap::{self, accounts::SwapGlobal, program::ExtSwap},
     BridgeAdapter, BridgeError, PayloadData, TokenTransferPayload,
 };
@@ -19,7 +19,8 @@ pub struct SendToken<'info> {
         mut,
         seeds = [GLOBAL_SEED],
         bump = portal_global.bump,
-        constraint = !portal_global.paused @ BridgeError::Paused,
+        constraint = !portal_global.outgoing_paused @ BridgeError::Paused,
+        has_one = m_mint @ BridgeError::InvalidMint,
     )]
     pub portal_global: Account<'info, PortalGlobal>,
 
@@ -106,7 +107,7 @@ pub struct SendToken<'info> {
 
 impl SendToken<'_> {
     fn validate(&self, amount: u64, destination_chain_id: u32) -> Result<()> {
-        if self.portal_global.paused {
+        if self.portal_global.outgoing_paused {
             return err!(BridgeError::Paused);
         }
 
@@ -177,26 +178,44 @@ impl SendToken<'_> {
         ctx.accounts.m_token_account.reload()?;
         let m_amount = ctx.accounts.m_token_account.amount - m_pre_balance;
 
+        // Burn $M
+        token_interface::burn(
+            CpiContext::new_with_signer(
+                ctx.accounts.m_token_program.to_account_info(),
+                token_interface::Burn {
+                    mint: ctx.accounts.m_mint.to_account_info(),
+                    from: ctx.accounts.m_token_account.to_account_info(),
+                    authority: ctx.accounts.portal_authority.to_account_info(),
+                },
+                &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
+            ),
+            m_amount,
+        )?;
+
+        let scaled_m_amount = m0_portal_common::principal_to_amount_down(
+            m_amount,
+            m0_portal_common::get_scaled_ui_config(&ctx.accounts.m_mint.to_account_info())?
+                .multiplier
+                .into(),
+        );
+
         let payload = PayloadData::TokenTransfer(TokenTransferPayload {
-            amount: m_amount as u128,
+            amount: scaled_m_amount,
             destination_token,
             sender: ctx.accounts.sender.key().to_bytes(),
             recipient,
-            index: ctx.accounts.portal_global.m_index,
         });
 
         // Send message to bridge adapter
         send_message(
             ctx.accounts.bridge_adapter.to_account_info(),
             ctx.accounts.sender.to_account_info(),
+            &mut ctx.accounts.portal_global,
             ctx.accounts.portal_authority.to_account_info(),
             ctx.bumps.portal_authority,
             ctx.accounts.system_program.to_account_info(),
             ctx.remaining_accounts.to_vec(),
             destination_chain_id,
-            ctx.accounts
-                .portal_global
-                .generate_message_id(destination_chain_id),
             payload,
             PayloadData::TOKEN_TRANSFER_DISCRIMINANT,
         )?;
@@ -207,7 +226,7 @@ impl SendToken<'_> {
             destination_token,
             sender: ctx.accounts.sender.key(),
             recipient,
-            amount: m_amount as u128,
+            amount: scaled_m_amount,
             index: ctx.accounts.portal_global.m_index,
             bridge_adapter: ctx.accounts.bridge_adapter.key(),
         });

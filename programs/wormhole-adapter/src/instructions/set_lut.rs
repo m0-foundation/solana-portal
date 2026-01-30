@@ -1,8 +1,6 @@
-use anchor_lang::prelude::{
-    program::{invoke, invoke_signed},
-    *,
-};
-use common::{earn, ext_swap, pda, portal, wormhole_verify_vaa_shim};
+use anchor_lang::solana_program::program::{invoke, invoke_signed};
+use anchor_lang::{prelude::*, system_program};
+use m0_portal_common::{earn, ext_swap, pda, portal, wormhole_verify_vaa_shim};
 use solana_address_lookup_table_interface::instruction::{
     create_lookup_table, extend_lookup_table,
 };

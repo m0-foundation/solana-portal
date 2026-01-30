@@ -3,24 +3,32 @@ use std::{str::FromStr, sync::Arc};
 use anchor_client::{Client, Cluster, Program};
 use anchor_lang::{prelude::Pubkey, system_program, AccountDeserialize};
 use anchor_spl::token_2022;
-use anyhow::Result;
+use anyhow::{Ok, Result};
 use solana_client::rpc_client::RpcClient;
-use solana_sdk::signature::Keypair;
+use solana_sdk::{
+    address_lookup_table::{state::AddressLookupTable, AddressLookupTableAccount},
+    compute_budget::ComputeBudgetInstruction,
+    message::{v0, VersionedMessage},
+    signature::Keypair,
+    transaction::VersionedTransaction,
+};
 use solana_transaction_status_client_types::UiTransactionEncoding;
 use spl_token_2022::{
     extension::StateWithExtensions,
     state::{Account as TokenAccount2022, AccountState},
 };
 
-use common::{
+use m0_portal_common::{
     ext_swap::{self, accounts::SwapGlobal},
-    hyperlane_adapter,
-    hyperlane_adapter::accounts::HyperlaneGlobal,
+    hyperlane_adapter::{
+        self,
+        accounts::{HyperlaneGlobal, HyperlaneUserGlobal},
+    },
     m_ext::{self, accounts::ExtGlobalV2},
     pda,
     portal::constants::{GLOBAL_SEED, MINT_AUTHORITY_SEED, M_VAULT_SEED},
-    wormhole_adapter, HyperlaneRemainingAccounts, PayloadData, WormholeRemainingAccounts,
-    AUTHORITY_SEED,
+    wormhole_adapter::{self, accounts::WormholeGlobal},
+    HyperlaneRemainingAccounts, PayloadData, WormholeRemainingAccounts, AUTHORITY_SEED,
 };
 
 use portal::{accounts as portal_accounts, instruction as portal_instruction, state::PortalGlobal};
@@ -97,7 +105,7 @@ impl TestCtx {
         })
     }
 
-    fn hyperlane_remaining_accounts(&self) -> Result<HyperlaneRemainingAccounts> {
+    fn hyperlane_remaining_accounts(&self, nonce: u64) -> Result<HyperlaneRemainingAccounts> {
         let data = self
             .rpc
             .get_account_data(&pda!(&[GLOBAL_SEED], &hyperlane_adapter::ID))?;
@@ -105,7 +113,12 @@ impl TestCtx {
         Ok(HyperlaneRemainingAccounts::new(
             &self.portal.payer(),
             &global,
-            None,
+            Some(&HyperlaneUserGlobal {
+                nonce,
+                bump: 255,
+                user: Pubkey::default(),
+            }),
+            false,
         ))
     }
 }
@@ -213,7 +226,7 @@ fn test_01_send_token_wormhole_unauthorized_unwrapper() -> Result<()> {
             destination_chain_id: 2,
             recipient: ctx.portal.payer().to_bytes(),
         })
-        .accounts(WormholeRemainingAccounts::account_metas())
+        .accounts(WormholeRemainingAccounts::account_metas(false))
         .send()
         .unwrap_err();
 
@@ -229,7 +242,7 @@ fn test_01_send_token_wormhole_unauthorized_unwrapper() -> Result<()> {
 #[test]
 fn test_02_send_token_hyperlane_unauthorized_unwrapper() -> Result<()> {
     let ctx = TestCtx::new()?;
-    let hyp = ctx.hyperlane_remaining_accounts()?;
+    let hyp = ctx.hyperlane_remaining_accounts(0)?;
 
     let err = ctx
         .portal
@@ -309,7 +322,7 @@ fn test_03_send_token_wormhole_insufficient_funds() -> Result<()> {
             destination_chain_id: 2,
             recipient: ctx.portal.payer().to_bytes(),
         })
-        .accounts(WormholeRemainingAccounts::account_metas())
+        .accounts(WormholeRemainingAccounts::account_metas(false))
         .send()
         .unwrap_err();
 
@@ -378,7 +391,7 @@ fn test_04_send_token_wormhole_success() -> Result<()> {
             destination_chain_id: 1,
             recipient: ctx.portal.payer().to_bytes(),
         })
-        .accounts(WormholeRemainingAccounts::account_metas())
+        .accounts(WormholeRemainingAccounts::account_metas(false))
         .send()?;
 
     let tx = ctx.rpc.get_transaction(&sig, UiTransactionEncoding::Json)?;
@@ -392,8 +405,8 @@ fn test_04_send_token_wormhole_success() -> Result<()> {
 
     match payload.data {
         PayloadData::TokenTransfer(token_payload) => {
-            assert_eq!(token_payload.index, portal_global.m_index);
-            assert!(token_payload.amount > 0 && token_payload.amount < AMOUNT as u128); // scaled by index multiplier (which changes over time)
+            assert_eq!(payload.header.index, portal_global.m_index);
+            assert!(token_payload.amount < AMOUNT as u128 && token_payload.amount > 0); // will change depending on current index value
             assert_eq!(token_payload.destination_token, ctx.m_mint.to_bytes());
             assert_eq!(token_payload.sender, ctx.portal.payer().to_bytes());
             assert_eq!(token_payload.recipient, ctx.portal.payer().to_bytes());
@@ -401,47 +414,148 @@ fn test_04_send_token_wormhole_success() -> Result<()> {
         _ => panic!("Expected TokenTransferPayload"),
     }
 
+    // assert the $M was burned
+    let balance = ctx.rpc.get_token_account_balance(&ctx.m_token_account)?;
+    assert_eq!(balance.amount, "0");
+
     Ok(())
 }
 
-// #[test]
-// fn test_05_send_token_hyperlane_success() -> Result<()> {
-//     let ctx = TestCtx::new()?;
-//     let hyp = ctx.hyperlane_remaining_accounts()?;
+#[test]
+fn test_05_send_token_hyperlane_success() -> Result<()> {
+    let ctx = TestCtx::new()?;
+    let hyp = ctx.hyperlane_remaining_accounts(1)?;
 
-//     // TODO: On default settings this exceeds the compute budget; bumping CU limit then exposes a tx-size limit error.
-//     let _sig = ctx
-//         .portal
-//         .request()
-//         .instruction(ComputeBudgetInstruction::set_compute_unit_limit(600_000))
-//         .accounts(portal_accounts::SendToken {
-//             sender: ctx.portal.payer(),
-//             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
-//             swap_global: pda!(&[GLOBAL_SEED], &ext_swap::ID),
-//             extension_global: pda!(&[GLOBAL_SEED], &ctx.extension_program),
-//             m_mint: ctx.m_mint,
-//             extension_mint: ctx.extension_mint,
-//             m_token_account: ctx.m_token_account,
-//             extension_token_account: ctx.extension_token_account,
-//             portal_authority: ctx.portal_authority,
-//             ext_m_vault: ctx.ext_m_vault,
-//             ext_m_vault_auth: pda!(&[M_VAULT_SEED], &ctx.extension_program),
-//             ext_mint_authority: pda!(&[MINT_AUTHORITY_SEED], &ctx.extension_program),
-//             swap_program: ext_swap::ID,
-//             extension_program: ctx.extension_program,
-//             m_token_program: token_2022::ID,
-//             extension_token_program: token_2022::ID,
-//             bridge_adapter: hyperlane_adapter::ID,
-//             system_program: system_program::ID,
-//         })
-//         .args(portal_instruction::SendToken {
-//             amount: AMOUNT,
-//             destination_token: ctx.m_mint.to_bytes(),
-//             destination_chain_id: 1,
-//             recipient: ctx.portal.payer().to_bytes(),
-//         })
-//         .accounts(hyp.to_account_metas())
-//         .send()?;
+    let data_wh = ctx
+        .rpc
+        .get_account_data(&pda!(&[GLOBAL_SEED], &wormhole_adapter::ID))?;
 
-//     Ok(())
-// }
+    let global_wh = WormholeGlobal::try_deserialize(&mut data_wh.as_slice())?;
+
+    let lut = global_wh
+        .receive_lut
+        .expect("expected receive LUT to be initialized");
+
+    let instructions = ctx
+        .portal
+        .request()
+        .instruction(ComputeBudgetInstruction::set_compute_unit_limit(600_000))
+        .accounts(portal_accounts::SendToken {
+            sender: ctx.portal.payer(),
+            portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
+            swap_global: pda!(&[GLOBAL_SEED], &ext_swap::ID),
+            extension_global: pda!(&[GLOBAL_SEED], &ctx.extension_program),
+            m_mint: ctx.m_mint,
+            extension_mint: ctx.extension_mint,
+            m_token_account: ctx.m_token_account,
+            extension_token_account: ctx.extension_token_account,
+            portal_authority: ctx.portal_authority,
+            ext_m_vault: ctx.ext_m_vault,
+            ext_m_vault_auth: pda!(&[M_VAULT_SEED], &ctx.extension_program),
+            ext_mint_authority: pda!(&[MINT_AUTHORITY_SEED], &ctx.extension_program),
+            swap_program: ext_swap::ID,
+            extension_program: ctx.extension_program,
+            m_token_program: token_2022::ID,
+            extension_token_program: token_2022::ID,
+            bridge_adapter: hyperlane_adapter::ID,
+            system_program: system_program::ID,
+        })
+        .args(portal_instruction::SendToken {
+            amount: AMOUNT,
+            destination_token: ctx.m_mint.to_bytes(),
+            destination_chain_id: 1,
+            recipient: ctx.portal.payer().to_bytes(),
+        })
+        .accounts(hyp.to_account_metas())
+        .instructions()?;
+
+    let recent_blockhash = ctx.rpc.get_latest_blockhash()?;
+
+    // fetch the address lookup table account
+    let lut_account = ctx.rpc.get_account(&lut)?;
+    let address_lookup_table = AddressLookupTableAccount {
+        key: lut,
+        addresses: AddressLookupTable::deserialize(&lut_account.data)?
+            .addresses
+            .to_vec(),
+    };
+
+    // create versioned transaction with address lookup table
+    let message = v0::Message::try_compile(
+        &ctx.portal.payer(),
+        &instructions,
+        &[address_lookup_table],
+        recent_blockhash,
+    )?;
+
+    // Send transaction
+    let versioned_message = VersionedMessage::V0(message);
+    let versioned_tx = VersionedTransaction::try_new(versioned_message, &[get_signer()])?;
+    ctx.rpc.send_and_confirm_transaction(&versioned_tx)?;
+
+    // assert the $M was burned
+    let balance = ctx.rpc.get_token_account_balance(&ctx.m_token_account)?;
+    assert_eq!(balance.amount, "0");
+
+    let message_data = ctx.rpc.get_account_data(&hyp.dispatched_message)?;
+    let (payload, _) = util::hyperlane::decode_payload_from_message_account(&message_data)
+        .expect("Failed to decode index payload");
+
+    match payload.data {
+        PayloadData::TokenTransfer(payload) => {
+            assert_eq!(payload.recipient, ctx.portal.payer().to_bytes());
+            assert!(payload.amount < AMOUNT as u128 && payload.amount > 0); // will change depending on current index value
+        }
+        _ => panic!("Expected TokenTransfer"),
+    }
+
+    Ok(())
+}
+
+#[test]
+fn test_06_send_token_invalid_m_mint() -> Result<()> {
+    let ctx = TestCtx::new()?;
+
+    let err = ctx
+        .portal
+        .request()
+        .accounts(portal_accounts::SendToken {
+            sender: ctx.portal.payer(),
+            portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
+            swap_global: pda!(&[GLOBAL_SEED], &ext_swap::ID),
+            extension_global: pda!(&[GLOBAL_SEED], &ctx.extension_program),
+            m_mint: Pubkey::new_unique(), // invalid m_mint
+            extension_mint: ctx.extension_mint,
+            m_token_account: ctx.m_token_account,
+            extension_token_account: ctx.extension_token_account,
+            portal_authority: ctx.portal_authority,
+            ext_m_vault: ctx.ext_m_vault,
+            ext_m_vault_auth: pda!(&[M_VAULT_SEED], &ctx.extension_program),
+            ext_mint_authority: pda!(&[MINT_AUTHORITY_SEED], &ctx.extension_program),
+            swap_program: ext_swap::ID,
+            extension_program: ctx.extension_program,
+            m_token_program: token_2022::ID,
+            extension_token_program: token_2022::ID,
+            bridge_adapter: wormhole_adapter::ID,
+            system_program: system_program::ID,
+        })
+        .args(portal_instruction::SendToken {
+            amount: AMOUNT,
+            destination_token: ctx.m_mint.to_bytes(),
+            destination_chain_id: 2,
+            recipient: ctx.portal.payer().to_bytes(),
+        })
+        .accounts(WormholeRemainingAccounts::account_metas(false))
+        .send()
+        .unwrap_err();
+
+    let s = err.to_string();
+    assert!(s.contains("custom program error: 0xbbf"), "got: {}", s);
+    assert!(
+        s.contains("AnchorError caused by account: m_mint"),
+        "got: {}",
+        s
+    );
+
+    Ok(())
+}

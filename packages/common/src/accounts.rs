@@ -1,59 +1,15 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::get_associated_token_address_with_program_id;
 use borsh::{BorshDeserialize, BorshSerialize};
-use common_macros::ExtractAccounts;
+use m0_portal_common_macros::ExtractAccounts;
 
 use crate::{
-    earn, ext_swap, order_book, BridgeError, EarnerMerkleRootPayload, FillReportPayload,
-    IndexPayload, TokenTransferPayload,
+    ext_swap::{self, accounts::SwapGlobal},
+    order_book, BridgeError, CancelReportPayload, FillReportPayload, TokenTransferPayload,
 };
 
 #[derive(ExtractAccounts)]
-pub struct IndexPayloadAccounts<'info> {
-    pub m_global: AccountInfo<'info>,
-    pub m_mint: AccountInfo<'info>,
-    pub earn_program: AccountInfo<'info>,
-    pub m_token_program: AccountInfo<'info>,
-}
-
-impl IndexPayload {
-    pub fn parse_and_validate_accounts<'info>(
-        &self,
-        remaining_accounts: Vec<AccountInfo<'info>>,
-    ) -> Result<IndexPayloadAccounts<'info>> {
-        let accounts = IndexPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
-
-        if accounts.earn_program.key != &earn::ID {
-            return err!(BridgeError::InvalidRemainingAccount);
-        }
-
-        Ok(accounts)
-    }
-}
-
-impl EarnerMerkleRootPayload {
-    pub fn parse_and_validate_accounts<'info>(
-        &self,
-        remaining_accounts: Vec<AccountInfo<'info>>,
-    ) -> Result<IndexPayloadAccounts<'info>> {
-        let accounts = IndexPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
-
-        if accounts.earn_program.key != &earn::ID {
-            return err!(BridgeError::InvalidRemainingAccount);
-        }
-
-        Ok(accounts)
-    }
-}
-
-#[derive(ExtractAccounts)]
 pub struct TokenTransferPayloadAccounts<'info> {
-    // Shared with IndexPayloadAccounts
-    pub m_global: AccountInfo<'info>,
-    pub m_mint: AccountInfo<'info>,
-    pub earn_program: AccountInfo<'info>,
-    pub m_token_program: AccountInfo<'info>,
-    // Remaining accounts specific to TokenTransferPayload
     pub extension_mint: AccountInfo<'info>,
     pub recipient_token_account: AccountInfo<'info>,
     pub authority_m_token_account: AccountInfo<'info>,
@@ -85,12 +41,23 @@ impl TokenTransferPayload {
             return err!(BridgeError::InvalidRemainingAccount);
         }
 
-        if accounts.earn_program.key != &earn::ID {
+        if accounts.swap_program.key != &ext_swap::ID {
             return err!(BridgeError::InvalidRemainingAccount);
         }
 
-        if accounts.swap_program.key != &ext_swap::ID {
-            return err!(BridgeError::InvalidRemainingAccount);
+        // Enforce destination token if found in whitelist
+        {
+            let data = accounts.swap_global.try_borrow_data()?;
+            let extensions = SwapGlobal::deserialize(&mut &data[..])?.whitelisted_extensions;
+            let expected_extension = extensions
+                .iter()
+                .find(|ext| ext.mint.eq(&self.destination_token.into()));
+
+            if let Some(expected_extension) = expected_extension {
+                if accounts.extension_mint.key != &expected_extension.mint {
+                    return err!(BridgeError::InvalidRemainingAccount);
+                }
+            }
         }
 
         Ok(accounts)
@@ -118,6 +85,36 @@ impl FillReportPayload {
     ) -> Result<FillReportPayloadAccounts<'info>> {
         let accounts =
             FillReportPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
+
+        if accounts.orderbook_program.key != &order_book::ID {
+            return err!(BridgeError::InvalidRemainingAccount);
+        }
+
+        Ok(accounts)
+    }
+}
+
+#[derive(ExtractAccounts)]
+pub struct CancelReportPayloadAccounts<'info> {
+    pub orderbook_global_account: AccountInfo<'info>,
+    pub order: AccountInfo<'info>,
+    pub token_in_mint: AccountInfo<'info>,
+    pub order_sender: AccountInfo<'info>,
+    pub sender_token_in_ata: AccountInfo<'info>,
+    pub order_token_in_ata: AccountInfo<'info>,
+    pub token_in_program: AccountInfo<'info>,
+    pub associated_token_program: AccountInfo<'info>,
+    pub event_authority: AccountInfo<'info>,
+    pub orderbook_program: AccountInfo<'info>,
+}
+
+impl CancelReportPayload {
+    pub fn parse_and_validate_accounts<'info>(
+        &self,
+        remaining_accounts: Vec<AccountInfo<'info>>,
+    ) -> Result<CancelReportPayloadAccounts<'info>> {
+        let accounts =
+            CancelReportPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
 
         if accounts.orderbook_program.key != &order_book::ID {
             return err!(BridgeError::InvalidRemainingAccount);

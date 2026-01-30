@@ -1,14 +1,15 @@
 use anchor_lang::AccountDeserialize;
 use anyhow::Result;
-use common::{
-    hyperlane_adapter::{
-        accounts::AccountMetasData,
-        constants::{DEFAULT_IGP_ACCOUNT, DEFAULT_IGP_PROGRAM_ID, DEFAULT_OVERHEAD_IGP_ACCOUNT},
+use hyperlane_adapter::state::HyperlaneGlobal;
+use m0_portal_common::{
+    consts::{
+        HYPERLANE_DEFAULT_IGP_ACCOUNT, HYPERLANE_DEFAULT_IGP_PROGRAM_ID,
+        HYPERLANE_DEFAULT_OVERHEAD_IGP_ACCOUNT,
     },
+    hyperlane_adapter::accounts::AccountMetasData,
     pda,
     portal::{self, accounts::PortalGlobal},
 };
-use hyperlane_adapter::state::HyperlaneGlobal;
 use std::vec;
 use wormhole_adapter::state::WormholeGlobal;
 
@@ -46,21 +47,22 @@ fn test_03_check_globals() -> Result<()> {
     assert_eq!(global_portal.message_nonce, 0);
     assert_eq!(global_portal.pending_admin, None);
     assert_eq!(global_portal.padding, [0u8; 128]);
-    assert!(!global_portal.paused);
+    assert!(!global_portal.incoming_paused);
+    assert!(!global_portal.outgoing_paused);
 
     // Assert all fields of global_hp
-    assert_eq!(global_hp.igp_program_id, DEFAULT_IGP_PROGRAM_ID);
+    assert_eq!(global_hp.igp_program_id, HYPERLANE_DEFAULT_IGP_PROGRAM_ID);
     assert_eq!(global_hp.igp_gas_amount, 50000);
-    assert_eq!(global_hp.igp_account, DEFAULT_IGP_ACCOUNT);
+    assert_eq!(global_hp.igp_account, HYPERLANE_DEFAULT_IGP_ACCOUNT);
     assert_eq!(
         global_hp.igp_overhead_account,
-        Some(DEFAULT_OVERHEAD_IGP_ACCOUNT)
+        Some(HYPERLANE_DEFAULT_OVERHEAD_IGP_ACCOUNT)
     );
     assert_eq!(global_hp.ism, None);
     assert_eq!(global_hp.pending_admin, None);
     assert!(global_hp.peers.len() == 0);
     assert_eq!(global_hp.padding, [0u8; 128]);
-    assert!(!global_hp.paused);
+    assert!(!global_hp.outgoing_paused);
 
     // Assert all fields of global_wh
     assert_eq!(global_wh.receive_lut, None);
@@ -68,7 +70,7 @@ fn test_03_check_globals() -> Result<()> {
     assert!(global_wh.peers.len() == 0);
     assert_eq!(global_wh.padding, [0u8; 128]);
     assert_eq!(global_wh.receive_lut, None);
-    assert!(!global_wh.paused);
+    assert!(!global_wh.outgoing_paused);
 
     assert_eq!(global_wh.admin, global_portal.admin);
     assert_eq!(global_portal.admin, global_hp.admin);
@@ -92,7 +94,7 @@ fn test_04_check_hyperlane_metas_pda() -> Result<()> {
     ))?;
 
     let account_metas = AccountMetasData::try_deserialize(&mut data_account_metas.as_slice())?;
-    assert_eq!(account_metas.extensions.len(), 4);
+    assert_eq!(account_metas.extensions.len(), 5);
 
     Ok(())
 }
