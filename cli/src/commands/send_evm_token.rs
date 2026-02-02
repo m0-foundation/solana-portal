@@ -7,18 +7,19 @@ use alloy::{
 use anyhow::{Context, Result};
 
 use crate::{
-    types::evm::{address_to_bytes32, Portal, MTOKEN_INDEX_PAYLOAD_TYPE, SOLANA_CHAIN_ID},
+    types::evm::{address_to_bytes32, Portal, TOKEN_TRANSFER_PAYLOAD_TYPE, SOLANA_CHAIN_ID},
     BridgeAdapter,
 };
 
 use super::evm_common::{
     create_provider, get_adapter_address, get_adapter_args_and_value, get_adapter_name,
-    get_portal_address, load_private_key, send_and_confirm_transaction,
+    get_portal_address, load_private_key, parse_recipient, send_and_confirm_transaction,
 };
 
-/// Send $M index from Sepolia to Solana via the Portal contract
-pub async fn send_evm_index(adapter: BridgeAdapter) -> Result<()> {
+/// Send token transfer from Sepolia to Solana via the Portal contract
+pub async fn send_evm_token(amount: u128, recipient: String, adapter: BridgeAdapter) -> Result<()> {
     println!("Using adapter: {}", get_adapter_name(adapter));
+    println!("Sending {} tokens to Solana", amount);
 
     // Load private key and create provider
     let signer = load_private_key()
@@ -31,19 +32,25 @@ pub async fn send_evm_index(adapter: BridgeAdapter) -> Result<()> {
     let adapter_address = get_adapter_address(adapter)?;
     let refund_address = address_to_bytes32(sender_address);
 
+    // Parse recipient
+    let recipient_bytes = parse_recipient(&recipient)?;
+    println!("Recipient: 0x{}", hex::encode(recipient_bytes));
+
     // Get adapter args and transaction value
     let (adapter_args, tx_value) = get_adapter_args_and_value(
         adapter,
         &provider,
         contract_address,
         adapter_address,
-        MTOKEN_INDEX_PAYLOAD_TYPE,
+        TOKEN_TRANSFER_PAYLOAD_TYPE,
     )
     .await?;
 
-    // Encode the sendMTokenIndex function call
-    let call = Portal::sendMTokenIndexCall {
+    // Encode the sendTokenTransfer function call
+    let call = Portal::sendTokenTransferCall {
         destinationChainId: SOLANA_CHAIN_ID,
+        amount,
+        recipient: FixedBytes::from(recipient_bytes),
         refundAddress: FixedBytes::from(refund_address),
         bridgeAdapter: adapter_address,
         bridgeAdapterArgs: adapter_args,

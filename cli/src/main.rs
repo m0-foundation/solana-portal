@@ -18,9 +18,6 @@ pub enum BridgeAdapter {
 
 #[derive(Subcommand)]
 enum Commands {
-    ResolveExecute {
-        tx_hash: String,
-    },
     SendIndex {
         destination_chain_id: u32,
         #[arg(short, long, value_enum, default_value = "hyperlane")]
@@ -30,9 +27,18 @@ enum Commands {
         #[arg(short, long, value_enum, default_value = "hyperlane")]
         adapter: BridgeAdapter,
     },
-    ProcessHyperlaneMessage {
-        message_id_hex: String,
-        raw_hex: String,
+    SendToken {
+        amount: u64,
+        destination_chain_id: u32,
+        recipient: String,
+        #[arg(short, long, value_enum, default_value = "hyperlane")]
+        adapter: BridgeAdapter,
+    },
+    SendEvmToken {
+        amount: u128,
+        recipient: String,
+        #[arg(short, long, value_enum, default_value = "hyperlane")]
+        adapter: BridgeAdapter,
     },
 }
 
@@ -41,23 +47,29 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::ResolveExecute { tx_hash } => {
-            commands::resolve_execute(tx_hash).await?;
-        }
         Commands::SendIndex {
             destination_chain_id,
             adapter,
         } => {
-            commands::send_index(destination_chain_id, adapter)?;
+            commands::send_index(destination_chain_id, adapter).await?;
         }
         Commands::SendEvmIndex { adapter } => {
             commands::send_evm_index(adapter).await?;
         }
-        Commands::ProcessHyperlaneMessage {
-            message_id_hex,
-            raw_hex,
+        Commands::SendToken {
+            amount,
+            destination_chain_id,
+            recipient,
+            adapter,
         } => {
-            commands::process_hyperlane_message(message_id_hex, raw_hex)?;
+            commands::send_token(amount, destination_chain_id, recipient, adapter).await?;
+        }
+        Commands::SendEvmToken {
+            amount,
+            recipient,
+            adapter,
+        } => {
+            commands::send_evm_token(amount, recipient, adapter).await?;
         }
     }
 

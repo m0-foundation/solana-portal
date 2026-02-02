@@ -1,4 +1,4 @@
-.PHONY: test build test-verbose
+.PHONY: test build test-verbose send_token_svm send_token_evm
 
 test:
 	anchor build -- --features skip-validation
@@ -32,3 +32,14 @@ publish-common:
 	cd packages/common && \
 	cargo build && \
 	cargo publish --allow-dirty
+
+# Usage: make send_token_svm AMOUNT=1000 DEST_CHAIN=1 RECIPIENT=<address> ADAPTER=hyperlane
+send_token_svm:
+	DEVNET_RPC_URL=$$(op read "op://Solana Dev/Helius/dev rpc") \
+	cargo run --package cli -- send-token $(AMOUNT) $(DEST_CHAIN) $(RECIPIENT) --adapter $(ADAPTER)
+
+# Usage: make send_token_evm AMOUNT=1000 RECIPIENT=<address> ADAPTER=hyperlane
+send_token_evm:
+	SEPOLIA_RPC_URL=$$(op read "op://Solana Dev/Alchemy/sepolia") \
+	PRIVATE_KEY=$$(op read "op://Solana Dev/Ethereum Test Wallet/Wallet/key") \
+	cargo run --package cli -- send-evm-token $(AMOUNT) $(RECIPIENT) --adapter $(ADAPTER)

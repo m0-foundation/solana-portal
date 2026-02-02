@@ -1,0 +1,269 @@
+use alloy::{
+    network::EthereumWallet,
+    primitives::{Address, Bytes, U256},
+    providers::{Provider, ProviderBuilder},
+    rpc::types::TransactionRequest,
+    signers::local::PrivateKeySigner,
+    sol_types::{SolCall, SolValue},
+    transports::http,
+};
+use anyhow::{Context, Result};
+use m0_portal_common::{DEFAULT_GAS_LIMIT, DEFAULT_MSG_VALUE, SOLANA_WORMHOLE_CHAIN_ID};
+use serde::{Deserialize, Serialize};
+
+use crate::{
+    types::evm::{
+        Portal, SEPOLIA_HYPERLANE_ADAPTER, SEPOLIA_PORTAL_CONTRACT, SEPOLIA_WORMHOLE_ADAPTER,
+        SOLANA_CHAIN_ID,
+    },
+    BridgeAdapter,
+};
+
+pub const WORMHOLE_SEPOLIA_CHAIN_ID: u16 = 10002;
+const EXECUTOR_QUOTE_API_URL: &str = "https://executor-testnet.labsapis.com/v0/quote";
+const GAS_INSTRUCTION_DISCRIMINANT: u8 = 1;
+const DEFAULT_SEPOLIA_RPC: &str = "https://sepolia.gateway.tenderly.co";
+
+/// Get Sepolia RPC URL from SEPOLIA_RPC_URL env var, or use default
+pub fn get_sepolia_rpc_url() -> String {
+    std::env::var("SEPOLIA_RPC_URL").unwrap_or_else(|_| DEFAULT_SEPOLIA_RPC.to_string())
+}
+
+/// Request body for the executor quote API
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct QuoteRequest {
+    src_chain: u16,
+    dst_chain: u16,
+    relay_instructions: String,
+}
+
+/// Response from the executor quote API
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct QuoteResponse {
+    signed_quote: String,
+    estimated_cost: Option<String>,
+}
+
+/// Result from fetching a Wormhole executor quote
+pub struct WormholeQuote {
+    pub signed_quote: Vec<u8>,
+    pub estimated_cost: U256,
+}
+
+/// Load private key from PRIVATE_KEY environment variable
+pub fn load_private_key() -> Result<PrivateKeySigner> {
+    let private_key =
+        std::env::var("PRIVATE_KEY").context("PRIVATE_KEY environment variable not set")?;
+
+    let private_key = private_key.trim_start_matches("0x");
+
+    private_key
+        .parse::<PrivateKeySigner>()
+        .context("Invalid private key format")
+}
+
+/// Create a provider with the given signer
+pub fn create_provider(
+    signer: PrivateKeySigner,
+) -> Result<impl Provider<http::Http<http::Client>>> {
+    let wallet = EthereumWallet::from(signer);
+    let rpc_url = get_sepolia_rpc_url();
+    let provider = ProviderBuilder::new()
+        .with_recommended_fillers()
+        .wallet(wallet)
+        .on_http(rpc_url.parse()?);
+    Ok(provider)
+}
+
+/// Get the portal contract address
+pub fn get_portal_address() -> Result<Address> {
+    SEPOLIA_PORTAL_CONTRACT
+        .parse::<Address>()
+        .context("Failed to parse portal contract address")
+}
+
+/// Get adapter address based on bridge selection
+pub fn get_adapter_address(adapter: BridgeAdapter) -> Result<Address> {
+    let addr_str = match adapter {
+        BridgeAdapter::Hyperlane => SEPOLIA_HYPERLANE_ADAPTER,
+        BridgeAdapter::Wormhole => SEPOLIA_WORMHOLE_ADAPTER,
+    };
+    addr_str
+        .parse::<Address>()
+        .context("Failed to parse adapter address")
+}
+
+/// Get adapter name for display
+pub fn get_adapter_name(adapter: BridgeAdapter) -> &'static str {
+    match adapter {
+        BridgeAdapter::Hyperlane => "Hyperlane (Sepolia)",
+        BridgeAdapter::Wormhole => "Wormhole (Sepolia)",
+    }
+}
+
+/// Parse recipient as hex bytes (32 or 20 bytes)
+pub fn parse_recipient(recipient: &str) -> Result<[u8; 32]> {
+    let hex_str = recipient.strip_prefix("0x").unwrap_or(recipient);
+    let bytes = hex::decode(hex_str).context("Invalid recipient format (not valid hex)")?;
+
+    if bytes.len() == 32 {
+        let mut arr = [0u8; 32];
+        arr.copy_from_slice(&bytes);
+        Ok(arr)
+    } else if bytes.len() == 20 {
+        // EVM address - left-pad with zeros
+        let mut arr = [0u8; 32];
+        arr[12..].copy_from_slice(&bytes);
+        Ok(arr)
+    } else {
+        anyhow::bail!("Invalid recipient length: expected 32 bytes (Solana) or 20 bytes (EVM)")
+    }
+}
+
+/// Estimate gas fee by calling the quote function
+pub async fn estimate_gas_fee<P>(
+    provider: &P,
+    contract_address: Address,
+    adapter_address: Address,
+    payload_type: u8,
+) -> Result<U256>
+where
+    P: Provider<http::Http<http::Client>>,
+{
+    let call = Portal::quoteCall {
+        destinationChainId: SOLANA_CHAIN_ID,
+        payloadType: payload_type,
+        bridgeAdapter: adapter_address,
+    };
+
+    let calldata = call.abi_encode();
+
+    let tx = TransactionRequest::default()
+        .to(contract_address)
+        .input(calldata.into());
+
+    let result = provider
+        .call(&tx)
+        .await
+        .context("Failed to call quote function")?;
+
+    let fee = U256::abi_decode(&result, true).context("Failed to decode quote result")?;
+
+    Ok(fee)
+}
+
+/// Format wei to ETH string
+pub fn format_wei_to_eth(wei: U256) -> String {
+    let eth = wei.to_string().parse::<f64>().unwrap_or(0.0) / 1e18;
+    format!("{:.6}", eth)
+}
+
+/// Encode relay instructions for the executor quote API
+fn encode_relay_instructions(gas_limit: u128, msg_value: u128) -> String {
+    let mut data = Vec::with_capacity(33);
+    data.push(GAS_INSTRUCTION_DISCRIMINANT);
+    data.extend_from_slice(&gas_limit.to_be_bytes());
+    data.extend_from_slice(&msg_value.to_be_bytes());
+    format!("0x{}", hex::encode(data))
+}
+
+/// Fetch a signed quote from the Wormhole executor API
+pub async fn fetch_wormhole_quote() -> Result<WormholeQuote> {
+    println!("Fetching Wormhole executor quote...");
+
+    let relay_instructions = encode_relay_instructions(DEFAULT_GAS_LIMIT, DEFAULT_MSG_VALUE);
+
+    let request = QuoteRequest {
+        src_chain: WORMHOLE_SEPOLIA_CHAIN_ID,
+        dst_chain: SOLANA_WORMHOLE_CHAIN_ID,
+        relay_instructions,
+    };
+
+    let client = reqwest::Client::new();
+    let response: QuoteResponse = client
+        .post(EXECUTOR_QUOTE_API_URL)
+        .json(&request)
+        .send()
+        .await
+        .context("Failed to fetch executor quote")?
+        .json()
+        .await
+        .context("Failed to parse executor quote response")?;
+
+    // Decode hex to bytes (strip 0x prefix if present)
+    let hex_str = response
+        .signed_quote
+        .strip_prefix("0x")
+        .unwrap_or(&response.signed_quote);
+    let signed_quote = hex::decode(hex_str).context("Failed to decode signed quote hex")?;
+
+    // Parse estimated cost (defaults to 0 if not provided)
+    let estimated_cost = response
+        .estimated_cost
+        .as_ref()
+        .and_then(|c| c.parse::<u128>().ok())
+        .map(U256::from)
+        .unwrap_or(U256::ZERO);
+
+    println!(
+        "Got signed quote ({} bytes), estimated cost: {} wei",
+        signed_quote.len(),
+        estimated_cost
+    );
+
+    Ok(WormholeQuote {
+        signed_quote,
+        estimated_cost,
+    })
+}
+
+/// Get adapter args and transaction value based on adapter type
+pub async fn get_adapter_args_and_value<P>(
+    adapter: BridgeAdapter,
+    provider: &P,
+    contract_address: Address,
+    adapter_address: Address,
+    payload_type: u8,
+) -> Result<(Bytes, U256)>
+where
+    P: Provider<http::Http<http::Client>>,
+{
+    match adapter {
+        BridgeAdapter::Wormhole => {
+            let quote = fetch_wormhole_quote().await?;
+            let value_eth = format_wei_to_eth(quote.estimated_cost);
+            println!("Estimated cost: {} ETH", value_eth);
+            Ok((Bytes::from(quote.signed_quote), quote.estimated_cost))
+        }
+        BridgeAdapter::Hyperlane => {
+            let gas_fee =
+                estimate_gas_fee(provider, contract_address, adapter_address, payload_type).await?;
+            let gas_fee_eth = format_wei_to_eth(gas_fee);
+            println!("Estimated gas fee: {} ETH", gas_fee_eth);
+            Ok((Bytes::new(), gas_fee))
+        }
+    }
+}
+
+/// Send a transaction and wait for receipt
+pub async fn send_and_confirm_transaction<P>(
+    provider: &P,
+    tx: TransactionRequest,
+) -> Result<alloy::primitives::TxHash>
+where
+    P: Provider<http::Http<http::Client>>,
+{
+    let pending_tx = provider
+        .send_transaction(tx)
+        .await
+        .context("Failed to send transaction")?;
+
+    let receipt = pending_tx
+        .get_receipt()
+        .await
+        .context("Failed to get transaction receipt")?;
+
+    Ok(receipt.transaction_hash)
+}

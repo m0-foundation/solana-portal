@@ -42,7 +42,7 @@ const REQ_VAA_V1: &[u8; 4] = b"ERV1";
 /// # Returns
 ///
 /// Returns the instruction to request execution, or an error if the quote fetch fails.
-pub fn build_relay_instruction(
+pub async fn build_relay_instruction(
     payer: &Pubkey,
     destination_chain: u16,
     sequence: u64,
@@ -58,7 +58,8 @@ pub fn build_relay_instruction(
         SOLANA_WORMHOLE_CHAIN_ID,
         destination_chain,
         &relay_instructions,
-    )?;
+    )
+    .await?;
 
     let estimated_cost: u64 = quote
         .estimated_cost
@@ -235,7 +236,7 @@ struct QuoteResponse {
     estimated_cost: Option<String>,
 }
 
-fn fetch_executor_quote(
+async fn fetch_executor_quote(
     src_chain: u16,
     dst_chain: u16,
     relay_instructions: &RelayInstructions,
@@ -246,12 +247,14 @@ fn fetch_executor_quote(
         relay_instructions: relay_instructions.encode_hex(),
     };
 
-    let response_text = reqwest::blocking::Client::new()
+    let response_text = reqwest::Client::new()
         .post(EXECUTOR_QUOTE_API_URL)
         .json(&request)
         .send()
+        .await
         .map_err(|e| ExecutorQuoteError::RequestFailed(e.to_string()))?
         .text()
+        .await
         .map_err(|e| ExecutorQuoteError::RequestFailed(e.to_string()))?;
 
     serde_json::from_str(&response_text)

@@ -11,12 +11,25 @@ pub const SOLANA_CHAIN_ID: u32 = 1399811150;
 // PayloadType enum value for MTokenIndex
 pub const MTOKEN_INDEX_PAYLOAD_TYPE: u8 = 1;
 
+// PayloadType enum value for TokenTransfer
+pub const TOKEN_TRANSFER_PAYLOAD_TYPE: u8 = 0;
+
 // Contract ABI bindings using alloy's sol! macro
 alloy::sol! {
     interface IPortal {
         // sendMTokenIndex with explicit bridge adapter
         function sendMTokenIndex(
             uint32 destinationChainId,
+            bytes32 refundAddress,
+            address bridgeAdapter,
+            bytes bridgeAdapterArgs
+        ) external payable returns (bytes32 messageId);
+
+        // sendTokenTransfer for cross-chain token transfers
+        function sendTokenTransfer(
+            uint32 destinationChainId,
+            uint128 amount,
+            bytes32 recipient,
             bytes32 refundAddress,
             address bridgeAdapter,
             bytes bridgeAdapterArgs
@@ -33,6 +46,15 @@ alloy::sol! {
         event MTokenIndexSent(
             uint32 indexed destinationChainId,
             uint128 index,
+            address bridgeAdapter,
+            bytes32 messageId
+        );
+
+        // Event emitted when token transfer is sent
+        event TokenTransferSent(
+            uint32 indexed destinationChainId,
+            uint128 amount,
+            bytes32 recipient,
             address bridgeAdapter,
             bytes32 messageId
         );
