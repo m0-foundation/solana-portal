@@ -1,6 +1,6 @@
 use anchor_lang::solana_program::program::{invoke, invoke_signed};
 use anchor_lang::{prelude::*, system_program};
-use anchor_spl::associated_token::get_associated_token_address_with_program_id;
+use anchor_spl::associated_token::{self, get_associated_token_address_with_program_id};
 use anchor_spl::{token, token_2022};
 use m0_portal_common::portal::accounts::PortalGlobal;
 use m0_portal_common::{earn, ext_swap, pda, portal, wormhole_verify_vaa_shim};
@@ -96,6 +96,7 @@ impl SetLookupTable<'_> {
                 token::ID,
                 token_2022::ID,
                 system_program::ID,
+                associated_token::ID,
             ],
         );
 

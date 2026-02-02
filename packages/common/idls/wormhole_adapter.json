@@ -1153,12 +1153,9 @@
       ],
       "accounts": [
         {
-          "name": "admin",
+          "name": "payer",
           "writable": true,
-          "signer": true,
-          "relations": [
-            "wormhole_global"
-          ]
+          "signer": true
         },
         {
           "name": "wormhole_global",
