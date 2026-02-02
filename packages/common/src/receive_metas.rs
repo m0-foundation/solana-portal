@@ -88,6 +88,7 @@ pub fn require_metas(
                 AccountMeta::new_readonly(extension_pid, false),
                 AccountMeta::new_readonly(swap_global, false),
                 AccountMeta::new_readonly(ext_swap::ID, false),
+                AccountMeta::new_readonly(associated_token::ID, false),
             ])
         }
         PayloadData::Index(_) | PayloadData::EarnerMerkleRoot(_) => Ok(vec![]),
