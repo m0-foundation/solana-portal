@@ -77,6 +77,7 @@ pub fn require_metas(
 
             Ok(vec![
                 AccountMeta::new(extension_mint, false),
+                AccountMeta::new_readonly(token_transfer.recipient.into(), false),
                 AccountMeta::new(recipient_token_account, false),
                 AccountMeta::new(authority_m_token_account, false),
                 AccountMeta::new(extention_m_vault, false),
