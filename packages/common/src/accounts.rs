@@ -11,6 +11,7 @@ use crate::{
 #[derive(ExtractAccounts)]
 pub struct TokenTransferPayloadAccounts<'info> {
     pub extension_mint: AccountInfo<'info>,
+    pub recipient: AccountInfo<'info>,
     pub recipient_token_account: AccountInfo<'info>,
     pub authority_m_token_account: AccountInfo<'info>,
     pub extension_m_vault: AccountInfo<'info>,
@@ -21,6 +22,7 @@ pub struct TokenTransferPayloadAccounts<'info> {
     pub extension_program: AccountInfo<'info>,
     pub swap_global: AccountInfo<'info>,
     pub swap_program: AccountInfo<'info>,
+    pub associated_token_program: AccountInfo<'info>,
 }
 
 impl TokenTransferPayload {
@@ -31,7 +33,11 @@ impl TokenTransferPayload {
         let accounts =
             TokenTransferPayloadAccounts::extract_from_remaining_accounts(&remaining_accounts)?;
 
-        // Recipient matches transfer payload
+        if accounts.recipient.key() != Pubkey::from(self.recipient) {
+            return err!(BridgeError::InvalidRemainingAccount);
+        }
+
+        // Recipient token account matches expected ATA
         let recipient_token_account = get_associated_token_address_with_program_id(
             &Pubkey::from(self.recipient),
             accounts.extension_mint.key,
@@ -42,6 +48,10 @@ impl TokenTransferPayload {
         }
 
         if accounts.swap_program.key != &ext_swap::ID {
+            return err!(BridgeError::InvalidRemainingAccount);
+        }
+
+        if accounts.associated_token_program.key != &anchor_spl::associated_token::ID {
             return err!(BridgeError::InvalidRemainingAccount);
         }
 

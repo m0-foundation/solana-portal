@@ -17,9 +17,11 @@ use m0_portal_common::{
 };
 use portal::state::MESSAGE_SEED;
 use solana_client::rpc_config::RpcSendTransactionConfig;
+use solana_sdk::compute_budget::ComputeBudgetInstruction;
 use solana_sdk::transaction::Transaction;
 use solana_sdk::{instruction::Instruction, pubkey::Pubkey, signer::Signer};
 use solana_transaction_status_client_types::UiTransactionEncoding;
+use spl_associated_token_account::get_associated_token_address_with_program_id;
 use wormhole_adapter::{
     accounts as wormhole_accounts, consts::CORE_BRIDGE_PROGRAM_ID,
     instruction as wormhole_instruction, instructions::VaaBody,
@@ -28,6 +30,7 @@ use wormhole_adapter::{
 use crate::util::constants::{
     ETHEREUM_HYPERLANE_ADAPTER, ETHEREUM_WORMHOLE_ADAPTER, M_MINT, SOLANA_CHAIN_ID,
 };
+use crate::util::wormhole::build_versioned_tx_with_lut;
 use crate::{get_rpc_client, get_signer, set_account};
 
 #[test]
@@ -415,6 +418,67 @@ fn test_09_receive_merkle_root() -> Result<()> {
     assert!(result.is_err());
     let err = result.err().unwrap().to_string();
     assert!(err.contains("InvalidSourceChain"), "Invalid error: {}", err);
+
+    Ok(())
+}
+
+#[test]
+fn test_10_uninitialized_token_account() -> Result<()> {
+    let rpc_client = get_rpc_client();
+    let signer = get_signer();
+    let client = Client::new(Cluster::Localnet, signer.clone());
+    let program = client.program(wormhole_adapter::ID)?;
+
+    let message_id = [48u8; 32];
+    let mut payload = create_default_payload(message_id, SOLANA_CHAIN_ID, portal::ID.to_bytes());
+    let mint = Pubkey::from_str("mzeroXDoBpRVhnEXBra27qzAMdxgpWVY3DzQW7xMVJp")?;
+    let rand_recipient = Pubkey::new_unique();
+
+    payload.header.payload_type = 0;
+    payload.data = PayloadData::TokenTransfer(TokenTransferPayload {
+        recipient: rand_recipient.to_bytes(),
+        destination_token: mint.to_bytes(),
+        amount: 1_000_000,
+        sender: get_signer().pubkey().to_bytes(),
+    });
+
+    let data_swap = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &ext_swap::ID))?;
+    let swap_global = SwapGlobal::deserialize(&mut &data_swap[8..])?;
+    let whitelisted_extensions = swap_global
+        .whitelisted_extensions
+        .iter()
+        .map(|&ext| Extension::from(ext))
+        .collect();
+
+    let vaa = create_default_vaa(2, ETHEREUM_WORMHOLE_ADAPTER, payload.clone());
+    let metas = require_metas(&payload.data, M_MINT, whitelisted_extensions, None)?;
+
+    // ensure the account is not initialized
+    let ata = get_associated_token_address_with_program_id(&rand_recipient, &mint, &token_2022::ID);
+    let account = rpc_client.get_account(&ata);
+    assert!(account.is_err());
+
+    // Set $M mint authority
+    let mut mint_account = rpc_client.get_account(&M_MINT)?;
+    mint_account.data[0..4].copy_from_slice(&[1, 0, 0, 0]); // COption::Some
+    mint_account.data[4..36].copy_from_slice(&pda!(&[AUTHORITY_SEED], &portal::ID).to_bytes());
+    set_account(&M_MINT, &mint_account).expect("failed to set mint authority");
+
+    let instructions = program
+        .request()
+        .accounts(create_receive_message_accounts(signer.pubkey(), message_id))
+        .args(wormhole_instruction::ReceiveMessage {
+            vaa_body: vaa.to_bytes(),
+            guardian_set_index: 0,
+        })
+        .accounts(metas)
+        .instruction(ComputeBudgetInstruction::set_compute_unit_limit(600_000))
+        .instructions()?;
+
+    let versioned_tx = build_versioned_tx_with_lut(rpc_client.clone(), instructions)?;
+
+    let result = rpc_client.send_and_confirm_transaction(&versioned_tx);
+    assert!(result.is_ok());
 
     Ok(())
 }

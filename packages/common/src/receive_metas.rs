@@ -77,6 +77,7 @@ pub fn require_metas(
 
             Ok(vec![
                 AccountMeta::new(extension_mint, false),
+                AccountMeta::new_readonly(token_transfer.recipient.into(), false),
                 AccountMeta::new(recipient_token_account, false),
                 AccountMeta::new(authority_m_token_account, false),
                 AccountMeta::new(extention_m_vault, false),
@@ -87,6 +88,7 @@ pub fn require_metas(
                 AccountMeta::new_readonly(extension_pid, false),
                 AccountMeta::new_readonly(swap_global, false),
                 AccountMeta::new_readonly(ext_swap::ID, false),
+                AccountMeta::new_readonly(associated_token::ID, false),
             ])
         }
         PayloadData::Index(_) | PayloadData::EarnerMerkleRoot(_) => Ok(vec![]),

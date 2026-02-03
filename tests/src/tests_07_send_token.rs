@@ -5,13 +5,7 @@ use anchor_lang::{prelude::Pubkey, system_program, AccountDeserialize};
 use anchor_spl::token_2022;
 use anyhow::{Ok, Result};
 use solana_client::rpc_client::RpcClient;
-use solana_sdk::{
-    address_lookup_table::{state::AddressLookupTable, AddressLookupTableAccount},
-    compute_budget::ComputeBudgetInstruction,
-    message::{v0, VersionedMessage},
-    signature::Keypair,
-    transaction::VersionedTransaction,
-};
+use solana_sdk::{compute_budget::ComputeBudgetInstruction, signature::Keypair};
 use solana_transaction_status_client_types::UiTransactionEncoding;
 use spl_token_2022::{
     extension::StateWithExtensions,
@@ -27,13 +21,16 @@ use m0_portal_common::{
     m_ext::{self, accounts::ExtGlobalV2},
     pda,
     portal::constants::{GLOBAL_SEED, MINT_AUTHORITY_SEED, M_VAULT_SEED},
-    wormhole_adapter::{self, accounts::WormholeGlobal},
+    wormhole_adapter::{self},
     HyperlaneRemainingAccounts, PayloadData, WormholeRemainingAccounts, AUTHORITY_SEED,
 };
 
 use portal::{accounts as portal_accounts, instruction as portal_instruction, state::PortalGlobal};
 
-use crate::{get_rpc_client, get_signer, set_account, set_token_account, util};
+use crate::{
+    get_rpc_client, get_signer, set_account, set_token_account,
+    util::{self, wormhole::build_versioned_tx_with_lut},
+};
 
 const AMOUNT: u64 = 1_000_000;
 
@@ -244,7 +241,7 @@ fn test_02_send_token_hyperlane_unauthorized_unwrapper() -> Result<()> {
     let ctx = TestCtx::new()?;
     let hyp = ctx.hyperlane_remaining_accounts(0)?;
 
-    let err = ctx
+    let instructions = ctx
         .portal
         .request()
         .accounts(portal_accounts::SendToken {
@@ -274,7 +271,12 @@ fn test_02_send_token_hyperlane_unauthorized_unwrapper() -> Result<()> {
             recipient: ctx.portal.payer().to_bytes(),
         })
         .accounts(hyp.to_account_metas())
-        .send()
+        .instructions()?;
+
+    let versioned_tx = build_versioned_tx_with_lut(ctx.rpc.clone(), instructions)?;
+    let err = ctx
+        .rpc
+        .send_and_confirm_transaction(&versioned_tx)
         .unwrap_err();
 
     assert_err_contains(
@@ -426,16 +428,6 @@ fn test_05_send_token_hyperlane_success() -> Result<()> {
     let ctx = TestCtx::new()?;
     let hyp = ctx.hyperlane_remaining_accounts(1)?;
 
-    let data_wh = ctx
-        .rpc
-        .get_account_data(&pda!(&[GLOBAL_SEED], &wormhole_adapter::ID))?;
-
-    let global_wh = WormholeGlobal::try_deserialize(&mut data_wh.as_slice())?;
-
-    let lut = global_wh
-        .receive_lut
-        .expect("expected receive LUT to be initialized");
-
     let instructions = ctx
         .portal
         .request()
@@ -469,28 +461,7 @@ fn test_05_send_token_hyperlane_success() -> Result<()> {
         .accounts(hyp.to_account_metas())
         .instructions()?;
 
-    let recent_blockhash = ctx.rpc.get_latest_blockhash()?;
-
-    // fetch the address lookup table account
-    let lut_account = ctx.rpc.get_account(&lut)?;
-    let address_lookup_table = AddressLookupTableAccount {
-        key: lut,
-        addresses: AddressLookupTable::deserialize(&lut_account.data)?
-            .addresses
-            .to_vec(),
-    };
-
-    // create versioned transaction with address lookup table
-    let message = v0::Message::try_compile(
-        &ctx.portal.payer(),
-        &instructions,
-        &[address_lookup_table],
-        recent_blockhash,
-    )?;
-
-    // Send transaction
-    let versioned_message = VersionedMessage::V0(message);
-    let versioned_tx = VersionedTransaction::try_new(versioned_message, &[get_signer()])?;
+    let versioned_tx = build_versioned_tx_with_lut(ctx.rpc.clone(), instructions)?;
     ctx.rpc.send_and_confirm_transaction(&versioned_tx)?;
 
     // assert the $M was burned

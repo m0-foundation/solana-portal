@@ -1,10 +1,24 @@
-use crate::util::constants::{WH_EVENT_DISCRIMINATOR, WH_SHIM_POST_MESSAGE_DISCRIMINATOR};
+use std::sync::Arc;
+
+use crate::{
+    get_signer,
+    util::constants::{WH_EVENT_DISCRIMINATOR, WH_SHIM_POST_MESSAGE_DISCRIMINATOR},
+};
+use anchor_lang::AccountDeserialize;
 use anyhow::Result;
-use m0_portal_common::Payload;
-use solana_sdk::bs58;
+use m0_portal_common::{pda, wormhole_adapter::accounts::WormholeGlobal, Payload};
+use solana_client::rpc_client::RpcClient;
+use solana_sdk::{
+    address_lookup_table::state::AddressLookupTable,
+    bs58,
+    message::{v0, AddressLookupTableAccount, VersionedMessage},
+    signer::Signer,
+    transaction::VersionedTransaction,
+};
 use solana_transaction_status_client_types::{
     option_serializer::OptionSerializer, EncodedConfirmedTransactionWithStatusMeta, UiInstruction,
 };
+use wormhole_adapter::state::GLOBAL_SEED;
 
 // Wormhole MessageEvent structure
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -102,4 +116,37 @@ pub fn get_instructions_data(
             _ => None,
         })
         .collect())
+}
+
+pub fn build_versioned_tx_with_lut(
+    rpc: Arc<RpcClient>,
+    instructions: Vec<solana_sdk::instruction::Instruction>,
+) -> Result<VersionedTransaction> {
+    let signer = get_signer();
+
+    let data_wh = rpc.get_account_data(&pda!(&[GLOBAL_SEED], &wormhole_adapter::ID))?;
+    let global_wh = WormholeGlobal::try_deserialize(&mut data_wh.as_slice())?;
+    let lut = global_wh
+        .receive_lut
+        .expect("expected receive LUT to be initialized");
+
+    let recent_blockhash = rpc.get_latest_blockhash()?;
+
+    let lut_account = rpc.get_account(&lut)?;
+    let address_lookup_table = AddressLookupTableAccount {
+        key: lut,
+        addresses: AddressLookupTable::deserialize(&lut_account.data)?
+            .addresses
+            .to_vec(),
+    };
+
+    let message = v0::Message::try_compile(
+        &signer.pubkey(),
+        &instructions,
+        &[address_lookup_table],
+        recent_blockhash,
+    )?;
+
+    let versioned_message = VersionedMessage::V0(message);
+    Ok(VersionedTransaction::try_new(versioned_message, &[signer])?)
 }

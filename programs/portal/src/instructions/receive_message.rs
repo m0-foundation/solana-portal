@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
+    associated_token,
     token_2022::Token2022,
     token_interface::{self, Mint},
 };
@@ -238,6 +239,21 @@ impl ReceiveMessage<'_> {
             ),
             principal.try_into().unwrap(),
         )?;
+
+        // Initialize recipient token account if not already initialized
+        if accounts.recipient_token_account.data_is_empty() {
+            associated_token::create(CpiContext::new(
+                accounts.associated_token_program.to_account_info(),
+                associated_token::Create {
+                    payer: ctx.accounts.payer.to_account_info(),
+                    associated_token: accounts.recipient_token_account.clone(),
+                    authority: accounts.recipient.clone(),
+                    mint: accounts.extension_mint.clone(),
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                    token_program: accounts.extension_token_program.clone(),
+                },
+            ))?;
+        }
 
         // Wrap $M to extension tokens
         ext_swap::cpi::wrap(
