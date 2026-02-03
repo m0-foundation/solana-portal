@@ -246,7 +246,7 @@ impl ReceiveMessage<'_> {
         // Check if destination_token is in whitelist
         let is_whitelisted = {
             let data = accounts.swap_global.try_borrow_data()?;
-            let extensions = SwapGlobal::deserialize(&mut &data[..])?.whitelisted_extensions;
+            let extensions = SwapGlobal::try_deserialize(&mut &data[..])?.whitelisted_extensions;
             extensions
                 .iter()
                 .any(|ext| ext.mint.eq(&payload.destination_token.into()))
