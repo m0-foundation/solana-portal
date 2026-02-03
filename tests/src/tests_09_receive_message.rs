@@ -478,7 +478,7 @@ fn test_10_uninitialized_token_account() -> Result<()> {
     let versioned_tx = build_versioned_tx_with_lut(rpc_client.clone(), instructions)?;
 
     let result = rpc_client.send_and_confirm_transaction(&versioned_tx);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "error: {:?}", result.err());
 
     Ok(())
 }
