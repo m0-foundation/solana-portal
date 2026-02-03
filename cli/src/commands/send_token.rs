@@ -1,11 +1,12 @@
 use anchor_lang::system_program;
 use anyhow::Result;
 use m0_portal_common::{
-    pda,
-    portal::{self, constants::{GLOBAL_SEED, MINT_AUTHORITY_SEED, M_VAULT_SEED}},
-    hyperlane_adapter, wormhole_adapter,
-    ext_swap,
-    AUTHORITY_SEED,
+    ext_swap, hyperlane_adapter, pda,
+    portal::{
+        self,
+        constants::{GLOBAL_SEED, MINT_AUTHORITY_SEED, M_VAULT_SEED},
+    },
+    wormhole_adapter, AUTHORITY_SEED,
 };
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::instruction::AccountMeta;
@@ -16,8 +17,9 @@ use std::str::FromStr;
 use crate::{types::calculate_instruction_discriminator, BridgeAdapter};
 
 use super::common::{
-    get_rpc_config, load_keypair, parse_recipient, send_via_hyperlane, send_via_wormhole,
-    get_associated_token_address, M_MINT, EXTENSION_MINT, EXTENSION_PROGRAM, TOKEN_2022_PROGRAM_ID,
+    get_associated_token_address, get_rpc_config, load_keypair, parse_recipient,
+    send_via_hyperlane, send_via_wormhole, EXTENSION_MINT, EXTENSION_PROGRAM, M_MINT,
+    TOKEN_2022_PROGRAM_ID,
 };
 
 pub async fn send_token(
@@ -29,7 +31,10 @@ pub async fn send_token(
     let (rpc_url, adapter_name) = get_rpc_config(adapter);
 
     println!("Using adapter: {}", adapter_name);
-    println!("Sending {} tokens to chain {}", amount, destination_chain_id);
+    println!(
+        "Sending {} tokens to chain {}",
+        amount, destination_chain_id
+    );
 
     let rpc_client = RpcClient::new(rpc_url.to_string());
     let payer = load_keypair()?;
@@ -53,8 +58,10 @@ pub async fn send_token(
     let ext_mint_authority = pda!(&[MINT_AUTHORITY_SEED], &extension_program);
 
     // Get token accounts
-    let m_token_account = get_associated_token_address(&portal_authority, &m_mint, &token_2022_program);
-    let extension_token_account = get_associated_token_address(&payer.pubkey(), &extension_mint, &token_2022_program);
+    let m_token_account =
+        get_associated_token_address(&portal_authority, &m_mint, &token_2022_program);
+    let extension_token_account =
+        get_associated_token_address(&payer.pubkey(), &extension_mint, &token_2022_program);
     let ext_m_vault = get_associated_token_address(&ext_m_vault_auth, &m_mint, &token_2022_program);
 
     // Use m_mint as destination token (same token on destination chain)
@@ -99,7 +106,15 @@ pub async fn send_token(
             send_via_hyperlane(&rpc_client, &payer, accounts, instruction_data, false).await?
         }
         BridgeAdapter::Wormhole => {
-            send_via_wormhole(&rpc_client, &payer, accounts, instruction_data, destination_chain_id, false).await?
+            send_via_wormhole(
+                &rpc_client,
+                &payer,
+                accounts,
+                instruction_data,
+                destination_chain_id,
+                false,
+            )
+            .await?
         }
     };
 

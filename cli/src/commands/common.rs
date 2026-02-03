@@ -10,16 +10,19 @@ use m0_portal_common::{
     },
     pda,
     portal::{self, constants::GLOBAL_SEED},
+    wormhole_adapter::accounts::WormholeGlobal,
     HyperlaneRemainingAccounts, WormholeRemainingAccounts,
 };
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::{
+    address_lookup_table::state::AddressLookupTable,
     compute_budget::ComputeBudgetInstruction,
     instruction::{AccountMeta, Instruction as SolanaInstruction},
+    message::{v0, AddressLookupTableAccount, VersionedMessage},
     pubkey::Pubkey,
     signature::Keypair,
     signer::{EncodableKey, Signer},
-    transaction::Transaction,
+    transaction::{Transaction, VersionedTransaction},
 };
 use std::str::FromStr;
 
@@ -213,13 +216,12 @@ pub async fn send_via_wormhole(
     // Build transaction with both instructions
     let compute_budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(500_000);
 
-    let recent_blockhash = rpc_client.get_latest_blockhash().await?;
-    let transaction = Transaction::new_signed_with_payer(
-        &[compute_budget_ix, send_ix, relay_ix],
-        Some(&payer.pubkey()),
-        &[payer],
-        recent_blockhash,
-    );
+    let transaction = build_versioned_tx_with_lut(
+        rpc_client,
+        vec![compute_budget_ix, send_ix, relay_ix],
+        payer,
+    )
+    .await?;
 
     let signature = rpc_client
         .send_and_confirm_transaction(&transaction)
@@ -227,4 +229,50 @@ pub async fn send_via_wormhole(
         .context("Failed to send transaction")?;
 
     Ok(signature)
+}
+
+pub async fn build_versioned_tx_with_lut(
+    rpc: &RpcClient,
+    instructions: Vec<solana_sdk::instruction::Instruction>,
+    signer: &Keypair,
+) -> Result<VersionedTransaction> {
+    let data_wh = rpc
+        .get_account_data(&pda!(&[GLOBAL_SEED], &wormhole_adapter::ID))
+        .await?;
+    let global_wh = WormholeGlobal::try_deserialize(&mut data_wh.as_slice())?;
+    let lut = global_wh
+        .receive_lut
+        .expect("expected receive LUT to be initialized");
+
+    let recent_blockhash = rpc.get_latest_blockhash().await?;
+
+    let lut_account = rpc.get_account(&lut).await?;
+    let address_lookup_table = AddressLookupTableAccount {
+        key: lut,
+        addresses: AddressLookupTable::deserialize(&lut_account.data)?
+            .addresses
+            .to_vec(),
+    };
+
+    let swap_lut_account =
+        Pubkey::from_str("6GhuWPuAmiJeeSVsr58KjqHcAejJRndCx9BVtHkaYHUR").unwrap();
+
+    let swap_lut = AddressLookupTableAccount {
+        key: swap_lut_account,
+        addresses: AddressLookupTable::deserialize(
+            &rpc.get_account(&swap_lut_account).await?.data,
+        )?
+        .addresses
+        .to_vec(),
+    };
+
+    let message = v0::Message::try_compile(
+        &signer.pubkey(),
+        &instructions,
+        &[address_lookup_table, swap_lut],
+        recent_blockhash,
+    )?;
+
+    let versioned_message = VersionedMessage::V0(message);
+    Ok(VersionedTransaction::try_new(versioned_message, &[signer])?)
 }

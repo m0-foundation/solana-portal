@@ -103,25 +103,6 @@ pub fn get_adapter_name(adapter: BridgeAdapter) -> &'static str {
     }
 }
 
-/// Parse recipient as hex bytes (32 or 20 bytes)
-pub fn parse_recipient(recipient: &str) -> Result<[u8; 32]> {
-    let hex_str = recipient.strip_prefix("0x").unwrap_or(recipient);
-    let bytes = hex::decode(hex_str).context("Invalid recipient format (not valid hex)")?;
-
-    if bytes.len() == 32 {
-        let mut arr = [0u8; 32];
-        arr.copy_from_slice(&bytes);
-        Ok(arr)
-    } else if bytes.len() == 20 {
-        // EVM address - left-pad with zeros
-        let mut arr = [0u8; 32];
-        arr[12..].copy_from_slice(&bytes);
-        Ok(arr)
-    } else {
-        anyhow::bail!("Invalid recipient length: expected 32 bytes (Solana) or 20 bytes (EVM)")
-    }
-}
-
 /// Estimate gas fee by calling the quote function
 pub async fn estimate_gas_fee<P>(
     provider: &P,

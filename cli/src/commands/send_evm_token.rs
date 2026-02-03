@@ -1,5 +1,5 @@
 use alloy::{
-    primitives::FixedBytes,
+    primitives::{Address, FixedBytes, U256},
     providers::Provider,
     rpc::types::TransactionRequest,
     sol_types::SolCall,
@@ -7,13 +7,14 @@ use alloy::{
 use anyhow::{Context, Result};
 
 use crate::{
-    types::evm::{address_to_bytes32, Portal, TOKEN_TRANSFER_PAYLOAD_TYPE, SOLANA_CHAIN_ID},
+    commands::common::parse_recipient,
+    types::evm::{address_to_bytes32, Portal, PAYLOAD_TYPE_TOKEN_TRANSFER, SOLANA_CHAIN_ID},
     BridgeAdapter,
 };
 
 use super::evm_common::{
     create_provider, get_adapter_address, get_adapter_args_and_value, get_adapter_name,
-    get_portal_address, load_private_key, parse_recipient, send_and_confirm_transaction,
+    get_portal_address, load_private_key, send_and_confirm_transaction,
 };
 
 /// Send token transfer from Sepolia to Solana via the Portal contract
@@ -32,7 +33,12 @@ pub async fn send_evm_token(amount: u128, recipient: String, adapter: BridgeAdap
     let adapter_address = get_adapter_address(adapter)?;
     let refund_address = address_to_bytes32(sender_address);
 
-    // Parse recipient
+    let source_token_address: Address = "0x866A2BF4E572CbcF37D5071A7a58503Bfb36be1b"
+        .parse()
+        .context("Invalid source token address")?;
+    let destination_token_bytes = parse_recipient(&"mzeroXDoBpRVhnEXBra27qzAMdxgpWVY3DzQW7xMVJp")?;
+
+    // Parse recipient (Solana address as bytes32)
     let recipient_bytes = parse_recipient(&recipient)?;
     println!("Recipient: 0x{}", hex::encode(recipient_bytes));
 
@@ -42,14 +48,16 @@ pub async fn send_evm_token(amount: u128, recipient: String, adapter: BridgeAdap
         &provider,
         contract_address,
         adapter_address,
-        TOKEN_TRANSFER_PAYLOAD_TYPE,
+        PAYLOAD_TYPE_TOKEN_TRANSFER,
     )
     .await?;
 
-    // Encode the sendTokenTransfer function call
-    let call = Portal::sendTokenTransferCall {
+    // Encode the sendToken function call
+    let call = Portal::sendTokenCall {
+        amount: U256::from(amount),
+        sourceToken: source_token_address,
         destinationChainId: SOLANA_CHAIN_ID,
-        amount,
+        destinationToken: FixedBytes::from(destination_token_bytes),
         recipient: FixedBytes::from(recipient_bytes),
         refundAddress: FixedBytes::from(refund_address),
         bridgeAdapter: adapter_address,

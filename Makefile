@@ -33,13 +33,13 @@ publish-common:
 	cargo build && \
 	cargo publish --allow-dirty
 
-# Usage: make send_token_svm AMOUNT=1000 DEST_CHAIN=1 RECIPIENT=<address> ADAPTER=hyperlane
+# Usage: make send_token_svm AMOUNT=1000 ADAPTER=hyperlane
 send_token_svm:
-	DEVNET_RPC_URL=$$(op read "op://Solana Dev/Helius/dev rpc") \
-	cargo run --package cli -- send-token $(AMOUNT) $(DEST_CHAIN) $(RECIPIENT) --adapter $(ADAPTER)
+	export DEVNET_RPC_URL=$$(op read "op://Solana Dev/Helius/dev rpc") \
+	cd cli && cargo run send-token $(AMOUNT) 11155111 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217 --adapter $(ADAPTER)
 
-# Usage: make send_token_evm AMOUNT=1000 RECIPIENT=<address> ADAPTER=hyperlane
+# Usage: make send_token_evm AMOUNT=1000 ADAPTER=hyperlane
 send_token_evm:
-	SEPOLIA_RPC_URL=$$(op read "op://Solana Dev/Alchemy/sepolia") \
-	PRIVATE_KEY=$$(op read "op://Solana Dev/Ethereum Test Wallet/Wallet/key") \
-	cargo run --package cli -- send-evm-token $(AMOUNT) $(RECIPIENT) --adapter $(ADAPTER)
+	export SEPOLIA_RPC_URL=$$(op read "op://Solana Dev/Alchemy/sepolia") \
+	export PRIVATE_KEY=$$(op read "op://Solana Dev/Ethereum Test Wallet/Wallet/key") \
+	cd cli && cargo run send-evm-token $(AMOUNT) D76ySoHPwD8U2nnTTDqXeUJQg5UkD9UD1PUE1rnvPAGm --adapter $(ADAPTER)

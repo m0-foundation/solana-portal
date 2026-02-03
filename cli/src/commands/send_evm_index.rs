@@ -7,7 +7,7 @@ use alloy::{
 use anyhow::{Context, Result};
 
 use crate::{
-    types::evm::{address_to_bytes32, Portal, MTOKEN_INDEX_PAYLOAD_TYPE, SOLANA_CHAIN_ID},
+    types::evm::{address_to_bytes32, HubPortal, PAYLOAD_TYPE_INDEX, SOLANA_CHAIN_ID},
     BridgeAdapter,
 };
 
@@ -16,7 +16,7 @@ use super::evm_common::{
     get_portal_address, load_private_key, send_and_confirm_transaction,
 };
 
-/// Send $M index from Sepolia to Solana via the Portal contract
+/// Send $M index from Sepolia to Solana via the HubPortal contract
 pub async fn send_evm_index(adapter: BridgeAdapter) -> Result<()> {
     println!("Using adapter: {}", get_adapter_name(adapter));
 
@@ -37,12 +37,12 @@ pub async fn send_evm_index(adapter: BridgeAdapter) -> Result<()> {
         &provider,
         contract_address,
         adapter_address,
-        MTOKEN_INDEX_PAYLOAD_TYPE,
+        PAYLOAD_TYPE_INDEX,
     )
     .await?;
 
-    // Encode the sendMTokenIndex function call
-    let call = Portal::sendMTokenIndexCall {
+    // Encode the sendMTokenIndex function call (HubPortal-specific)
+    let call = HubPortal::sendMTokenIndexCall {
         destinationChainId: SOLANA_CHAIN_ID,
         refundAddress: FixedBytes::from(refund_address),
         bridgeAdapter: adapter_address,
