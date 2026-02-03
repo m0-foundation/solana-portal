@@ -182,12 +182,11 @@ pub async fn send_via_wormhole(
     accounts: Vec<AccountMeta>,
     instruction_data: Vec<u8>,
     destination_chain_id: u32,
-    include_igp: bool,
 ) -> Result<solana_sdk::signature::Signature> {
     let mut all_accounts = accounts;
 
     // Get and append Wormhole remaining accounts
-    let wormhole_accounts = WormholeRemainingAccounts::account_metas(include_igp);
+    let wormhole_accounts = WormholeRemainingAccounts::account_metas(true);
     all_accounts.extend(wormhole_accounts);
 
     let send_ix = SolanaInstruction {
@@ -208,8 +207,8 @@ pub async fn send_via_wormhole(
         get_wormhole_chain_id(destination_chain_id).unwrap(),
         current_sequence,
         &PEER_PORTAL,
-        None,
-        None,
+        Some(350_000),
+        Some(25_000_000),
     )
     .await?;
 

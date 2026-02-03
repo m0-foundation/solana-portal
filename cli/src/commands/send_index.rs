@@ -1,10 +1,9 @@
 use anchor_lang::system_program;
 use anyhow::Result;
 use m0_portal_common::{
-    pda,
+    hyperlane_adapter, pda,
     portal::{self, constants::GLOBAL_SEED},
-    hyperlane_adapter, wormhole_adapter,
-    AUTHORITY_SEED,
+    wormhole_adapter, AUTHORITY_SEED,
 };
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::instruction::AccountMeta;
@@ -48,7 +47,14 @@ pub async fn send_index(destination_chain_id: u32, adapter: BridgeAdapter) -> Re
             send_via_hyperlane(&rpc_client, &payer, accounts, instruction_data, true).await?
         }
         BridgeAdapter::Wormhole => {
-            send_via_wormhole(&rpc_client, &payer, accounts, instruction_data, destination_chain_id, true).await?
+            send_via_wormhole(
+                &rpc_client,
+                &payer,
+                accounts,
+                instruction_data,
+                destination_chain_id,
+            )
+            .await?
         }
     };
 
