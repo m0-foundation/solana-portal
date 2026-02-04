@@ -3849,6 +3849,7 @@ dependencies = [
  "borsh 0.10.4",
  "hex",
  "m0-portal-common-macros",
+ "proptest",
  "reqwest",
  "serde",
  "serde_json",
