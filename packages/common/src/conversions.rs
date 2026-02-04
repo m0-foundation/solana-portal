@@ -9,18 +9,22 @@ use spl_token_2022::{
 const INDEX_SCALE_F64: f64 = 1e12;
 const INDEX_SCALE_U64: u64 = 1_000_000_000_000;
 
-pub fn amount_to_principal_down(amount: u128, multiplier: f64) -> u128 {
+pub fn amount_to_principal_up(amount: u64, multiplier: f64) -> u64 {
     if multiplier == 1.0 {
         return amount;
     }
 
     let index = (multiplier * INDEX_SCALE_F64).trunc() as u128;
 
-    amount
+    (amount as u128)
         .checked_mul(INDEX_SCALE_U64 as u128)
+        .expect("overflow")
+        .checked_add(index - 1)
         .expect("overflow")
         .checked_div(index)
         .expect("underflow")
+        .try_into()
+        .expect("overflow")
 }
 
 pub fn principal_to_amount_down(principal: u64, multiplier: f64) -> u128 {

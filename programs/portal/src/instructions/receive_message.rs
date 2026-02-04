@@ -219,9 +219,14 @@ impl ReceiveMessage<'_> {
 
         let accounts = payload.parse_and_validate_accounts(ctx.remaining_accounts.to_vec())?;
 
+        let amount: u64 = payload
+            .amount
+            .try_into()
+            .map_err(|_| BridgeError::InvalidAmount)?;
         // Get the principal amount of $M tokens to transfer using the multiplier
-        let principal: u64 = m0_portal_common::amount_to_principal_down(
-            payload.amount,
+        // Round up to ensure that enough M is minted to back the amount of tokens being transferred
+        let principal: u64 = m0_portal_common::amount_to_principal_up(
+            amount,
             m0_portal_common::get_scaled_ui_config(&ctx.accounts.m_mint.to_account_info())?
                 .new_multiplier
                 .into(),
@@ -291,7 +296,7 @@ impl ReceiveMessage<'_> {
                     },
                     &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
                 ),
-                principal,
+                amount,
             )?;
 
             emit!(TokenReceived {
