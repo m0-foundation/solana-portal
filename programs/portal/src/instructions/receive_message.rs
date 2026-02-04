@@ -230,9 +230,7 @@ impl ReceiveMessage<'_> {
             m0_portal_common::get_scaled_ui_config(&ctx.accounts.m_mint.to_account_info())?
                 .new_multiplier
                 .into(),
-        )
-        .try_into()
-        .unwrap();
+        );
 
         // Mint to authority account
         token_interface::mint_to(
