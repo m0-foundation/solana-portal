@@ -49,3 +49,27 @@ action "deploy_hyperlane_adapter" "svm::deploy_program" {
       assertion = input.hyperlane_adapter == "true"
   }
 }
+
+action "deploy_msf" "svm::deploy_program" {
+  description = "Deploy MSF program"
+  program = svm::get_program_from_anchor_project("ext_swap", null, "./tests/programs/ext_swap.json", "./tests/programs/ext_swap.so")
+  authority = signer.authority
+  payer = signer.payer
+  instant_surfnet_deployment = true
+  pre_condition {
+      behavior = "skip"
+      assertion = input.network_id == "localnet"
+  }
+}
+
+action "deploy_wm" "svm::deploy_program" {
+  description = "Deploy wM extension"
+  program = svm::get_program_from_anchor_project("m_ext", null, "./tests/programs/m_ext.json", "./tests/programs/m_ext.so")
+  authority = signer.authority
+  payer = signer.payer
+  instant_surfnet_deployment = true
+  pre_condition {
+      behavior = "skip"
+      assertion = input.network_id == "localnet"
+  }
+}
