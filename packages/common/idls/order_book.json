@@ -139,12 +139,50 @@
         },
         {
           "name": "portal_global",
-          "docs": ["This is validated in the portal CPI"],
-          "writable": true
+          "docs": [
+            "The data is not used in this instruction",
+            "We pass it into the CPI to the portal program"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5, 96, 71, 38, 195, 17, 0, 131, 79, 49, 225, 51, 140, 91, 229,
+                193, 101, 155, 214, 243, 111, 176, 88, 151, 248, 178, 69, 151,
+                27, 53, 202, 23
+              ]
+            }
+          }
         },
         {
           "name": "portal_authority",
-          "docs": ["This is validated in the portal CPI"]
+          "docs": [
+            "The account holds no data and is used as a signer",
+            "in the CPI to the portal program"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [97, 117, 116, 104, 111, 114, 105, 116, 121]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5, 96, 71, 38, 195, 17, 0, 131, 79, 49, 225, 51, 140, 91, 229,
+                193, 101, 155, 214, 243, 111, 176, 88, 151, 248, 178, 69, 151,
+                27, 53, 202, 23
+              ]
+            }
+          }
         },
         {
           "name": "bridge_adapter",
@@ -525,12 +563,50 @@
         },
         {
           "name": "portal_global",
-          "docs": ["This is validated in the portal CPI"],
-          "writable": true
+          "docs": [
+            "The data is not used in this instruction",
+            "We pass it into the CPI to the portal program"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5, 96, 71, 38, 195, 17, 0, 131, 79, 49, 225, 51, 140, 91, 229,
+                193, 101, 155, 214, 243, 111, 176, 88, 151, 248, 178, 69, 151,
+                27, 53, 202, 23
+              ]
+            }
+          }
         },
         {
           "name": "portal_authority",
-          "docs": ["This is validated in the portal CPI"]
+          "docs": [
+            "The account holds no data and is used as a signer",
+            "in the CPI to the portal program"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [97, 117, 116, 104, 111, 114, 105, 116, 121]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5, 96, 71, 38, 195, 17, 0, 131, 79, 49, 225, 51, 140, 91, 229,
+                193, 101, 155, 214, 243, 111, 176, 88, 151, 248, 178, 69, 151,
+                27, 53, 202, 23
+              ]
+            }
+          }
         },
         {
           "name": "bridge_adapter",
@@ -1420,11 +1496,7 @@
       "discriminator": [143, 197, 147, 95, 106, 165, 50, 43]
     },
     {
-      "name": "NativeOrder",
-      "discriminator": [134, 173, 223, 185, 77, 86, 28, 51]
-    },
-    {
-      "name": "ForeignOrder",
+      "name": "Order",
       "discriminator": [134, 173, 223, 185, 77, 86, 28, 51]
     },
     {
@@ -1634,8 +1706,18 @@
     },
     {
       "code": 6033,
+      "name": "InvalidPortalAuthority",
+      "msg": "Portal authority cannot be default pubkey"
+    },
+    {
+      "code": 6034,
       "name": "InvalidRefundAmount",
       "msg": "Reported refund amount is greater than available"
+    },
+    {
+      "code": 6035,
+      "name": "TransferExactFailed",
+      "msg": "Transfer failed due to receiving less than specified"
     }
   ],
   "types": [
@@ -2175,6 +2257,10 @@
           {
             "name": "dest_chain_id",
             "type": "u32"
+          },
+          {
+            "name": "created_at",
+            "type": "u64"
           },
           {
             "name": "fill_deadline",
