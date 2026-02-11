@@ -822,29 +822,6 @@
       ]
     },
     {
-      "name": "idl_instruction",
-      "discriminator": [184, 210, 197, 207, 188, 74, 218, 150],
-      "accounts": [],
-      "args": [
-        {
-          "name": "foreign",
-          "type": {
-            "defined": {
-              "name": "ForeignOrder"
-            }
-          }
-        },
-        {
-          "name": "native",
-          "type": {
-            "defined": {
-              "name": "NativeOrder"
-            }
-          }
-        }
-      ]
-    },
-    {
       "name": "initialize",
       "discriminator": [175, 175, 109, 31, 13, 152, 155, 237],
       "accounts": [
@@ -1496,7 +1473,11 @@
       "discriminator": [143, 197, 147, 95, 106, 165, 50, 43]
     },
     {
-      "name": "Order",
+      "name": "NativeOrder",
+      "discriminator": [134, 173, 223, 185, 77, 86, 28, 51]
+    },
+    {
+      "name": "ForeignOrder",
       "discriminator": [134, 173, 223, 185, 77, 86, 28, 51]
     },
     {
@@ -1878,7 +1859,7 @@
       }
     },
     {
-      "name": "ForeignOrder",
+      "name": "ForeignOrderData",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1906,7 +1887,7 @@
       }
     },
     {
-      "name": "NativeOrder",
+      "name": "NativeOrderData",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2008,13 +1989,7 @@
       }
     },
     {
-      "name": "Order",
-      "generics": [
-        {
-          "kind": "type",
-          "name": "T"
-        }
-      ],
+      "name": "NativeOrder",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2033,7 +2008,37 @@
           {
             "name": "data",
             "type": {
-              "generic": "T"
+              "defined": {
+                "name": "NativeOrderData"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ForeignOrder",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "order_type",
+            "type": {
+              "defined": {
+                "name": "OrderType"
+              }
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "data",
+            "type": {
+              "defined": {
+                "name": "ForeignOrderData"
+              }
             }
           }
         ]
