@@ -23,6 +23,9 @@ runbooks:
   - name: fund_receive_payer
     description: Fund the Hyperlane receive payer account
     location: runbooks/fund_receive_payer
+  - name: test_programs
+    description: Deploy programs needed for testing locally
+    location: runbooks/test_programs
 environments:
   localnet:
     network_id: localnet
