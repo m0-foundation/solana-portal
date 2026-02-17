@@ -9,7 +9,9 @@ pub mod transfer_admin;
 
 use anchor_lang::prelude::*;
 pub use initialize::*;
-use m0_portal_common::{BridgeError, Payload, PayloadData, PayloadHeader, TokenTransferPayload};
+use m0_portal_common::{
+    portal, BridgeError, Payload, PayloadData, PayloadHeader, TokenTransferPayload,
+};
 pub use pause::*;
 pub use receive_message::*;
 pub use resolve_execute::*;
@@ -45,7 +47,7 @@ impl VaaBody {
         // Transform legacy TransceiverMessage
         #[cfg(feature = "legacy-ntt")]
         let payload = if payload_bytes.starts_with(&[0x99, 0x45, 0xFF, 0x10]) {
-            let (source_ntt_manager, rest) = payload_bytes[4..].split_at(32);
+            let (_source_ntt_manager, rest) = payload_bytes[4..].split_at(32);
             let (_recipient_ntt_manager, rest) = rest.split_at(32);
             let (_ntt_manager_payload_len, rest) = rest.split_at(2);
 
@@ -69,7 +71,7 @@ impl VaaBody {
                     header: PayloadHeader {
                         message_id: id.try_into().unwrap(),
                         destination_chain_id: 1399811149, // M0 chain id for Solana
-                        destination_peer: source_ntt_manager.try_into().unwrap(),
+                        destination_peer: portal::ID.to_bytes(),
                         payload_type: PayloadData::TOKEN_TRANSFER_DISCRIMINANT,
                         index: u64::from_be_bytes(index.try_into().unwrap()) as u128,
                     },
