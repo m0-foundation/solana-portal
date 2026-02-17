@@ -319,11 +319,17 @@ fn test_07_receive_cancel_wormhole() -> Result<()> {
         .accounts(metas)
         .send();
 
-    // order_book not deployed
+    // the order is fake
+    // check for order book error
     assert!(result.is_err());
     let err = result.err().unwrap().to_string();
     assert!(
-        err.contains("Unsupported program id"),
+        err.contains("Instruction: ReportOrderCancel"),
+        "Invalid error: {}",
+        err
+    );
+    assert!(
+        err.contains("AnchorError caused by account: order"),
         "Invalid error: {}",
         err
     );
