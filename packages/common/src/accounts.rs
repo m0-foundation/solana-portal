@@ -4,8 +4,8 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use m0_portal_common_macros::ExtractAccounts;
 
 use crate::{
-    ext_swap::{self, accounts::SwapGlobal},
-    order_book, BridgeError, CancelReportPayload, FillReportPayload, TokenTransferPayload,
+    ext_swap::{self, accounts::SwapGlobal, constants::GLOBAL_SEED},
+    order_book, pda, BridgeError, CancelReportPayload, FillReportPayload, TokenTransferPayload,
 };
 
 #[derive(ExtractAccounts)]
@@ -52,6 +52,12 @@ impl TokenTransferPayload {
         }
 
         if accounts.associated_token_program.key != &anchor_spl::associated_token::ID {
+            return err!(BridgeError::InvalidRemainingAccount);
+        }
+
+        // Check swap global PDA
+        // Using a fake swap global can result in tokens going to unclaimed_m_balance
+        if pda!(&[GLOBAL_SEED], &ext_swap::ID) != accounts.swap_global.key() {
             return err!(BridgeError::InvalidRemainingAccount);
         }
 
