@@ -308,17 +308,20 @@ impl ReceiveMessage<'_> {
             });
         } else {
             // Store flow: M stays in portal ATA, track balance
+            // We use the UI amount of M here so that the unclaimed balance is not earning.
+            // The actual stored amount in the portal ATA is earning, so excess can collect there.
+            // However, this is fine.
             msg!(
-                "Destination token {} not whitelisted, storing {} M principal",
+                "Destination token {} not whitelisted, storing {} M",
                 Pubkey::from(payload.destination_token),
-                principal
+                amount
             );
 
             ctx.accounts.portal_global.unclaimed_m_balance = ctx
                 .accounts
                 .portal_global
                 .unclaimed_m_balance
-                .checked_add(principal)
+                .checked_add(amount)
                 .ok_or(BridgeError::InvalidAmount)?;
 
             emit!(MBalanceStored {
@@ -326,7 +329,7 @@ impl ReceiveMessage<'_> {
                 destination_token: payload.destination_token,
                 sender: payload.sender,
                 recipient: payload.recipient,
-                principal_amount: principal,
+                principal_amount: amount,
                 message_id: message_id,
             });
         }
