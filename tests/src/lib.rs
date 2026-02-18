@@ -83,6 +83,14 @@ impl SurfnetValidator {
                     .iter()
                     .any(|line| line.contains("Runbook 'deployment' execution completed"))
             {
+                // Deploy MSF and wM programs for testing
+                let logs = run_surfpool_cmd(vec!["run", "test_programs", "--unsupervised"])?;
+                assert!(
+                    !logs.contains("error"),
+                    "MSF/wM deployments failed: {}",
+                    logs
+                );
+
                 return Ok(validator);
             }
 
@@ -143,10 +151,10 @@ pub fn run_surfpool_cmd(args: Vec<&str>) -> Result<String> {
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     if stdout.contains("x Failed") {
-        anyhow::bail!(
+        return Err(anyhow::anyhow!(
             "Error executing surfpool command: \n{}",
             stdout.split("x Failed: ").nth(1).unwrap()
-        );
+        ));
     }
     Ok(stdout)
 }
@@ -238,7 +246,10 @@ mod tests_05_pausing;
 mod tests_06_set_lut;
 
 #[cfg(test)]
-mod tests_07_send_token;
+mod tests_07_bridge_path;
 
 #[cfg(test)]
-mod tests_08_receive_message;
+mod tests_08_send_token;
+
+#[cfg(test)]
+mod tests_09_receive_message;

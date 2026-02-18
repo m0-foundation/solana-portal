@@ -1,0 +1,75 @@
+addon "svm" {
+    rpc_api_url = input.rpc_api_url
+    network_id = input.network_id
+}
+
+variable "portal_program" {
+    value = svm::get_program_from_anchor_project("portal")
+}
+
+variable "source_mint" {
+    description = "The Solana source mint (hex)"
+    value = "0x0b86be66bc1f98b47d20a3be615a4905a825b826864e2a0f4c948467d33ee709"
+    editable = true
+}
+
+variable "destination_token" {
+    description = "The destination token address (hex)"
+    value = "0x000000000000000000000000437cc33344a0b27a429f795ff6b469c72698b291"
+    editable = true
+}
+
+variable "destination_chain_id_be_hex" {
+    description = "The destination chain id (big-endian hex encoded)"
+    value = "0x00000001"
+    editable = true
+}
+
+variable "destination_chain_id_le_hex" {
+    description = "The destination chain id (big-endian hex encoded)"
+    value = "0x01000000"
+    editable = true
+}
+
+variable "global" {
+    value = svm::find_pda("MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce", ["global"])
+}
+
+variable "chain_path" {
+    value = svm::find_pda("MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce", ["chain_paths", variable.destination_chain_id_be_hex])
+}
+
+action "set_path" "svm::process_instructions" {
+    description = "Sets bridging path"
+    signers = [signer.caller]
+    instruction {
+        program_id = "MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce"
+        account {
+            public_key = signer.caller.public_key
+            is_signer = true
+            is_writable = true
+        }
+        account {
+            public_key = variable.global.pda
+            is_signer = false
+            is_writable = false
+        }
+        account {
+            public_key = variable.chain_path.pda
+            is_signer = false
+            is_writable = true
+        }
+        account {
+            public_key = "0x0000000000000000000000000000000000000000000000000000000000000000"
+            is_signer = false
+            is_writable = false
+        }
+        data = [
+            "0x37474d94a4e90fb9",                   // add_bridge_paths instruction discriminator
+            variable.destination_chain_id_le_hex,   // destination_chain_id (u32 little-endian)
+            "0x01000000",                           // number of paths (u32 little-endian)
+            variable.source_mint,                   // source_mint (Pubkey)
+            variable.destination_token              // destination_token (32 bytes)
+        ]
+    }
+}

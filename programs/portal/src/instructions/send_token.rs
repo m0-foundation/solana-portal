@@ -7,10 +7,14 @@ use m0_portal_common::{
 
 use crate::{
     instructions::send_message,
-    state::{PortalGlobal, AUTHORITY_SEED, GLOBAL_SEED, MINT_AUTHORITY_SEED, M_VAULT_SEED},
+    state::{
+        ChainBridgePaths, PortalGlobal, AUTHORITY_SEED, CHAIN_PATHS_SEED, GLOBAL_SEED,
+        MINT_AUTHORITY_SEED, M_VAULT_SEED,
+    },
 };
 
 #[derive(Accounts)]
+#[instruction(amount: u64, destination_token: [u8; 32], destination_chain_id: u32)]
 pub struct SendToken<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
@@ -30,6 +34,12 @@ pub struct SendToken<'info> {
         bump = swap_global.bump,
     )]
     pub swap_global: Account<'info, SwapGlobal>,
+
+    #[account(
+        seeds = [CHAIN_PATHS_SEED, &destination_chain_id.to_be_bytes()],
+        bump = chain_paths.bump,
+    )]
+    pub chain_paths: Account<'info, ChainBridgePaths>,
 
     #[account(
         mut,
@@ -106,7 +116,12 @@ pub struct SendToken<'info> {
 }
 
 impl SendToken<'_> {
-    fn validate(&self, amount: u64, destination_chain_id: u32) -> Result<()> {
+    fn validate(
+        &self,
+        amount: u64,
+        destination_token: [u8; 32],
+        destination_chain_id: u32,
+    ) -> Result<()> {
         if self.portal_global.outgoing_paused {
             return err!(BridgeError::Paused);
         }
@@ -116,6 +131,14 @@ impl SendToken<'_> {
             if chain_id != destination_chain_id {
                 return err!(BridgeError::InvalidTransfer);
             }
+        }
+
+        // Validate bridge path is supported
+        if !self
+            .chain_paths
+            .is_path_supported(&self.extension_mint.key(), &destination_token)
+        {
+            return err!(BridgeError::UnsupportedBridgePath);
         }
 
         if self
@@ -138,7 +161,7 @@ impl SendToken<'_> {
         Ok(())
     }
 
-    #[access_control(ctx.accounts.validate(amount, destination_chain_id))]
+    #[access_control(ctx.accounts.validate(amount, destination_token, destination_chain_id))]
     pub fn handler<'info>(
         ctx: Context<'_, '_, '_, 'info, SendToken<'info>>,
         amount: u64,
@@ -176,7 +199,7 @@ impl SendToken<'_> {
 
         // Amount of $M we got from unwrap
         ctx.accounts.m_token_account.reload()?;
-        let m_amount = ctx.accounts.m_token_account.amount - m_pre_balance;
+        let m_principal = ctx.accounts.m_token_account.amount - m_pre_balance;
 
         // Burn $M
         token_interface::burn(
@@ -189,18 +212,11 @@ impl SendToken<'_> {
                 },
                 &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
             ),
-            m_amount,
+            m_principal,
         )?;
 
-        let scaled_m_amount = m0_portal_common::principal_to_amount_down(
-            m_amount,
-            m0_portal_common::get_scaled_ui_config(&ctx.accounts.m_mint.to_account_info())?
-                .multiplier
-                .into(),
-        );
-
         let payload = PayloadData::TokenTransfer(TokenTransferPayload {
-            amount: scaled_m_amount,
+            amount: amount as u128,
             destination_token,
             sender: ctx.accounts.sender.key().to_bytes(),
             recipient,
@@ -226,7 +242,7 @@ impl SendToken<'_> {
             destination_token,
             sender: ctx.accounts.sender.key(),
             recipient,
-            amount: scaled_m_amount,
+            amount: amount as u128,
             index: ctx.accounts.portal_global.m_index,
             bridge_adapter: ctx.accounts.bridge_adapter.key(),
         });

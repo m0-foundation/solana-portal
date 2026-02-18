@@ -319,11 +319,17 @@ fn test_07_receive_cancel_wormhole() -> Result<()> {
         .accounts(metas)
         .send();
 
-    // order_book not deployed
+    // the order is fake
+    // check for order book error
     assert!(result.is_err());
     let err = result.err().unwrap().to_string();
     assert!(
-        err.contains("Unsupported program id"),
+        err.contains("Instruction: ReportOrderCancel"),
+        "Invalid error: {}",
+        err
+    );
+    assert!(
+        err.contains("AnchorError caused by account: order"),
         "Invalid error: {}",
         err
     );
@@ -417,7 +423,7 @@ fn test_09_receive_merkle_root() -> Result<()> {
 
     assert!(result.is_err());
     let err = result.err().unwrap().to_string();
-    assert!(err.contains("InvalidSourceChain"), "Invalid error: {}", err);
+    assert!(err.contains("InvalidPeer"), "Invalid error: {}", err);
 
     Ok(())
 }
@@ -478,7 +484,7 @@ fn test_10_uninitialized_token_account() -> Result<()> {
     let versioned_tx = build_versioned_tx_with_lut(rpc_client.clone(), instructions)?;
 
     let result = rpc_client.send_and_confirm_transaction(&versioned_tx);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "error: {:?}", result.err());
 
     Ok(())
 }

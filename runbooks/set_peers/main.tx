@@ -6,9 +6,11 @@ addon "svm" {
 variable "wormhole_adapter_program" {
     value = svm::get_program_from_anchor_project("wormhole_adapter")
 }
-
 variable "hyperlane_adapter_program" {
     value = svm::get_program_from_anchor_project("hyperlane_adapter")
+}
+variable "portal_program" {
+    value = svm::get_program_from_anchor_project("portal")
 }
 
 variable "evm_wormhole_adapter" {
@@ -19,6 +21,11 @@ variable "evm_wormhole_adapter" {
 variable "evm_hyperlane_adapter" {
     description = "Hyperlane adapter on EVM chains: 0xFc44dadD758A7737aC9200059e9FCd1521d75a07"
     value = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 252, 68, 218, 221, 117, 138, 119, 55, 172, 146, 0, 5, 158, 159, 205, 21, 33, 215, 90, 7]
+}
+
+variable "peer_address" {
+    description = "Peer address on EVM chains"
+    value = [11, 106, 134, 128, 106, 3, 84, 200, 43, 143, 4, 158, 183, 93, 156, 151,227, 112, 166, 240, 192, 207, 161, 95, 71, 144, 156, 63, 225, 200, 247, 148]
 }
 
 action "set_wormhole_peer_ethereum" "svm::process_instructions" {
@@ -133,5 +140,44 @@ action "set_hyperlane_peer_arbitrum" "svm::process_instructions" {
     pre_condition {
         behavior = "skip"
         assertion = input.hyperlane_adapter == "true"
+    }
+}
+
+variable "chain_path_ethereum" {
+    value = svm::find_pda("MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce", ["chain_paths", index(["0x00000001", "0x00AA36A7"], input.chain_id_idx)])
+}
+variable "chain_path_arbitrum" {
+    value = svm::find_pda("MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce", ["chain_paths", index(["0x0000A4B1", "0x00066EEE"], input.chain_id_idx)])
+}
+
+action "initailize_path_destination_ethereum" "svm::process_instructions" {
+    description = "Initialize Ethereum bridge paths"
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.portal_program.idl
+        instruction_name = "initialize_bridge_paths"
+        admin {
+            public_key = signer.caller.public_key
+        }
+        chain_paths {
+            public_key = variable.chain_path_ethereum.pda
+        }
+        instruction_args = [index([1, 11155111], input.chain_id_idx)]
+    }
+}
+
+action "initailize_path_destination_arbitrum" "svm::process_instructions" {
+    description = "Initialize Arbitrum bridge paths"
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.portal_program.idl
+        instruction_name = "initialize_bridge_paths"
+        admin {
+            public_key = signer.caller.public_key
+        }
+        chain_paths {
+            public_key = variable.chain_path_arbitrum.pda
+        }
+        instruction_args = [ index([42161, 421614], input.chain_id_idx)]
     }
 }

@@ -5,6 +5,7 @@ pub mod state;
 
 use anchor_lang::prelude::*;
 use instructions::*;
+use state::BridgePath;
 
 #[cfg(not(feature = "no-entrypoint"))]
 solana_security_txt::security_txt! {
@@ -63,6 +64,35 @@ pub mod portal {
 
     pub fn enable_cross_spoke_transfers(ctx: Context<EnableCrossSpokeTransfers>) -> Result<()> {
         EnableCrossSpokeTransfers::handler(ctx)
+    }
+
+    pub fn wrap_unclaimed(ctx: Context<WrapUnclaimed>, amount: Option<u64>) -> Result<()> {
+        WrapUnclaimed::handler(ctx, amount)
+    }
+
+    /// Bridge Path Configuration Instructions
+
+    pub fn initialize_bridge_paths(
+        ctx: Context<InitializeBridgePaths>,
+        destination_chain_id: u32,
+    ) -> Result<()> {
+        InitializeBridgePaths::handler(ctx, destination_chain_id)
+    }
+
+    pub fn add_bridge_paths(
+        ctx: Context<AddBridgePaths>,
+        destination_chain_id: u32,
+        paths: Vec<BridgePath>,
+    ) -> Result<()> {
+        AddBridgePaths::handler(ctx, destination_chain_id, paths)
+    }
+
+    pub fn remove_bridge_path(
+        ctx: Context<RemoveBridgePath>,
+        destination_chain_id: u32,
+        path: BridgePath,
+    ) -> Result<()> {
+        RemoveBridgePath::handler(ctx, destination_chain_id, path)
     }
 
     /// Outbound Instructions

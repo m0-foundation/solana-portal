@@ -4,7 +4,7 @@ use m0_portal_common::{
     ext_swap, hyperlane_adapter, pda,
     portal::{
         self,
-        constants::{GLOBAL_SEED, MINT_AUTHORITY_SEED, M_VAULT_SEED},
+        constants::{CHAIN_PATHS_SEED, GLOBAL_SEED, MINT_AUTHORITY_SEED, M_VAULT_SEED},
     },
     wormhole_adapter, AUTHORITY_SEED,
 };
@@ -41,6 +41,7 @@ pub async fn send_token(
 
     // Parse recipient as either Pubkey or hex bytes
     let recipient_bytes = parse_recipient(&recipient)?;
+    let destination_token = parse_recipient(&"0x437cc33344a0B27A429f795ff6B469C72698B291")?;
     println!("Recipient: 0x{}", hex::encode(recipient_bytes));
 
     // Parse token addresses
@@ -56,6 +57,10 @@ pub async fn send_token(
     let extension_global = pda!(&[GLOBAL_SEED], &extension_program);
     let ext_m_vault_auth = pda!(&[M_VAULT_SEED], &extension_program);
     let ext_mint_authority = pda!(&[MINT_AUTHORITY_SEED], &extension_program);
+    let chain_paths = pda!(
+        &[CHAIN_PATHS_SEED, &destination_chain_id.to_be_bytes()],
+        &portal::ID
+    );
 
     // Get token accounts
     let m_token_account =
@@ -63,9 +68,6 @@ pub async fn send_token(
     let extension_token_account =
         get_associated_token_address(&payer.pubkey(), &extension_mint, &token_2022_program);
     let ext_m_vault = get_associated_token_address(&ext_m_vault_auth, &m_mint, &token_2022_program);
-
-    // Use m_mint as destination token (same token on destination chain)
-    let destination_token = m_mint.to_bytes();
 
     // Build the SendToken instruction data
     let mut instruction_data = calculate_instruction_discriminator("send_token").to_vec();
@@ -84,7 +86,8 @@ pub async fn send_token(
         AccountMeta::new(payer.pubkey(), true),
         AccountMeta::new(portal_global, false),
         AccountMeta::new_readonly(swap_global, false),
-        AccountMeta::new_readonly(extension_global, false),
+        AccountMeta::new_readonly(chain_paths, false),
+        AccountMeta::new(extension_global, false),
         AccountMeta::new(m_mint, false),
         AccountMeta::new(extension_mint, false),
         AccountMeta::new(m_token_account, false),
@@ -112,7 +115,6 @@ pub async fn send_token(
                 accounts,
                 instruction_data,
                 destination_chain_id,
-                false,
             )
             .await?
         }

@@ -14,6 +14,8 @@ pub const MINT_AUTHORITY_SEED: &[u8] = b"mint_authority";
 pub use m0_portal_common::interfaces::AUTHORITY_SEED;
 #[constant]
 pub const MESSAGE_SEED: &[u8] = b"message";
+#[constant]
+pub const CHAIN_PATHS_SEED: &[u8] = b"chain_paths";
 
 #[account]
 #[derive(InitSpace)]
@@ -24,11 +26,16 @@ pub struct PortalGlobal {
     pub admin: Pubkey,
     pub outgoing_paused: bool,
     pub incoming_paused: bool,
+    /// The lastest index value to propagate to other chains
     pub m_index: u128,
+    /// To ensure bridge message ID uniqueness
     pub message_nonce: u64,
     pub pending_admin: Option<Pubkey>,
+    /// This portal is an isolated spoke
     pub isolated_hub_chain_id: Option<u32>,
-    pub padding: [u8; 128],
+    /// Aggregate principal amount of M tokens stored when destination_token is not whitelisted
+    pub unclaimed_m_balance: u64,
+    pub padding: [u8; 120],
 }
 
 impl PortalGlobal {
@@ -60,6 +67,45 @@ impl BridgeMessage {
     pub const SIZE: usize = BridgeMessage::INIT_SPACE + BridgeMessage::DISCRIMINATOR.len();
 }
 
+/// Represents an allowed bridging path from a source token to a destination token
+#[derive(Clone, AnchorSerialize, AnchorDeserialize, InitSpace, PartialEq, Debug, Hash, Eq)]
+pub struct BridgePath {
+    /// Extension mint on Solana (e.g., wM mint pubkey)
+    pub source_mint: Pubkey,
+    /// Token address on destination chain (e.g., Ethereum wM address)
+    pub destination_token: [u8; 32],
+}
+
+impl BridgePath {
+    pub const SIZE: usize = 32 + 32; // 64 bytes
+}
+
+/// Per-destination-chain configuration of allowed bridging paths
+#[account]
+pub struct ChainBridgePaths {
+    pub bump: u8,
+    pub destination_chain_id: u32,
+    pub paths: Vec<BridgePath>,
+}
+
+impl ChainBridgePaths {
+    /// Check if a given source_mint → destination_token path is supported
+    pub fn is_path_supported(&self, source_mint: &Pubkey, destination_token: &[u8; 32]) -> bool {
+        self.paths
+            .iter()
+            .any(|p| &p.source_mint == source_mint && &p.destination_token == destination_token)
+    }
+
+    /// Calculate account size for a given number of paths
+    pub fn size(num_paths: usize) -> usize {
+        8 +  // discriminator
+        1 +  // bump
+        4 +  // destination_chain_id
+        4 +  // Vec length prefix
+        (num_paths * BridgePath::SIZE)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -83,7 +129,8 @@ mod tests {
             message_nonce: nonce_value - 1, // Will be incremented
             pending_admin: None,
             isolated_hub_chain_id: None,
-            padding: [0u8; 128],
+            unclaimed_m_balance: 0,
+            padding: [0u8; 120],
         };
 
         // Generate message ID using Rust function
@@ -122,7 +169,8 @@ mod tests {
                 message_nonce: nonce - 1,
                 pending_admin: None,
                 isolated_hub_chain_id: None,
-                padding: [0u8; 128],
+                unclaimed_m_balance: 0,
+                padding: [0u8; 120],
             };
 
             let rust_message_id = portal_global.generate_message_id(dest_chain_id);
