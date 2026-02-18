@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use m0_portal_common::BridgeError;
+use std::collections::HashSet;
 
 use crate::state::{BridgePath, ChainBridgePaths, PortalGlobal, CHAIN_PATHS_SEED, GLOBAL_SEED};
 
@@ -77,6 +78,12 @@ pub struct AddBridgePaths<'info> {
 
 impl AddBridgePaths<'_> {
     fn validate(&self, paths: &Vec<BridgePath>) -> Result<()> {
+        // List must not contain duplicates
+        let mut seen = HashSet::new();
+        let all_unique = paths.iter().all(|p| seen.insert(p));
+        require!(all_unique, BridgeError::DuplicatePath);
+
+        // Paths must not already exist in the current list
         for p in paths {
             require!(
                 !self.chain_paths.paths.contains(p),

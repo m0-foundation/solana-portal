@@ -50,4 +50,6 @@ pub enum BridgeError {
     PathAlreadyExists,
     #[msg("Bridge path not found")]
     PathNotFound,
+    #[msg("Duplicate bridge path in input")]
+    DuplicatePath,
 }

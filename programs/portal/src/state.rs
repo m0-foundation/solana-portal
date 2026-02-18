@@ -68,7 +68,7 @@ impl BridgeMessage {
 }
 
 /// Represents an allowed bridging path from a source token to a destination token
-#[derive(Clone, AnchorSerialize, AnchorDeserialize, InitSpace, PartialEq, Debug)]
+#[derive(Clone, AnchorSerialize, AnchorDeserialize, InitSpace, PartialEq, Debug, Hash, Eq)]
 pub struct BridgePath {
     /// Extension mint on Solana (e.g., wM mint pubkey)
     pub source_mint: Pubkey,
