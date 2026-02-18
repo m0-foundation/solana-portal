@@ -83,6 +83,14 @@ impl SurfnetValidator {
                     .iter()
                     .any(|line| line.contains("Runbook 'deployment' execution completed"))
             {
+                // Deploy MSF and wM programs for testing
+                let logs = run_surfpool_cmd(vec!["run", "test_programs", "--unsupervised"])?;
+                assert!(
+                    !logs.contains("error"),
+                    "MSF/wM deployments failed: {}",
+                    logs
+                );
+
                 return Ok(validator);
             }
 

@@ -29,3 +29,4 @@ anchor-client = { version = "0.31.1", optional = true }
 
 [dev-dependencies]
 hex = { version = "0.4" }
+proptest = "1.5"

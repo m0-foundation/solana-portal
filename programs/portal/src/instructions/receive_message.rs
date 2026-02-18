@@ -219,15 +219,18 @@ impl ReceiveMessage<'_> {
 
         let accounts = payload.parse_and_validate_accounts(ctx.remaining_accounts.to_vec())?;
 
+        let amount: u64 = payload
+            .amount
+            .try_into()
+            .map_err(|_| BridgeError::InvalidAmount)?;
         // Get the principal amount of $M tokens to transfer using the multiplier
-        let principal: u64 = m0_portal_common::amount_to_principal_down(
-            payload.amount,
+        // Round up to ensure that enough M is minted to back the amount of tokens being transferred
+        let principal: u64 = m0_portal_common::amount_to_principal_up(
+            amount,
             m0_portal_common::get_scaled_ui_config(&ctx.accounts.m_mint.to_account_info())?
                 .new_multiplier
                 .into(),
-        )
-        .try_into()
-        .unwrap();
+        );
 
         // Mint to authority account
         token_interface::mint_to(
@@ -291,7 +294,7 @@ impl ReceiveMessage<'_> {
                     },
                     &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
                 ),
-                principal,
+                amount,
             )?;
 
             emit!(TokenReceived {
@@ -305,17 +308,20 @@ impl ReceiveMessage<'_> {
             });
         } else {
             // Store flow: M stays in portal ATA, track balance
+            // We use the UI amount of M here so that the unclaimed balance is not earning.
+            // The actual stored amount in the portal ATA is earning, so excess can collect there.
+            // However, this is fine.
             msg!(
-                "Destination token {} not whitelisted, storing {} M principal",
+                "Destination token {} not whitelisted, storing {} M",
                 Pubkey::from(payload.destination_token),
-                principal
+                amount
             );
 
             ctx.accounts.portal_global.unclaimed_m_balance = ctx
                 .accounts
                 .portal_global
                 .unclaimed_m_balance
-                .checked_add(principal)
+                .checked_add(amount)
                 .ok_or(BridgeError::InvalidAmount)?;
 
             emit!(MBalanceStored {
@@ -323,7 +329,7 @@ impl ReceiveMessage<'_> {
                 destination_token: payload.destination_token,
                 sender: payload.sender,
                 recipient: payload.recipient,
-                principal_amount: principal,
+                principal_amount: amount,
                 message_id: message_id,
             });
         }

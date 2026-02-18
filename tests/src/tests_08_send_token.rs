@@ -428,7 +428,7 @@ fn test_04_send_token_wormhole_success() -> Result<()> {
     match payload.data {
         PayloadData::TokenTransfer(token_payload) => {
             assert_eq!(payload.header.index, portal_global.m_index);
-            assert!(token_payload.amount < AMOUNT as u128 && token_payload.amount > 0); // will change depending on current index value
+            assert_eq!(token_payload.amount, AMOUNT as u128); // exact extension amount is sent
             assert_eq!(token_payload.destination_token, ctx.destination_token);
             assert_eq!(token_payload.sender, ctx.portal.payer().to_bytes());
             assert_eq!(token_payload.recipient, ctx.portal.payer().to_bytes());
@@ -497,7 +497,7 @@ fn test_05_send_token_hyperlane_success() -> Result<()> {
     match payload.data {
         PayloadData::TokenTransfer(payload) => {
             assert_eq!(payload.recipient, ctx.portal.payer().to_bytes());
-            assert!(payload.amount < AMOUNT as u128 && payload.amount > 0); // will change depending on current index value
+            assert_eq!(payload.amount, AMOUNT as u128); // exact extension amount is sent
         }
         _ => panic!("Expected TokenTransfer"),
     }

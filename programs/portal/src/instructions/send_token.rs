@@ -199,7 +199,7 @@ impl SendToken<'_> {
 
         // Amount of $M we got from unwrap
         ctx.accounts.m_token_account.reload()?;
-        let m_amount = ctx.accounts.m_token_account.amount - m_pre_balance;
+        let m_principal = ctx.accounts.m_token_account.amount - m_pre_balance;
 
         // Burn $M
         token_interface::burn(
@@ -212,18 +212,11 @@ impl SendToken<'_> {
                 },
                 &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
             ),
-            m_amount,
+            m_principal,
         )?;
 
-        let scaled_m_amount = m0_portal_common::principal_to_amount_down(
-            m_amount,
-            m0_portal_common::get_scaled_ui_config(&ctx.accounts.m_mint.to_account_info())?
-                .multiplier
-                .into(),
-        );
-
         let payload = PayloadData::TokenTransfer(TokenTransferPayload {
-            amount: scaled_m_amount,
+            amount: amount as u128,
             destination_token,
             sender: ctx.accounts.sender.key().to_bytes(),
             recipient,
@@ -249,7 +242,7 @@ impl SendToken<'_> {
             destination_token,
             sender: ctx.accounts.sender.key(),
             recipient,
-            amount: scaled_m_amount,
+            amount: amount as u128,
             index: ctx.accounts.portal_global.m_index,
             bridge_adapter: ctx.accounts.bridge_adapter.key(),
         });
