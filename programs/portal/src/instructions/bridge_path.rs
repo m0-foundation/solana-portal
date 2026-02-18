@@ -83,11 +83,16 @@ impl AddBridgePaths<'_> {
         let all_unique = paths.iter().all(|p| seen.insert(p));
         require!(all_unique, BridgeError::DuplicatePath);
 
-        // Paths must not already exist in the current list
         for p in paths {
+            // Paths must not already exist in the current list
             require!(
                 !self.chain_paths.paths.contains(p),
                 BridgeError::PathAlreadyExists
+            );
+
+            require!(
+                p.source_mint != Pubkey::default() && p.destination_token != [0u8; 32],
+                BridgeError::InvalidPath
             );
         }
 
