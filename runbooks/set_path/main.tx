@@ -20,7 +20,7 @@ variable "destination_token" {
 }
 
 variable "destination_chain_id_hex" {
-    description = "The destination chain id (big-endian hex encoded)"
+    description = "The destination chain id (little-endian hex encoded)"
     value = "0x01000000"
     editable = true
 }
