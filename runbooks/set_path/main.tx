@@ -19,13 +19,7 @@ variable "destination_token" {
     editable = true
 }
 
-variable "destination_chain_id_be_hex" {
-    description = "The destination chain id (big-endian hex encoded)"
-    value = "0x00000001"
-    editable = true
-}
-
-variable "destination_chain_id_le_hex" {
+variable "destination_chain_id_hex" {
     description = "The destination chain id (big-endian hex encoded)"
     value = "0x01000000"
     editable = true
@@ -36,7 +30,7 @@ variable "global" {
 }
 
 variable "chain_path" {
-    value = svm::find_pda("MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce", ["chain_paths", variable.destination_chain_id_be_hex])
+    value = svm::find_pda("MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce", ["chain_paths", variable.destination_chain_id_hex])
 }
 
 action "set_path" "svm::process_instructions" {
@@ -66,7 +60,7 @@ action "set_path" "svm::process_instructions" {
         }
         data = [
             "0x37474d94a4e90fb9",                   // add_bridge_paths instruction discriminator
-            variable.destination_chain_id_le_hex,   // destination_chain_id (u32 little-endian)
+            variable.destination_chain_id_hex,      // destination_chain_id (u32 little-endian)
             "0x01000000",                           // number of paths (u32 little-endian)
             variable.source_mint,                   // source_mint (Pubkey)
             variable.destination_token              // destination_token (32 bytes)

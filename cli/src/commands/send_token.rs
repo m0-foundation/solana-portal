@@ -58,7 +58,7 @@ pub async fn send_token(
     let ext_m_vault_auth = pda!(&[M_VAULT_SEED], &extension_program);
     let ext_mint_authority = pda!(&[MINT_AUTHORITY_SEED], &extension_program);
     let chain_paths = pda!(
-        &[CHAIN_PATHS_SEED, &destination_chain_id.to_be_bytes()],
+        &[CHAIN_PATHS_SEED, &destination_chain_id.to_le_bytes()],
         &portal::ID
     );
 

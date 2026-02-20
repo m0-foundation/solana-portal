@@ -76,7 +76,7 @@ pub struct SendMessage<'info> {
         seeds = [
             UNIQUE_MESSAGE_SEED,
             hyperlane_user_global.key().as_ref(),
-            &hyperlane_user_global.nonce.to_be_bytes(),
+            &hyperlane_user_global.nonce.to_le_bytes(),
         ],
         bump
     )]
@@ -222,7 +222,7 @@ impl SendMessage<'_> {
                     &[
                         UNIQUE_MESSAGE_SEED,
                         ctx.accounts.hyperlane_user_global.key().as_ref(),
-                        &ctx.accounts.hyperlane_user_global.nonce.to_be_bytes(),
+                        &ctx.accounts.hyperlane_user_global.nonce.to_le_bytes(),
                         &[ctx.bumps.unique_message],
                     ],
                 ],
@@ -285,7 +285,7 @@ impl SendMessage<'_> {
                 &[&[
                     UNIQUE_MESSAGE_SEED,
                     ctx.accounts.hyperlane_user_global.key().as_ref(),
-                    &ctx.accounts.hyperlane_user_global.nonce.to_be_bytes(),
+                    &ctx.accounts.hyperlane_user_global.nonce.to_le_bytes(),
                     &[ctx.bumps.unique_message],
                 ]],
             )?;
