@@ -18,7 +18,7 @@ solana_security_txt::security_txt! {
     auditors: ""
 }
 
-declare_id!("MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce");
+declare_id!("mzp1q2j5Hr1QuLC3KFBCAUz5aUckT6qyuZKZ3WJnMmY");
 
 #[program]
 pub mod portal {

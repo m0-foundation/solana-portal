@@ -21,7 +21,7 @@ solana_security_txt::security_txt! {
     auditors: ""
 }
 
-declare_id!("mzp1q2j5Hr1QuLC3KFBCAUz5aUckT6qyuZKZ3WJnMmY");
+declare_id!("MzWhCSdXxmrRhxYkBtFVzLF9ddeXbvpMzwSdiU71tTa");
 
 #[program]
 pub mod wormhole_adapter {
