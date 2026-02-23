@@ -32,18 +32,18 @@ variable "destination_chain_id_le_hex" {
 }
 
 variable "global" {
-    value = svm::find_pda("MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce", ["global"])
+    value = svm::find_pda("mzp1q2j5Hr1QuLC3KFBCAUz5aUckT6qyuZKZ3WJnMmY", ["global"])
 }
 
 variable "chain_path" {
-    value = svm::find_pda("MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce", ["chain_paths", variable.destination_chain_id_be_hex])
+    value = svm::find_pda("mzp1q2j5Hr1QuLC3KFBCAUz5aUckT6qyuZKZ3WJnMmY", ["chain_paths", variable.destination_chain_id_be_hex])
 }
 
 action "set_path" "svm::process_instructions" {
     description = "Sets bridging path"
     signers = [signer.caller]
     instruction {
-        program_id = "MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce"
+        program_id = "mzp1q2j5Hr1QuLC3KFBCAUz5aUckT6qyuZKZ3WJnMmY"
         account {
             public_key = signer.caller.public_key
             is_signer = true

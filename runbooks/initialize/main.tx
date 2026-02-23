@@ -14,10 +14,10 @@ variable "hyperlane_adapter_program" {
 }
 
 variable "portal_global" {
-    value = svm::find_pda("MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce", ["global"])
+    value = svm::find_pda("mzp1q2j5Hr1QuLC3KFBCAUz5aUckT6qyuZKZ3WJnMmY", ["global"])
 }
 variable "wormhole_global" {
-    value = svm::find_pda("mzp1q2j5Hr1QuLC3KFBCAUz5aUckT6qyuZKZ3WJnMmY", ["global"])
+    value = svm::find_pda("MzWhCSdXxmrRhxYkBtFVzLF9ddeXbvpMzwSdiU71tTa", ["global"])
 }
 variable "hyperlane_global" {
     value = svm::find_pda("mZhPGteS36G7FhMTcRofLQU8ocBNAsGq7u8SKSHfL2X", ["global"])

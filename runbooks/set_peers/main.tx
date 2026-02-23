@@ -144,10 +144,10 @@ action "set_hyperlane_peer_arbitrum" "svm::process_instructions" {
 }
 
 variable "chain_path_ethereum" {
-    value = svm::find_pda("MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce", ["chain_paths", index(["0x00000001", "0x00AA36A7"], input.chain_id_idx)])
+    value = svm::find_pda("mzp1q2j5Hr1QuLC3KFBCAUz5aUckT6qyuZKZ3WJnMmY", ["chain_paths", index(["0x00000001", "0x00AA36A7"], input.chain_id_idx)])
 }
 variable "chain_path_arbitrum" {
-    value = svm::find_pda("MzBrgc8yXBj4P16GTkcSyDZkEQZB9qDqf3fh9bByJce", ["chain_paths", index(["0x0000A4B1", "0x00066EEE"], input.chain_id_idx)])
+    value = svm::find_pda("mzp1q2j5Hr1QuLC3KFBCAUz5aUckT6qyuZKZ3WJnMmY", ["chain_paths", index(["0x0000A4B1", "0x00066EEE"], input.chain_id_idx)])
 }
 
 action "initailize_path_destination_ethereum" "svm::process_instructions" {
