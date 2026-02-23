@@ -65,23 +65,6 @@ action "hyperlane_global_account" "std::send_http_request" {
   }
 }
 
-action "initialize_portal" "svm::process_instructions" {
-    description = "Initializes the Portal program"
-    signers = [signer.caller]
-    instruction {
-        program_idl = variable.portal_program.idl
-        instruction_name = "initialize"
-        admin {
-            public_key = signer.caller.public_key
-        }
-        instruction_args = [input.chain_id, null]
-    }
-    pre_condition {
-        behavior = "skip"
-        assertion = jq(action.portal_global_account.response_body, ".result.value") == null
-    }
-}
-
 action "initialize_wormhole_adapter" "svm::process_instructions" {
     description = "Initializes the Wormhole Adapter program"
     signers = [signer.caller]
@@ -132,5 +115,22 @@ action "sync_ext_hyperlane_adapter" "svm::process_instructions" {
     pre_condition {
         behavior = "skip"
         assertion = input.hyperlane_adapter == "true"
+    }
+}
+
+action "initialize_portal" "svm::process_instructions" {
+    description = "Initializes the Portal program"
+    signers = [signer.caller]
+    instruction {
+        program_idl = variable.portal_program.idl
+        instruction_name = "initialize"
+        admin {
+            public_key = signer.caller.public_key
+        }
+        instruction_args = [input.chain_id, null]
+    }
+    pre_condition {
+        behavior = "skip"
+        assertion = jq(action.portal_global_account.response_body, ".result.value") == null
     }
 }
