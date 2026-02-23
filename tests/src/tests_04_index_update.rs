@@ -9,9 +9,9 @@ use m0_portal_common::{
         constants::DASH_SEED,
     },
     pda,
-    portal::constants::GLOBAL_SEED,
+    portal::constants::{GLOBAL_SEED, PORTAL_AUTHORITY_SEED},
     wormhole_adapter::{self, constants::EMITTER_SEED},
-    HyperlaneRemainingAccounts, PayloadData, WormholeRemainingAccounts, AUTHORITY_SEED,
+    HyperlaneRemainingAccounts, PayloadData, WormholeRemainingAccounts,
 };
 use portal::{
     state::PortalGlobal,
@@ -36,7 +36,7 @@ fn test_01_index_update_wormhole() -> Result<()> {
             sender: program.payer(),
             system_program: system_program::ID,
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
-            portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
+            portal_authority: pda!(&[PORTAL_AUTHORITY_SEED], &portal::ID),
             bridge_adapter: wormhole_adapter::ID,
         })
         .args(instruction::SendIndex {
@@ -93,7 +93,7 @@ fn test_02_index_update_wormhole_bad_dest() -> Result<()> {
             sender: program.payer(),
             system_program: system_program::ID,
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
-            portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
+            portal_authority: pda!(&[PORTAL_AUTHORITY_SEED], &portal::ID),
             bridge_adapter: wormhole_adapter::ID,
         })
         .args(instruction::SendIndex {
@@ -128,7 +128,7 @@ fn test_03_index_update_hyperlane() -> Result<()> {
             sender: program.payer(),
             system_program: system_program::ID,
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
-            portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
+            portal_authority: pda!(&[PORTAL_AUTHORITY_SEED], &portal::ID),
             bridge_adapter: hyperlane_adapter::ID,
         })
         .args(instruction::SendIndex {
@@ -182,7 +182,7 @@ fn test_04_index_update_hyperlane_repeat_msgid() -> Result<()> {
             sender: program.payer(),
             system_program: system_program::ID,
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
-            portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
+            portal_authority: pda!(&[PORTAL_AUTHORITY_SEED], &portal::ID),
             bridge_adapter: hyperlane_adapter::ID,
         })
         .args(instruction::SendIndex {
@@ -225,7 +225,7 @@ fn test_05_index_update_hyperlane_bad_dest() -> Result<()> {
             sender: program.payer(),
             system_program: system_program::ID,
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
-            portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
+            portal_authority: pda!(&[PORTAL_AUTHORITY_SEED], &portal::ID),
             bridge_adapter: hyperlane_adapter::ID,
         })
         .args(instruction::SendIndex {
@@ -253,7 +253,7 @@ fn test_06_missing_account() -> Result<()> {
             sender: program.payer(),
             system_program: system_program::ID,
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
-            portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
+            portal_authority: pda!(&[PORTAL_AUTHORITY_SEED], &portal::ID),
             bridge_adapter: wormhole_adapter::ID,
         })
         .args(instruction::SendIndex {
@@ -281,7 +281,7 @@ fn test_07_send_merkle_root() -> Result<()> {
             sender: program.payer(),
             system_program: system_program::ID,
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
-            portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
+            portal_authority: pda!(&[PORTAL_AUTHORITY_SEED], &portal::ID),
             bridge_adapter: wormhole_adapter::ID,
             earn_global: pda!(&[GLOBAL_SEED], &earn::ID),
         })

@@ -3,6 +3,7 @@ use anchor_lang::{prelude::*, system_program};
 use anchor_spl::associated_token::{self, get_associated_token_address_with_program_id};
 use anchor_spl::{token, token_2022};
 use m0_portal_common::portal::accounts::PortalGlobal;
+use m0_portal_common::portal::constants::PORTAL_AUTHORITY_SEED;
 use m0_portal_common::{earn, ext_swap, pda, portal, wormhole_verify_vaa_shim};
 use solana_address_lookup_table_interface::instruction::{
     create_lookup_table, extend_lookup_table,
@@ -71,7 +72,7 @@ impl SetLookupTable<'_> {
         )?;
 
         let authority_m_token_account = get_associated_token_address_with_program_id(
-            &pda!(&[AUTHORITY_SEED], &portal::ID),
+            &pda!(&[PORTAL_AUTHORITY_SEED], &portal::ID),
             &ctx.accounts.portal_global.m_mint,
             &token_2022::ID,
         );
@@ -86,7 +87,7 @@ impl SetLookupTable<'_> {
                 pda!(&[GLOBAL_SEED], &earn::ID),
                 pda!(&[GLOBAL_SEED], &ext_swap::ID),
                 pda!(&[AUTHORITY_SEED], &crate::ID),
-                pda!(&[AUTHORITY_SEED], &portal::ID),
+                pda!(&[PORTAL_AUTHORITY_SEED], &portal::ID),
                 portal::ID,
                 wormhole_verify_vaa_shim::ID,
                 system_program::ID,

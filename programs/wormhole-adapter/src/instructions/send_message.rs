@@ -3,9 +3,9 @@ use anchor_lang::{
     system_program::{transfer, Transfer},
 };
 use m0_portal_common::{
-    portal::{self, accounts::PortalGlobal},
+    portal::{self, accounts::PortalGlobal, constants::PORTAL_AUTHORITY_SEED},
     wormhole_post_message_shim::{self, program::WormholePostMessageShim, types::Finality},
-    BridgeError, Payload, PayloadData, PayloadHeader, AUTHORITY_SEED,
+    BridgeError, Payload, PayloadData, PayloadHeader,
 };
 
 use crate::{
@@ -36,7 +36,7 @@ pub struct SendMessage<'info> {
     pub portal_global: Account<'info, PortalGlobal>,
 
     #[account(
-        seeds = [AUTHORITY_SEED],
+        seeds = [PORTAL_AUTHORITY_SEED],
         seeds::program = portal::ID,
         bump
     )]

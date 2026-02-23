@@ -10,10 +10,10 @@ use crate::{
     pda,
     portal::{
         self,
-        constants::{MINT_AUTHORITY_SEED, M_VAULT_SEED},
+        constants::{MINT_AUTHORITY_SEED, M_VAULT_SEED, PORTAL_AUTHORITY_SEED},
     },
     wormhole_adapter::constants::EVENT_AUTHORITY_SEED,
-    BridgeError, Extension, PayloadData, AUTHORITY_SEED,
+    BridgeError, Extension, PayloadData,
 };
 
 /// Returns account metas required to process the given payload.
@@ -70,7 +70,7 @@ pub fn require_metas(
                 &token_2022::ID,
             );
             let authority_m_token_account = get_associated_token_address_with_program_id(
-                &pda!(&[AUTHORITY_SEED], &portal::ID),
+                &pda!(&[PORTAL_AUTHORITY_SEED], &portal::ID),
                 &m_mint,
                 &token_2022::ID,
             );

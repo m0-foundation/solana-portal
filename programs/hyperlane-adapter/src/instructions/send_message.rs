@@ -3,9 +3,10 @@ use anchor_lang::solana_program::{
     instruction::Instruction,
     program::{get_return_data, invoke_signed},
 };
+use m0_portal_common::portal::constants::PORTAL_AUTHORITY_SEED;
 use m0_portal_common::{
     portal::{self, accounts::PortalGlobal},
-    BridgeError, Payload, PayloadData, PayloadHeader, AUTHORITY_SEED,
+    BridgeError, Payload, PayloadData, PayloadHeader,
 };
 use std::vec;
 
@@ -40,7 +41,7 @@ pub struct SendMessage<'info> {
     pub portal_global: Account<'info, PortalGlobal>,
 
     #[account(
-        seeds = [AUTHORITY_SEED],
+        seeds = [PORTAL_AUTHORITY_SEED],
         seeds::program = portal::ID,
         bump
     )]

@@ -4,6 +4,7 @@ use anchor_spl::{
     token_2022::{self, Token2022},
     token_interface::Mint,
 };
+use m0_portal_common::portal::constants::PORTAL_AUTHORITY_SEED;
 use m0_portal_common::{
     earn::{self, accounts::EarnGlobal, program::Earn},
     pda,
@@ -68,7 +69,7 @@ pub struct ReceiveMessage<'info> {
     pub portal_global: Account<'info, PortalGlobal>,
 
     #[account(
-        seeds = [AUTHORITY_SEED],
+        seeds = [PORTAL_AUTHORITY_SEED],
         seeds::program = portal::ID,
         bump
     )]
@@ -183,7 +184,7 @@ impl<'info> ReceiveMessageMetas<'info> {
         let hyperlane_global = pda!(&[GLOBAL_SEED], &crate::ID);
         let portal_global = pda!(&[GLOBAL_SEED], &portal::ID);
         let payer = pda!(&[PAYER_SEED], &crate::ID);
-        let portal_authority = pda!(&[AUTHORITY_SEED], &portal::ID);
+        let portal_authority = pda!(&[PORTAL_AUTHORITY_SEED], &portal::ID);
         let message_account = pda!(&[MESSAGE_SEED, &payload.header.message_id], &portal::ID);
 
         // Accounts needed by all payload types

@@ -6,6 +6,7 @@ use anchor_spl::token_2022;
 use anyhow::Result;
 use hyperlane_adapter::{accounts as hyperlane_accounts, instruction as hyperlane_instruction};
 use m0_portal_common::ext_swap::accounts::SwapGlobal;
+use m0_portal_common::portal::constants::PORTAL_AUTHORITY_SEED;
 use m0_portal_common::{
     earn, ext_swap, CancelReportPayload, EarnerMerkleRootPayload, Extension, IndexPayload,
     PayloadData, PayloadHeader, TokenTransferPayload,
@@ -31,18 +32,11 @@ use crate::util::constants::{
     ETHEREUM_HYPERLANE_ADAPTER, ETHEREUM_WORMHOLE_ADAPTER, M_MINT, SOLANA_CHAIN_ID,
 };
 use crate::util::wormhole::build_versioned_tx_with_lut;
-use crate::{get_rpc_client, get_signer, set_account};
+use crate::{get_rpc_client, get_signer};
 
 #[test]
 fn test_01_receive_index_wormhole() -> Result<()> {
     let rpc_client = get_rpc_client();
-    let earn_global = pda!(&[GLOBAL_SEED], &earn::ID);
-    let mut account = rpc_client.get_account(&earn_global)?;
-
-    // Update old portal authority to the new authority
-    account.data[72..72 + 32].copy_from_slice(&pda!(&[AUTHORITY_SEED], &portal::ID).to_bytes());
-    set_account(&earn_global, &account).expect("failed to set account");
-
     let signer = get_signer();
     let client = Client::new(Cluster::Localnet, signer.clone());
     let program = client.program(wormhole_adapter::ID)?;
@@ -101,7 +95,7 @@ fn test_02_receive_index_hyperlane() -> Result<()> {
     let mut accounts = hyperlane_accounts::ReceiveMessage {
         receive_payer: pda!(&[PAYER_SEED], &hyperlane_adapter::ID),
         portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
-        portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
+        portal_authority: pda!(&[PORTAL_AUTHORITY_SEED], &portal::ID),
         message_account: pda!(&[MESSAGE_SEED, &[43u8; 32]], &portal::ID),
         portal_program: portal::ID,
         system_program: system_program::ID,
@@ -464,12 +458,6 @@ fn test_10_uninitialized_token_account() -> Result<()> {
     let account = rpc_client.get_account(&ata);
     assert!(account.is_err());
 
-    // Set $M mint authority
-    let mut mint_account = rpc_client.get_account(&M_MINT)?;
-    mint_account.data[0..4].copy_from_slice(&[1, 0, 0, 0]); // COption::Some
-    mint_account.data[4..36].copy_from_slice(&pda!(&[AUTHORITY_SEED], &portal::ID).to_bytes());
-    set_account(&M_MINT, &mint_account).expect("failed to set mint authority");
-
     let instructions = program
         .request()
         .accounts(create_receive_message_accounts(signer.pubkey(), message_id))
@@ -527,7 +515,7 @@ fn create_receive_message_accounts(
         wormhole_global: pda!(&[GLOBAL_SEED], &wormhole_adapter::ID),
         portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
         wormhole_adapter_authority: pda!(&[AUTHORITY_SEED], &wormhole_adapter::ID),
-        portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
+        portal_authority: pda!(&[PORTAL_AUTHORITY_SEED], &portal::ID),
         message_account: pda!(&[MESSAGE_SEED, &message_id], &portal::ID),
         guardian_set: pda!(
             &[GUARDIAN_SET_SEED, &0u32.to_be_bytes()],

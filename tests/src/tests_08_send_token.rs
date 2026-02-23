@@ -20,9 +20,11 @@ use m0_portal_common::{
     },
     m_ext::{self, accounts::ExtGlobalV2},
     pda,
-    portal::constants::{CHAIN_PATHS_SEED, GLOBAL_SEED, MINT_AUTHORITY_SEED, M_VAULT_SEED},
+    portal::constants::{
+        CHAIN_PATHS_SEED, GLOBAL_SEED, MINT_AUTHORITY_SEED, M_VAULT_SEED, PORTAL_AUTHORITY_SEED,
+    },
     wormhole_adapter::{self},
-    HyperlaneRemainingAccounts, PayloadData, WormholeRemainingAccounts, AUTHORITY_SEED,
+    HyperlaneRemainingAccounts, PayloadData, WormholeRemainingAccounts,
 };
 
 use portal::{accounts as portal_accounts, instruction as portal_instruction, state::PortalGlobal};
@@ -64,7 +66,7 @@ impl TestCtx {
         let extension_program = Pubkey::from_str("wMXX1K1nca5W4pZr1piETe78gcAVVrEFi9f4g46uXko")?;
         let destination_token =
             hex::decode("000000000000000000000000437cc33344a0b27a429f795ff6b469c72698b291")?;
-        let portal_authority = pda!(&[AUTHORITY_SEED], &portal::ID);
+        let portal_authority = pda!(&[PORTAL_AUTHORITY_SEED], &portal::ID);
         let ext_global_pk = pda!(&[GLOBAL_SEED], &extension_program);
         let swap_global_pk = pda!(&[GLOBAL_SEED], &ext_swap::ID);
 

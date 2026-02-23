@@ -10,7 +10,10 @@ use m0_portal_common::{
     earn::{self, accounts::EarnGlobal},
     ext_swap::{self, accounts::SwapGlobal},
     pda,
-    portal::{self, constants::MESSAGE_SEED},
+    portal::{
+        self,
+        constants::{MESSAGE_SEED, PORTAL_AUTHORITY_SEED},
+    },
     require_metas, wormhole_verify_vaa_shim, BridgeError, Extension,
 };
 use wormhole_svm_definitions::{zero_copy::GuardianSet, GUARDIAN_SET_SEED};
@@ -182,7 +185,8 @@ impl ResolveExecuteVaa {
                 AccountMeta::new_readonly(pda!(&[GLOBAL_SEED], &crate::ID), false).into(),
                 AccountMeta::new(pda!(&[GLOBAL_SEED], &portal::ID), false).into(),
                 AccountMeta::new_readonly(pda!(&[AUTHORITY_SEED], &crate::ID), false).into(),
-                AccountMeta::new_readonly(pda!(&[AUTHORITY_SEED], &portal::ID), false).into(),
+                AccountMeta::new_readonly(pda!(&[PORTAL_AUTHORITY_SEED], &portal::ID), false)
+                    .into(),
                 AccountMeta::new(pda!(&[MESSAGE_SEED, &message_id], &portal::ID), false).into(),
                 AccountMeta::new_readonly(guardian_set, false).into(),
                 AccountMeta::new_readonly(RESOLVER_PUBKEY_SHIM_VAA_SIGS, false).into(),

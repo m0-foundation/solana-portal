@@ -2,8 +2,11 @@ use anchor_lang::system_program;
 use anyhow::Result;
 use m0_portal_common::{
     hyperlane_adapter, pda,
-    portal::{self, constants::GLOBAL_SEED},
-    wormhole_adapter, AUTHORITY_SEED,
+    portal::{
+        self,
+        constants::{GLOBAL_SEED, PORTAL_AUTHORITY_SEED},
+    },
+    wormhole_adapter,
 };
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::instruction::AccountMeta;
@@ -22,7 +25,7 @@ pub async fn send_index(destination_chain_id: u32, adapter: BridgeAdapter) -> Re
     let payer = load_keypair()?;
 
     let portal_global = pda!(&[GLOBAL_SEED], &portal::ID);
-    let portal_authority = pda!(&[AUTHORITY_SEED], &portal::ID);
+    let portal_authority = pda!(&[PORTAL_AUTHORITY_SEED], &portal::ID);
 
     // Build the SendIndex instruction data
     let mut instruction_data = calculate_instruction_discriminator("send_index").to_vec();

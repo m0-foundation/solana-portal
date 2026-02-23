@@ -3,7 +3,10 @@ use anchor_spl::{
     token_2022::{spl_token_2022::instruction::AuthorityType, Token2022},
     token_interface::{self, Mint},
 };
-use m0_portal_common::{portal, Peers, AUTHORITY_SEED};
+use m0_portal_common::{
+    portal::{self, constants::PORTAL_AUTHORITY_SEED},
+    Peers,
+};
 
 use crate::state::{WormholeGlobal, GLOBAL_SEED};
 
@@ -35,7 +38,7 @@ pub struct Initialize<'info> {
     pub old_token_authority: UncheckedAccount<'info>,
 
     #[account(
-        seeds = [AUTHORITY_SEED],
+        seeds = [PORTAL_AUTHORITY_SEED],
         seeds::program = portal::ID,
         bump,
     )]

@@ -5,7 +5,7 @@ use anchor_spl::{
 };
 use m0_portal_common::{
     earn::{self, accounts::EarnGlobal, program::Earn},
-    portal::{self, accounts::PortalGlobal, program::Portal},
+    portal::{self, accounts::PortalGlobal, constants::PORTAL_AUTHORITY_SEED, program::Portal},
     wormhole_verify_vaa_shim::{self, cpi::accounts::VerifyHash, program::WormholeVerifyVaaShim},
     BridgeError,
 };
@@ -45,7 +45,7 @@ pub struct ReceiveMessage<'info> {
     pub wormhole_adapter_authority: AccountInfo<'info>,
 
     #[account(
-        seeds = [AUTHORITY_SEED],
+        seeds = [PORTAL_AUTHORITY_SEED],
         seeds::program = portal::ID,
         bump
     )]

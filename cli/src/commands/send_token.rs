@@ -4,9 +4,11 @@ use m0_portal_common::{
     ext_swap, hyperlane_adapter, pda,
     portal::{
         self,
-        constants::{CHAIN_PATHS_SEED, GLOBAL_SEED, MINT_AUTHORITY_SEED, M_VAULT_SEED},
+        constants::{
+            CHAIN_PATHS_SEED, GLOBAL_SEED, MINT_AUTHORITY_SEED, M_VAULT_SEED, PORTAL_AUTHORITY_SEED,
+        },
     },
-    wormhole_adapter, AUTHORITY_SEED,
+    wormhole_adapter,
 };
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::instruction::AccountMeta;
@@ -52,7 +54,7 @@ pub async fn send_token(
 
     // Derive PDAs
     let portal_global = pda!(&[GLOBAL_SEED], &portal::ID);
-    let portal_authority = pda!(&[AUTHORITY_SEED], &portal::ID);
+    let portal_authority = pda!(&[PORTAL_AUTHORITY_SEED], &portal::ID);
     let swap_global = pda!(&[GLOBAL_SEED], &ext_swap::ID);
     let extension_global = pda!(&[GLOBAL_SEED], &extension_program);
     let ext_m_vault_auth = pda!(&[M_VAULT_SEED], &extension_program);
