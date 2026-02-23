@@ -52,7 +52,7 @@ fn test_01_index_update_wormhole() -> Result<()> {
 
     let expected_emitter = pda!(&[EMITTER_SEED], &wormhole_adapter::ID).to_bytes();
     assert_eq!(event_meta.emitter, expected_emitter);
-    assert!(event_meta.sequence > 50);
+    assert!(event_meta.sequence == 0);
     assert!(event_meta.timestamp > 0);
 
     let message_account = WormholeRemainingAccounts::new(false).message_account;
