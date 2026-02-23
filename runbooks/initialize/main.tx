@@ -91,9 +91,6 @@ action "initialize_wormhole_adapter" "svm::process_instructions" {
         admin {
             public_key = signer.caller.public_key
         }
-        m_mint {
-            public_key = "mzerojk9tg56ebsrEAhfkyc9VgKjTW2zDqp6C5mhjzH"
-        }
         instruction_args = [input.chain_id]
     }
     pre_condition {
