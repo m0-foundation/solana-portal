@@ -17,8 +17,8 @@ use m0_portal_common::{
 };
 
 use crate::state::{
-    BridgeMessage, PortalGlobal, AUTHORITY_SEED, ETHEREUM_CHAIN_ID, GLOBAL_SEED, MESSAGE_SEED,
-    SEPOLIA_CHAIN_ID,
+    BridgeMessage, PortalGlobal, ETHEREUM_CHAIN_ID, GLOBAL_SEED, MESSAGE_SEED,
+    PORTAL_AUTHORITY_SEED, SEPOLIA_CHAIN_ID,
 };
 
 #[derive(Accounts)]
@@ -47,7 +47,7 @@ pub struct ReceiveMessage<'info> {
     pub message_account: Account<'info, BridgeMessage>,
 
     #[account(
-        seeds = [AUTHORITY_SEED],
+        seeds = [PORTAL_AUTHORITY_SEED],
         bump,
     )]
     /// CHECK: account does not hold data
@@ -175,7 +175,8 @@ impl ReceiveMessage<'_> {
         ctx: &Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
         message: &Payload,
     ) -> Result<()> {
-        let authority_seed: &[&[&[u8]]] = &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]];
+        let authority_seed: &[&[&[u8]]] =
+            &[&[PORTAL_AUTHORITY_SEED, &[ctx.bumps.portal_authority]]];
 
         let propogate_ctx = CpiContext::new_with_signer(
             ctx.accounts.earn_program.to_account_info(),
@@ -241,7 +242,7 @@ impl ReceiveMessage<'_> {
                     to: accounts.authority_m_token_account.clone(),
                     authority: ctx.accounts.portal_authority.to_account_info(),
                 },
-                &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
+                &[&[PORTAL_AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
             ),
             principal,
         )?;
@@ -292,7 +293,7 @@ impl ReceiveMessage<'_> {
                         to_ext_program: accounts.extension_program,
                         system_program: ctx.accounts.system_program.to_account_info(),
                     },
-                    &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
+                    &[&[PORTAL_AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
                 ),
                 amount,
             )?;
@@ -364,7 +365,7 @@ impl ReceiveMessage<'_> {
                     event_authority: accounts.event_authority,
                     program: accounts.orderbook_program,
                 },
-                &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
+                &[&[PORTAL_AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
             ),
             source_chain_id,
             FillReport {
@@ -417,7 +418,7 @@ impl ReceiveMessage<'_> {
                     event_authority: accounts.event_authority,
                     program: accounts.orderbook_program,
                 },
-                &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
+                &[&[PORTAL_AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
             ),
             source_chain_id,
             CancelReport {

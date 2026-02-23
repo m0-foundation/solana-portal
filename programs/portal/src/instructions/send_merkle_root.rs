@@ -6,7 +6,7 @@ use m0_portal_common::{
 
 use crate::{
     instructions::send_message,
-    state::{PortalGlobal, AUTHORITY_SEED, GLOBAL_SEED},
+    state::{PortalGlobal, GLOBAL_SEED, PORTAL_AUTHORITY_SEED},
 };
 
 #[derive(Accounts)]
@@ -31,7 +31,7 @@ pub struct SendMerkleRoot<'info> {
 
     /// CHECK: account does not hold data
     #[account(
-        seeds = [AUTHORITY_SEED],
+        seeds = [PORTAL_AUTHORITY_SEED],
         bump,
     )]
     pub portal_authority: UncheckedAccount<'info>,

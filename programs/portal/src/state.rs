@@ -11,7 +11,8 @@ pub const M_VAULT_SEED: &[u8] = b"m_vault";
 #[constant]
 pub const MINT_AUTHORITY_SEED: &[u8] = b"mint_authority";
 #[constant]
-pub use m0_portal_common::interfaces::AUTHORITY_SEED;
+// This seed is used for backwards compatibility with Portal V1
+pub const PORTAL_AUTHORITY_SEED: &[u8] = b"token_authority";
 #[constant]
 pub const MESSAGE_SEED: &[u8] = b"message";
 #[constant]

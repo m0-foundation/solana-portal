@@ -8,8 +8,8 @@ use m0_portal_common::{
 use crate::{
     instructions::send_message,
     state::{
-        ChainBridgePaths, PortalGlobal, AUTHORITY_SEED, CHAIN_PATHS_SEED, GLOBAL_SEED,
-        MINT_AUTHORITY_SEED, M_VAULT_SEED,
+        ChainBridgePaths, PortalGlobal, CHAIN_PATHS_SEED, GLOBAL_SEED, MINT_AUTHORITY_SEED,
+        M_VAULT_SEED, PORTAL_AUTHORITY_SEED,
     },
 };
 
@@ -71,7 +71,7 @@ pub struct SendToken<'info> {
     pub extension_token_account: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
-        seeds = [AUTHORITY_SEED],
+        seeds = [PORTAL_AUTHORITY_SEED],
         bump,
     )]
     /// CHECK: account does not hold data
@@ -192,7 +192,7 @@ impl SendToken<'_> {
                     from_ext_program: ctx.accounts.extension_program.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info(),
                 },
-                &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
+                &[&[PORTAL_AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
             ),
             amount,
         )?;
@@ -210,7 +210,7 @@ impl SendToken<'_> {
                     from: ctx.accounts.m_token_account.to_account_info(),
                     authority: ctx.accounts.portal_authority.to_account_info(),
                 },
-                &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
+                &[&[PORTAL_AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
             ),
             m_principal,
         )?;

@@ -6,7 +6,7 @@ use m0_portal_common::{
     BridgeError,
 };
 
-use crate::state::{PortalGlobal, AUTHORITY_SEED, GLOBAL_SEED};
+use crate::state::{PortalGlobal, GLOBAL_SEED, PORTAL_AUTHORITY_SEED};
 
 #[derive(Accounts)]
 pub struct WrapUnclaimed<'info> {
@@ -37,7 +37,7 @@ pub struct WrapUnclaimed<'info> {
     pub extension_global: AccountInfo<'info>,
 
     #[account(
-        seeds = [AUTHORITY_SEED],
+        seeds = [PORTAL_AUTHORITY_SEED],
         bump,
     )]
     /// CHECK: PDA authority, does not hold data
@@ -128,7 +128,7 @@ impl WrapUnclaimed<'_> {
                     to_ext_program: ctx.accounts.extension_program.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info(),
                 },
-                &[&[AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
+                &[&[PORTAL_AUTHORITY_SEED, &[ctx.bumps.portal_authority]]],
             ),
             claim_amount,
         )?;

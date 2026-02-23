@@ -25,7 +25,7 @@ pub use send_token::*;
 pub use transfer_admin::*;
 pub use wrap_unclaimed::*;
 
-use crate::state::{PortalGlobal, AUTHORITY_SEED};
+use crate::state::{PortalGlobal, PORTAL_AUTHORITY_SEED};
 
 pub fn send_message<'info>(
     bridge_adapter: AccountInfo<'info>,
@@ -76,7 +76,7 @@ pub fn send_message<'info>(
                     wormhole_post_message_shim_ea,
                     wormhole_post_message_shim,
                 },
-                &[&[AUTHORITY_SEED, &[portal_authority_bump]]],
+                &[&[PORTAL_AUTHORITY_SEED, &[portal_authority_bump]]],
             ),
             destination_chain_id,
             portal_global.generate_message_id(destination_chain_id),
@@ -132,7 +132,7 @@ pub fn send_message<'info>(
                     igp_account,
                     igp_overhead_account,
                 },
-                &[&[AUTHORITY_SEED, &[portal_authority_bump]]],
+                &[&[PORTAL_AUTHORITY_SEED, &[portal_authority_bump]]],
             ),
             destination_chain_id,
             portal_global.generate_message_id(destination_chain_id),
