@@ -165,19 +165,3 @@ action "initailize_path_destination_ethereum" "svm::process_instructions" {
         instruction_args = [index([1, 11155111], input.chain_id_idx)]
     }
 }
-
-action "initailize_path_destination_arbitrum" "svm::process_instructions" {
-    description = "Initialize Arbitrum bridge paths"
-    signers = [signer.caller]
-    instruction {
-        program_idl = variable.portal_program.idl
-        instruction_name = "initialize_bridge_paths"
-        admin {
-            public_key = signer.caller.public_key
-        }
-        chain_paths {
-            public_key = variable.chain_path_arbitrum.pda
-        }
-        instruction_args = [ index([42161, 421614], input.chain_id_idx)]
-    }
-}
