@@ -156,7 +156,7 @@ fn test_03_index_update_hyperlane() -> Result<()> {
     // Recipient should be registered peer
     assert_eq!(
         hex::encode(recipient),
-        "000000000000000000000000fc44dadd758a7737ac9200059e9fcd1521d75a07"
+        "000000000000000000000000408f6e7bde5634160fda61b945dc9f41b965e406"
     );
 
     Ok(())

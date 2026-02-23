@@ -14,18 +14,18 @@ variable "portal_program" {
 }
 
 variable "evm_wormhole_adapter" {
-    description = "Wormhole adapter on EVM chains: 0x6b2A7bFa5F1C03EbFae779Df6988b8aC14CA4155"
-    value = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 107, 42, 123, 250, 95, 28, 3, 235, 250, 231, 121, 223, 105, 136, 184, 172, 20, 202, 65, 85]
+    description = "Wormhole adapter on EVM chains: 0xeAae496BcDa93cCCd3fD6ff6096347979e87B153"
+    value = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 234, 174, 73, 107, 205, 169, 60, 204, 211, 253, 111, 246, 9, 99, 71, 151, 158, 135, 177, 83]
 }
 
 variable "evm_hyperlane_adapter" {
-    description = "Hyperlane adapter on EVM chains: 0xFc44dadD758A7737aC9200059e9FCd1521d75a07"
-    value = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 252, 68, 218, 221, 117, 138, 119, 55, 172, 146, 0, 5, 158, 159, 205, 21, 33, 215, 90, 7]
+    description = "Hyperlane adapter on EVM chains: 0x408F6E7bDE5634160fda61b945DC9F41B965E406"
+    value = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 143, 110, 123, 222, 86, 52, 22, 15, 218, 97, 185, 69, 220, 159, 65, 185, 101, 228, 6]
 }
 
-variable "peer_address" {
-    description = "Peer address on EVM chains"
-    value = [11, 106, 134, 128, 106, 3, 84, 200, 43, 143, 4, 158, 183, 93, 156, 151,227, 112, 166, 240, 192, 207, 161, 95, 71, 144, 156, 63, 225, 200, 247, 148]
+variable "evm_layerzero_adapter" {
+    description = "LayerZero adapter on EVM chains: 0x5206A69aa6092f7082b2F9F121F516b73233051E"
+    value = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 82, 6, 166, 154, 166, 9,47, 112, 130, 178, 249, 241,33, 245, 22, 183, 50, 51, 5, 30]
 }
 
 action "set_wormhole_peer_ethereum" "svm::process_instructions" {
