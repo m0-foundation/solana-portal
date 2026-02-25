@@ -109,7 +109,11 @@ impl PayloadData {
                 let (amount_bytes, data) = data.split_at(16);
                 let (destination_token_bytes, data) = data.split_at(32);
                 let (sender_bytes, data) = data.split_at(32);
-                let (recipient_bytes, _) = data.split_at(32);
+                let (recipient_bytes, data) = data.split_at(32);
+
+                if !data.is_empty() {
+                    return err!(BridgeError::InvalidPayload);
+                }
 
                 Ok(PayloadData::TokenTransfer(TokenTransferPayload {
                     amount: u128::from_be_bytes(amount_bytes.try_into().unwrap()),
@@ -118,13 +122,22 @@ impl PayloadData {
                     recipient: recipient_bytes.try_into().unwrap(),
                 }))
             }
-            Self::INDEX_DISCRIMINANT => Ok(PayloadData::Index(IndexPayload {})),
+            Self::INDEX_DISCRIMINANT => {
+                if !data.is_empty() {
+                    return err!(BridgeError::InvalidPayload);
+                }
+                Ok(PayloadData::Index(IndexPayload {}))
+            }
             Self::FILL_REPORT_DISCRIMINANT => {
                 let (order_id_bytes, data) = data.split_at(32);
                 let (amount_in_to_release_bytes, data) = data.split_at(16);
                 let (amount_out_filled_bytes, data) = data.split_at(16);
                 let (origin_recipient_bytes, data) = data.split_at(32);
-                let (token_in_bytes, _) = data.split_at(32);
+                let (token_in_bytes, data) = data.split_at(32);
+
+                if !data.is_empty() {
+                    return err!(BridgeError::InvalidPayload);
+                }
 
                 Ok(PayloadData::FillReport(FillReportPayload {
                     order_id: order_id_bytes.try_into().unwrap(),
@@ -139,7 +152,11 @@ impl PayloadData {
                 }))
             }
             Self::EARNER_MERKLE_ROOT_DISCRIMINANT => {
-                let (merkle_root_bytes, _) = data.split_at(32);
+                let (merkle_root_bytes, data) = data.split_at(32);
+
+                if !data.is_empty() {
+                    return err!(BridgeError::InvalidPayload);
+                }
 
                 Ok(PayloadData::EarnerMerkleRoot(EarnerMerkleRootPayload {
                     merkle_root: merkle_root_bytes.try_into().unwrap(),
@@ -149,7 +166,11 @@ impl PayloadData {
                 let (order_id_bytes, data) = data.split_at(32);
                 let (order_sender_bytes, data) = data.split_at(32);
                 let (token_in_bytes, data) = data.split_at(32);
-                let (amount_in_to_refund_bytes, _) = data.split_at(16);
+                let (amount_in_to_refund_bytes, data) = data.split_at(16);
+
+                if !data.is_empty() {
+                    return err!(BridgeError::InvalidPayload);
+                }
 
                 Ok(PayloadData::CancelReport(CancelReportPayload {
                     order_id: order_id_bytes.try_into().unwrap(),
@@ -440,5 +461,32 @@ mod tests {
             }
             _ => panic!("Expected Index payload"),
         }
+    }
+
+    #[test]
+    fn test_extra_bytes_rejected() {
+        let header = PayloadHeader {
+            payload_type: 0,
+            destination_chain_id: 56,
+            destination_peer: [5u8; 32],
+            message_id: [4u8; 32],
+            index: 42,
+        };
+
+        let payload = Payload {
+            header,
+            data: PayloadData::TokenTransfer(TokenTransferPayload {
+                amount: 1000u128,
+                destination_token: [1u8; 32],
+                sender: [2u8; 32],
+                recipient: [3u8; 32],
+            }),
+        };
+
+        let mut encoded = payload.encode();
+        encoded.push(0xFF); // extra byte
+
+        let result = Payload::decode(&encoded);
+        assert!(result.is_err());
     }
 }
