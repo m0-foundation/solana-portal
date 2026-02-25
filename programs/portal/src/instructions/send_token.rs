@@ -36,7 +36,7 @@ pub struct SendToken<'info> {
     pub swap_global: Account<'info, SwapGlobal>,
 
     #[account(
-        seeds = [CHAIN_PATHS_SEED, &destination_chain_id.to_be_bytes()],
+        seeds = [CHAIN_PATHS_SEED, &destination_chain_id.to_le_bytes()],
         bump = chain_paths.bump,
     )]
     pub chain_paths: Account<'info, ChainBridgePaths>,

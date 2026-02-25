@@ -21,7 +21,7 @@ pub struct InitializeBridgePaths<'info> {
         init,
         payer = admin,
         space = ChainBridgePaths::size(0),
-        seeds = [CHAIN_PATHS_SEED, &destination_chain_id.to_be_bytes()],
+        seeds = [CHAIN_PATHS_SEED, &destination_chain_id.to_le_bytes()],
         bump,
     )]
     pub chain_paths: Account<'info, ChainBridgePaths>,
@@ -65,7 +65,7 @@ pub struct AddBridgePaths<'info> {
 
     #[account(
         mut,
-        seeds = [CHAIN_PATHS_SEED, &destination_chain_id.to_be_bytes()],
+        seeds = [CHAIN_PATHS_SEED, &destination_chain_id.to_le_bytes()],
         bump = chain_paths.bump,
         realloc = ChainBridgePaths::size(chain_paths.paths.len() + paths.len()),
         realloc::payer = admin,
@@ -141,7 +141,7 @@ pub struct RemoveBridgePath<'info> {
 
     #[account(
         mut,
-        seeds = [CHAIN_PATHS_SEED, &destination_chain_id.to_be_bytes()],
+        seeds = [CHAIN_PATHS_SEED, &destination_chain_id.to_le_bytes()],
         bump = chain_paths.bump,
         realloc = ChainBridgePaths::size(chain_paths.paths.len().saturating_sub(1)),
         realloc::payer = admin,

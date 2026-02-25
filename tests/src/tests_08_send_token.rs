@@ -108,7 +108,7 @@ impl TestCtx {
 
     fn chain_paths_pda(&self, destination_chain_id: u32) -> Pubkey {
         pda!(
-            &[CHAIN_PATHS_SEED, &destination_chain_id.to_be_bytes()],
+            &[CHAIN_PATHS_SEED, &destination_chain_id.to_le_bytes()],
             &portal::ID
         )
     }

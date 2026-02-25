@@ -122,7 +122,7 @@ fn test_05_bridge_path_config() -> Result<()> {
 
     for chain_id in [1u32, 42161u32] {
         let data = client.get_account_data(&pda!(
-            &[CHAIN_PATHS_SEED, &chain_id.to_be_bytes()],
+            &[CHAIN_PATHS_SEED, &chain_id.to_le_bytes()],
             &portal::ID
         ))?;
         let paths = ChainBridgePaths::try_deserialize(&mut data.as_slice())?;
