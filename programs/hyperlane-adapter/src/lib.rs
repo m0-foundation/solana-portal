@@ -5,12 +5,12 @@ mod instructions;
 pub mod state;
 
 use anchor_lang::prelude::*;
-use m0_portal_common::Peer;
 use consts::{
     HANDLE_ACCOUNT_METAS_DISCRIMINATOR, HANDLE_DISCRIMINATOR, ISM_DISCRIMINATOR,
     ISM_METAS_DISCRIMINATOR,
 };
 use instructions::*;
+use m0_portal_common::Peer;
 
 #[cfg(not(feature = "no-entrypoint"))]
 solana_security_txt::security_txt! {
@@ -20,7 +20,7 @@ solana_security_txt::security_txt! {
     policy: "https://github.com/m0-foundation/solana-portal/blob/main/SECURITY.md",
     preferred_languages: "en",
     source_code: "https://github.com/m0-foundation/solana-portal/tree/main/programs/hyperlane-adapter",
-    auditors: ""
+auditors: "Halborn, Sherlock, Adevar, Guardian"
 }
 
 declare_id!("mZhPGteS36G7FhMTcRofLQU8ocBNAsGq7u8SKSHfL2X");

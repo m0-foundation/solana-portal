@@ -18,7 +18,7 @@ solana_security_txt::security_txt! {
     policy: "https://github.com/m0-foundation/solana-portal/blob/main/SECURITY.md",
     preferred_languages: "en",
     source_code: "https://github.com/m0-foundation/solana-portal/tree/main/programs/wormhole-adapter",
-    auditors: ""
+   auditors: "Halborn, Sherlock, Adevar, Guardian"
 }
 
 declare_id!("mzp1q2j5Hr1QuLC3KFBCAUz5aUckT6qyuZKZ3WJnMmY");
