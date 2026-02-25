@@ -1,13 +1,19 @@
 use anchor_lang::solana_program::program::{invoke, invoke_signed};
+use anchor_lang::solana_program::sysvar::SysvarId;
 use anchor_lang::{prelude::*, system_program};
 use anchor_spl::associated_token::{self, get_associated_token_address_with_program_id};
 use anchor_spl::{token, token_2022};
 use m0_portal_common::portal::accounts::PortalGlobal;
+use m0_portal_common::wormhole_adapter::constants::EMITTER_SEED;
 use m0_portal_common::{earn, ext_swap, pda, portal, wormhole_verify_vaa_shim};
 use solana_address_lookup_table_interface::instruction::{
     create_lookup_table, extend_lookup_table,
 };
 
+use crate::consts::{
+    CORE_BRIDGE_CONFIG, CORE_BRIDGE_FEE_COLLECTOR, CORE_BRIDGE_PROGRAM_ID, EVENT_AUTHORITY_SEED,
+    SEQUENCE_SEED,
+};
 use crate::{
     consts::AUTHORITY_SEED,
     state::{WormholeGlobal, GLOBAL_SEED},
@@ -76,6 +82,8 @@ impl SetLookupTable<'_> {
             &token_2022::ID,
         );
 
+        let emitter = pda!(&[EMITTER_SEED], &crate::ID);
+
         let ix = extend_lookup_table(
             ctx.accounts.lut_address.key(),
             ctx.accounts.wormhole_global.key(),
@@ -88,15 +96,24 @@ impl SetLookupTable<'_> {
                 pda!(&[AUTHORITY_SEED], &crate::ID),
                 pda!(&[AUTHORITY_SEED], &portal::ID),
                 portal::ID,
-                wormhole_verify_vaa_shim::ID,
-                system_program::ID,
+                crate::ID,
+                earn::ID,
                 ext_swap::ID,
+                wormhole_verify_vaa_shim::ID,
+                emitter,
+                pda!(&[SEQUENCE_SEED, emitter.as_ref()], &CORE_BRIDGE_PROGRAM_ID),
+                pda!(&[EVENT_AUTHORITY_SEED], &wormhole_verify_vaa_shim::ID),
+                pda!(&[emitter.as_ref()], &wormhole_verify_vaa_shim::ID),
                 ctx.accounts.portal_global.m_mint,
                 authority_m_token_account,
                 token::ID,
                 token_2022::ID,
                 system_program::ID,
                 associated_token::ID,
+                Clock::id(),
+                CORE_BRIDGE_CONFIG,
+                CORE_BRIDGE_FEE_COLLECTOR,
+                CORE_BRIDGE_PROGRAM_ID,
             ],
         );
 
