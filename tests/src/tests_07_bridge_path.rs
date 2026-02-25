@@ -19,7 +19,7 @@ fn test_01_add_path() -> Result<()> {
     assert!(!logs.contains("error"), "Set path failed: {}", logs);
 
     let client = get_rpc_client();
-    let chain_id = 1u32.to_be_bytes();
+    let chain_id = 1u32.to_le_bytes();
     let data = client.get_account_data(&pda!(&[CHAIN_PATHS_SEED, &chain_id], &portal::ID))?;
     let paths = ChainBridgePaths::try_deserialize(&mut data.as_slice())?;
 
@@ -39,7 +39,7 @@ fn test_01_add_path() -> Result<()> {
 #[test]
 fn test_02_path_other_chain() -> Result<()> {
     let program = portal_program();
-    let chain_id = 42161u32.to_be_bytes();
+    let chain_id = 42161u32.to_le_bytes();
 
     program
         .request()
@@ -94,7 +94,7 @@ fn test_03_path_already_exists() -> Result<()> {
 #[test]
 fn test_04_add_second_bridge_path() -> Result<()> {
     let program = portal_program();
-    let chain_id = 1u32.to_be_bytes();
+    let chain_id = 1u32.to_le_bytes();
 
     program
         .request()
@@ -145,7 +145,7 @@ fn test_05_remove_bridge_path_success() -> Result<()> {
         .accounts(portal_accounts::RemoveBridgePath {
             admin: program.payer(),
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
-            chain_paths: pda!(&[CHAIN_PATHS_SEED, &chain_id.to_be_bytes()], &portal::ID),
+            chain_paths: pda!(&[CHAIN_PATHS_SEED, &chain_id.to_le_bytes()], &portal::ID),
             system_program: system_program::ID,
         })
         .args(portal_instruction::RemoveBridgePath {
@@ -163,7 +163,7 @@ fn test_05_remove_bridge_path_success() -> Result<()> {
 
     // Verify the path was removed
     let client = get_rpc_client();
-    let chain_id = 1u32.to_be_bytes();
+    let chain_id = 1u32.to_le_bytes();
     let data = client.get_account_data(&pda!(&[CHAIN_PATHS_SEED, &chain_id], &portal::ID))?;
     let paths = ChainBridgePaths::try_deserialize(&mut data.as_slice())?;
 
@@ -193,7 +193,7 @@ fn test_06_remove_bridge_path_not_found() -> Result<()> {
             admin: program.payer(),
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
             chain_paths: pda!(
-                &[CHAIN_PATHS_SEED, &destination_chain_id.to_be_bytes()],
+                &[CHAIN_PATHS_SEED, &destination_chain_id.to_le_bytes()],
                 &portal::ID
             ),
             system_program: system_program::ID,

@@ -136,7 +136,7 @@ impl HyperlaneRemainingAccounts {
                 &user_global
                     .map(|g| g.nonce)
                     .unwrap_or_default()
-                    .to_be_bytes()
+                    .to_le_bytes()
             ],
             &hyperlane_adapter::ID
         );
