@@ -16,6 +16,12 @@ pub enum BridgeAdapter {
     Wormhole,
 }
 
+#[derive(Clone, Copy, ValueEnum, Debug)]
+pub enum Network {
+    Devnet,
+    Mainnet,
+}
+
 #[derive(Subcommand)]
 enum Commands {
     SendIndex {
@@ -26,6 +32,8 @@ enum Commands {
     SendEvmIndex {
         #[arg(short, long, value_enum, default_value = "hyperlane")]
         adapter: BridgeAdapter,
+        #[arg(short, long, value_enum, env = "NETWORK", default_value = "devnet")]
+        network: Network,
     },
     SendToken {
         amount: u64,
@@ -39,6 +47,8 @@ enum Commands {
         recipient: String,
         #[arg(short, long, value_enum, default_value = "hyperlane")]
         adapter: BridgeAdapter,
+        #[arg(short, long, value_enum, env = "NETWORK", default_value = "devnet")]
+        network: Network,
     },
 }
 
@@ -53,8 +63,8 @@ async fn main() -> Result<()> {
         } => {
             commands::send_index(destination_chain_id, adapter).await?;
         }
-        Commands::SendEvmIndex { adapter } => {
-            commands::send_evm_index(adapter).await?;
+        Commands::SendEvmIndex { adapter, network } => {
+            commands::send_evm_index(adapter, network).await?;
         }
         Commands::SendToken {
             amount,
@@ -68,8 +78,9 @@ async fn main() -> Result<()> {
             amount,
             recipient,
             adapter,
+            network,
         } => {
-            commands::send_evm_token(amount, recipient, adapter).await?;
+            commands::send_evm_token(amount, recipient, adapter, network).await?;
         }
     }
 

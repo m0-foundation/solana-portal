@@ -8,25 +8,32 @@ use anyhow::{Context, Result};
 
 use crate::{
     commands::common::parse_recipient,
-    types::evm::{address_to_bytes32, Portal, PAYLOAD_TYPE_TOKEN_TRANSFER, SOLANA_CHAIN_ID},
-    BridgeAdapter,
+    types::evm::{address_to_bytes32, Portal, PAYLOAD_TYPE_TOKEN_TRANSFER},
+    BridgeAdapter, Network,
 };
 
 use super::evm_common::{
     create_provider, get_adapter_address, get_adapter_args_and_value, get_adapter_name,
-    get_portal_address, load_private_key, send_and_confirm_transaction,
+    get_portal_address, load_private_key, send_and_confirm_transaction, NetworkConfig,
 };
 
-/// Send token transfer from Sepolia to Solana via the Portal contract
-pub async fn send_evm_token(amount: u128, recipient: String, adapter: BridgeAdapter) -> Result<()> {
-    println!("Using adapter: {}", get_adapter_name(adapter));
+/// Send token transfer from EVM to Solana via the Portal contract
+pub async fn send_evm_token(
+    amount: u128,
+    recipient: String,
+    adapter: BridgeAdapter,
+    network: Network,
+) -> Result<()> {
+    let config = NetworkConfig::from_network(network)?;
+    println!("Network: {}", config.network_label);
+    println!("Using adapter: {}", get_adapter_name(adapter, &config));
     println!("Sending {} tokens to Solana", amount);
 
     // Load private key and create provider
     let signer = load_private_key()
         .context("Failed to load private key. Make sure PRIVATE_KEY env var is set")?;
     let sender_address = signer.address();
-    let provider = create_provider(signer)?;
+    let provider = create_provider(signer, &config)?;
 
     // Get addresses
     let contract_address = get_portal_address()?;
@@ -49,6 +56,7 @@ pub async fn send_evm_token(amount: u128, recipient: String, adapter: BridgeAdap
         contract_address,
         adapter_address,
         PAYLOAD_TYPE_TOKEN_TRANSFER,
+        &config,
     )
     .await?;
 
@@ -56,7 +64,7 @@ pub async fn send_evm_token(amount: u128, recipient: String, adapter: BridgeAdap
     let call = Portal::sendTokenCall {
         amount: U256::from(amount),
         sourceToken: source_token_address,
-        destinationChainId: SOLANA_CHAIN_ID,
+        destinationChainId: config.solana_chain_id,
         destinationToken: FixedBytes::from(destination_token_bytes),
         recipient: FixedBytes::from(recipient_bytes),
         refundAddress: FixedBytes::from(refund_address),
