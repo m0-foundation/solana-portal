@@ -44,10 +44,8 @@ send_token_evm:
 	export PRIVATE_KEY=$$(op read "op://Solana Dev/Ethereum Test Wallet/Wallet/key") \
 	cd cli && cargo run send-evm-token $(AMOUNT) D76ySoHPwD8U2nnTTDqXeUJQg5UkD9UD1PUE1rnvPAGm --adapter $(ADAPTER)
 
-# Usage: make create-hyperlane-lut-testnet
 create-hyperlane-lut-testnet:
 	cd cli && cargo run -- create-hyperlane-lut --network testnet
 
-# Usage: make create-hyperlane-lut-mainnet
 create-hyperlane-lut-mainnet:
 	cd cli && cargo run -- create-hyperlane-lut  --network mainnet
