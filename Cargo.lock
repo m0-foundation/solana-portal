@@ -9741,6 +9741,7 @@ dependencies = [
  "cfg-if",
  "m0-portal-common",
  "solana-address-lookup-table-interface",
+ "solana-compute-budget-interface",
  "solana-security-txt",
  "wormhole-svm-definitions",
 ]

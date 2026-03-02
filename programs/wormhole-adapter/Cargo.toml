@@ -34,6 +34,7 @@ wormhole-svm-definitions = { git = "https://github.com/wormhole-foundation/wormh
 ] }
 solana-security-txt.workspace = true
 solana-address-lookup-table-interface = "2.2.2"
+solana-compute-budget-interface = "2.2.2"
 
 [dev-dependencies]
 base64 = "0.22.1"

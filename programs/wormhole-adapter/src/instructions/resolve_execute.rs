@@ -1,6 +1,7 @@
 use anchor_lang::{
-    prelude::*, solana_program::entrypoint::MAX_PERMITTED_DATA_INCREASE, system_program,
-    InstructionData,
+    prelude::*,
+    solana_program::{entrypoint::MAX_PERMITTED_DATA_INCREASE, instruction::Instruction},
+    system_program, InstructionData,
 };
 use anchor_spl::{
     associated_token::spl_associated_token_account::solana_program::system_instruction::MAX_PERMITTED_DATA_LENGTH,
@@ -13,6 +14,7 @@ use m0_portal_common::{
     portal::{self, constants::MESSAGE_SEED},
     require_metas, wormhole_verify_vaa_shim, BridgeError, Extension,
 };
+use solana_compute_budget_interface::ComputeBudgetInstruction;
 use wormhole_svm_definitions::{zero_copy::GuardianSet, GUARDIAN_SET_SEED};
 
 use crate::{
@@ -223,9 +225,22 @@ impl ResolveExecuteVaa {
         let mut luts = vec![];
         luts.extend(wormhole_global.receive_lut);
 
+        // Increase compute budget
+        let compute_budget_ix: Instruction =
+            ComputeBudgetInstruction::set_compute_unit_limit(300_000).into();
+        let compute_budget_ix = SerializableInstruction {
+            program_id: compute_budget_ix.program_id,
+            accounts: compute_budget_ix
+                .accounts
+                .into_iter()
+                .map(|a| a.into())
+                .collect(),
+            data: compute_budget_ix.data,
+        };
+
         ret.set_inner(ExecutorAccountResolverResult(Resolver::Resolved(
             InstructionGroups(vec![InstructionGroup {
-                instructions: vec![receive_message_ix],
+                instructions: vec![compute_budget_ix, receive_message_ix],
                 address_lookup_tables: luts,
             }]),
         )));
