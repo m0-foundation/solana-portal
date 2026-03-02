@@ -227,7 +227,7 @@ impl ResolveExecuteVaa {
 
         // Increase compute budget
         let compute_budget_ix: Instruction =
-            ComputeBudgetInstruction::set_compute_unit_limit(300_000).into();
+            ComputeBudgetInstruction::set_compute_unit_limit(400_000).into();
         let compute_budget_ix = SerializableInstruction {
             program_id: compute_budget_ix.program_id,
             accounts: compute_budget_ix
