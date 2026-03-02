@@ -9,12 +9,12 @@ use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::instruction::AccountMeta;
 use solana_sdk::signer::Signer;
 
-use crate::{types::calculate_instruction_discriminator, BridgeAdapter};
+use crate::{types::calculate_instruction_discriminator, BridgeAdapter, Network};
 
 use super::common::{get_rpc_config, load_keypair, send_via_hyperlane, send_via_wormhole};
 
-pub async fn send_index(destination_chain_id: u32, adapter: BridgeAdapter) -> Result<()> {
-    let (rpc_url, adapter_name) = get_rpc_config(adapter);
+pub async fn send_index(destination_chain_id: u32, adapter: BridgeAdapter, network: Network) -> Result<()> {
+    let (rpc_url, adapter_name) = get_rpc_config(adapter, network);
 
     println!("Using adapter: {}", adapter_name);
 

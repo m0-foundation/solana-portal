@@ -14,7 +14,7 @@ use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signer::Signer;
 use std::str::FromStr;
 
-use crate::{types::calculate_instruction_discriminator, BridgeAdapter};
+use crate::{types::calculate_instruction_discriminator, BridgeAdapter, Network};
 
 use super::common::{
     get_associated_token_address, get_rpc_config, load_keypair, parse_recipient,
@@ -27,8 +27,9 @@ pub async fn send_token(
     destination_chain_id: u32,
     recipient: String,
     adapter: BridgeAdapter,
+    network: Network,
 ) -> Result<()> {
-    let (rpc_url, adapter_name) = get_rpc_config(adapter);
+    let (rpc_url, adapter_name) = get_rpc_config(adapter, network);
 
     println!("Using adapter: {}", adapter_name);
     println!(

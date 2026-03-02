@@ -1,4 +1,4 @@
-use crate::BridgeAdapter;
+use crate::{BridgeAdapter, Network};
 use anchor_lang::AccountDeserialize;
 use anyhow::{Context, Result};
 use m0_portal_common::{
@@ -39,12 +39,29 @@ pub const PEER_PORTAL: [u8; 32] = [
     9, 99, 71, 151, 158, 135, 177, 83,
 ];
 
-/// Get RPC URL and adapter name for the given bridge adapter
-pub fn get_rpc_config(adapter: BridgeAdapter) -> (String, &'static str) {
-    match adapter {
-        BridgeAdapter::Hyperlane => (get_testnet_rpc_url(), "Hyperlane (testnet)"),
-        BridgeAdapter::Wormhole => (get_devnet_rpc_url(), "Wormhole (devnet)"),
-    }
+/// Get RPC URL and adapter name for the given bridge adapter and network
+pub fn get_rpc_config(adapter: BridgeAdapter, network: Network) -> (String, String) {
+    let rpc_url = match network {
+        Network::Devnet => get_devnet_rpc_url(),
+        Network::Mainnet => get_mainnet_rpc_url(),
+    };
+
+    let network_name = match network {
+        Network::Devnet => "devnet",
+        Network::Mainnet => "mainnet",
+    };
+
+    let adapter_name = match adapter {
+        BridgeAdapter::Hyperlane => format!("Hyperlane ({})", network_name),
+        BridgeAdapter::Wormhole => format!("Wormhole ({})", network_name),
+    };
+
+    (rpc_url, adapter_name)
+}
+
+/// Get devnet RPC URL from DEVNET_RPC_URL env var, or use default
+pub fn get_devnet_rpc_url() -> String {
+    std::env::var("DEVNET_RPC_URL").unwrap_or_else(|_| "https://api.devnet.solana.com".to_string())
 }
 
 /// Get testnet RPC URL from TESTNET_RPC_URL env var, or use default
@@ -53,9 +70,10 @@ pub fn get_testnet_rpc_url() -> String {
         .unwrap_or_else(|_| "https://api.testnet.solana.com".to_string())
 }
 
-/// Get devnet RPC URL from DEVNET_RPC_URL env var, or use default
-pub fn get_devnet_rpc_url() -> String {
-    std::env::var("DEVNET_RPC_URL").unwrap_or_else(|_| "https://api.devnet.solana.com".to_string())
+/// Get mainnet RPC URL from MAINNET_RPC_URL env var, or use default
+pub fn get_mainnet_rpc_url() -> String {
+    std::env::var("MAINNET_RPC_URL")
+        .unwrap_or_else(|_| "https://api.mainnet-beta.solana.com".to_string())
 }
 
 /// Load keypair from the default Solana config location
