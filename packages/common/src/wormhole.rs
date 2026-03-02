@@ -18,7 +18,8 @@ pub const SOLANA_WORMHOLE_CHAIN_ID: u16 = 1;
 pub const DEFAULT_GAS_LIMIT: u128 = 250_000;
 pub const DEFAULT_MSG_VALUE: u128 = 15_000_000;
 const EXECUTOR_PROGRAM_ID: Pubkey = pubkey!("execXUrAsMnqMmTHj5m7N1YQgsDz3cwGLYCYyuDRciV");
-const EXECUTOR_QUOTE_API_URL: &str = "https://executor-testnet.labsapis.com/v0/quote";
+const EXECUTOR_QUOTE_API_URL_DEVNET: &str = "https://executor-testnet.labsapis.com/v0/quote";
+const EXECUTOR_QUOTE_API_URL: &str = "https://executor.labsapis.com/v0/quote";
 const GAS_INSTRUCTION_DISCRIMINANT: u8 = 1;
 const REQ_VAA_V1: &[u8; 4] = b"ERV1";
 
@@ -49,6 +50,7 @@ pub async fn build_relay_instruction(
     peer_portal: &[u8; 32],
     gas_limit: Option<u128>,
     msg_value: Option<u128>,
+    devnet: bool,
 ) -> std::result::Result<Instruction, ExecutorQuoteError> {
     let gas_limit = gas_limit.unwrap_or(DEFAULT_GAS_LIMIT);
     let msg_value = msg_value.unwrap_or(DEFAULT_MSG_VALUE);
@@ -58,6 +60,7 @@ pub async fn build_relay_instruction(
         SOLANA_WORMHOLE_CHAIN_ID,
         destination_chain,
         &relay_instructions,
+        devnet,
     )
     .await?;
 
@@ -240,6 +243,7 @@ async fn fetch_executor_quote(
     src_chain: u16,
     dst_chain: u16,
     relay_instructions: &RelayInstructions,
+    devnet: bool,
 ) -> std::result::Result<QuoteResponse, ExecutorQuoteError> {
     let request = QuoteRequest {
         src_chain,
@@ -248,7 +252,11 @@ async fn fetch_executor_quote(
     };
 
     let response_text = reqwest::Client::new()
-        .post(EXECUTOR_QUOTE_API_URL)
+        .post(if devnet {
+            EXECUTOR_QUOTE_API_URL_DEVNET
+        } else {
+            EXECUTOR_QUOTE_API_URL
+        })
         .json(&request)
         .send()
         .await

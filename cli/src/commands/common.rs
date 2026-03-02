@@ -64,12 +64,6 @@ pub fn get_devnet_rpc_url() -> String {
     std::env::var("DEVNET_RPC_URL").unwrap_or_else(|_| "https://api.devnet.solana.com".to_string())
 }
 
-/// Get testnet RPC URL from TESTNET_RPC_URL env var, or use default
-pub fn get_testnet_rpc_url() -> String {
-    std::env::var("TESTNET_RPC_URL")
-        .unwrap_or_else(|_| "https://api.testnet.solana.com".to_string())
-}
-
 /// Get mainnet RPC URL from MAINNET_RPC_URL env var, or use default
 pub fn get_mainnet_rpc_url() -> String {
     std::env::var("MAINNET_RPC_URL")
@@ -200,11 +194,12 @@ pub async fn send_via_wormhole(
     accounts: Vec<AccountMeta>,
     instruction_data: Vec<u8>,
     destination_chain_id: u32,
+    devnet: bool,
 ) -> Result<solana_sdk::signature::Signature> {
     let mut all_accounts = accounts;
 
     // Get and append Wormhole remaining accounts
-    let wormhole_accounts = WormholeRemainingAccounts::account_metas(true);
+    let wormhole_accounts = WormholeRemainingAccounts::account_metas(devnet);
     all_accounts.extend(wormhole_accounts);
 
     let send_ix = SolanaInstruction {
@@ -214,7 +209,7 @@ pub async fn send_via_wormhole(
     };
 
     // Build the relay instruction
-    let current_sequence = get_current_sequence(rpc_client, true)
+    let current_sequence = get_current_sequence(rpc_client, devnet)
         .await
         .expect("Failed to get current sequence");
 
@@ -227,6 +222,7 @@ pub async fn send_via_wormhole(
         &PEER_PORTAL,
         Some(350_000),
         Some(25_000_000),
+        devnet,
     )
     .await?;
 

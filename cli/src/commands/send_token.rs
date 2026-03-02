@@ -116,6 +116,7 @@ pub async fn send_token(
                 accounts,
                 instruction_data,
                 destination_chain_id,
+                network == Network::Devnet,
             )
             .await?
         }

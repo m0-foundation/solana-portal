@@ -1,4 +1,4 @@
-.PHONY: test build test-verbose send_token_svm send_token_evm docker-build docker-push
+.PHONY: test build test-verbose send_token_svm send_token_evm send_index_svm send_index_evm docker-build docker-push
 
 test:
 	anchor build -- --features skip-validation
@@ -33,16 +33,27 @@ publish-common:
 	cargo build && \
 	cargo publish --allow-dirty
 
-# Usage: make send_token_svm AMOUNT=1000 ADAPTER=hyperlane
+# Usage: make send_token_svm AMOUNT=1000 ADAPTER=wormhole
 send_token_svm:
 	export DEVNET_RPC_URL=$$(op read "op://Solana Dev/Helius/dev rpc") \
 	cd cli && cargo run send-token $(AMOUNT) 11155111 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217 --adapter $(ADAPTER)
 
-# Usage: make send_token_evm AMOUNT=1000 ADAPTER=hyperlane
+# Usage: make send_token_evm AMOUNT=1000 ADAPTER=wormhole
 send_token_evm:
 	export SEPOLIA_RPC_URL=$$(op read "op://Solana Dev/Alchemy/sepolia") \
 	export PRIVATE_KEY=$$(op read "op://Solana Dev/Ethereum Test Wallet/Wallet/key") \
 	cd cli && cargo run send-evm-token $(AMOUNT) D76ySoHPwD8U2nnTTDqXeUJQg5UkD9UD1PUE1rnvPAGm --adapter $(ADAPTER)
+
+# Usage: make send_index_svm CHAIN_ID=1 ADAPTER=wormhole
+send_index_svm:
+	export MAINNET_RPC_URL=$$(op read "op://Solana Dev/Helius/prod rpc") \
+	cd cli && cargo run send-index $(CHAIN_ID) --adapter $(ADAPTER) --network mainnet
+
+# Usage: make send_index_evm ADAPTER=wormhole
+send_index_evm:
+	export EVM_RPC_URL=$$(op read "op://Solana Dev/Alchemy/mainnet") \
+	export EVM_KEY=$$(op read "op://Solana Dev/Ethereum Test Wallet/Wallet/key") \
+	cd cli && cargo run send-evm-index --adapter $(ADAPTER) --network mainnet
 
 # service for pushing index updates
 push-index-update-image:

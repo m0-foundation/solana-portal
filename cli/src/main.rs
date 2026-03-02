@@ -16,7 +16,7 @@ pub enum BridgeAdapter {
     Wormhole,
 }
 
-#[derive(Clone, Copy, ValueEnum, Debug)]
+#[derive(Clone, Copy, ValueEnum, Debug, PartialEq, Eq)]
 pub enum Network {
     Devnet,
     Mainnet,

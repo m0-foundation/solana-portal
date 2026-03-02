@@ -13,7 +13,11 @@ use crate::{types::calculate_instruction_discriminator, BridgeAdapter, Network};
 
 use super::common::{get_rpc_config, load_keypair, send_via_hyperlane, send_via_wormhole};
 
-pub async fn send_index(destination_chain_id: u32, adapter: BridgeAdapter, network: Network) -> Result<()> {
+pub async fn send_index(
+    destination_chain_id: u32,
+    adapter: BridgeAdapter,
+    network: Network,
+) -> Result<()> {
     let (rpc_url, adapter_name) = get_rpc_config(adapter, network);
 
     println!("Using adapter: {}", adapter_name);
@@ -53,6 +57,7 @@ pub async fn send_index(destination_chain_id: u32, adapter: BridgeAdapter, netwo
                 accounts,
                 instruction_data,
                 destination_chain_id,
+                network == Network::Devnet,
             )
             .await?
         }
