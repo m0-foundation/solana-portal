@@ -26,7 +26,7 @@ use solana_sdk::{
 };
 use std::str::FromStr;
 
-// Token addresses (testnet/devnet)
+// Token addresses
 pub const M_MINT: &str = "mzerojk9tg56ebsrEAhfkyc9VgKjTW2zDqp6C5mhjzH";
 pub const EXTENSION_MINT: &str = "mzeroXDoBpRVhnEXBra27qzAMdxgpWVY3DzQW7xMVJp";
 pub const EXTENSION_PROGRAM: &str = "wMXX1K1nca5W4pZr1piETe78gcAVVrEFi9f4g46uXko";
@@ -34,7 +34,7 @@ pub const TOKEN_2022_PROGRAM_ID: &str = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpP
 pub const ASSOCIATED_TOKEN_PROGRAM_ID: &str = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
 
 // Wormhole peer portal address
-pub const PEER_PORTAL: [u8; 32] = [
+pub const WORMHOLE_PEER_PORTAL: [u8; 32] = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 234, 174, 73, 107, 205, 169, 60, 204, 211, 253, 111, 246,
     9, 99, 71, 151, 158, 135, 177, 83,
 ];
@@ -219,7 +219,7 @@ pub async fn send_via_wormhole(
         &payer.pubkey(),
         get_wormhole_chain_id(destination_chain_id).unwrap(),
         current_sequence,
-        &PEER_PORTAL,
+        &WORMHOLE_PEER_PORTAL,
         Some(350_000),
         Some(25_000_000),
         devnet,
@@ -233,6 +233,7 @@ pub async fn send_via_wormhole(
         rpc_client,
         vec![compute_budget_ix, send_ix, relay_ix],
         payer,
+        devnet,
     )
     .await?;
 
@@ -248,6 +249,7 @@ pub async fn build_versioned_tx_with_lut(
     rpc: &RpcClient,
     instructions: Vec<solana_sdk::instruction::Instruction>,
     signer: &Keypair,
+    devnet: bool,
 ) -> Result<VersionedTransaction> {
     let data_wh = rpc
         .get_account_data(&pda!(&[GLOBAL_SEED], &wormhole_adapter::ID))
@@ -267,8 +269,12 @@ pub async fn build_versioned_tx_with_lut(
             .to_vec(),
     };
 
-    let swap_lut_account =
-        Pubkey::from_str("6GhuWPuAmiJeeSVsr58KjqHcAejJRndCx9BVtHkaYHUR").unwrap();
+    let swap_lut_account = Pubkey::from_str(if devnet {
+        "6GhuWPuAmiJeeSVsr58KjqHcAejJRndCx9BVtHkaYHUR"
+    } else {
+        "6XLVt26ySCh55HEvBemM9k7FYLLzwi8SUJDV17t8oCQR"
+    })
+    .unwrap();
 
     let swap_lut = AddressLookupTableAccount {
         key: swap_lut_account,
