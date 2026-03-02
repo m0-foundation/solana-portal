@@ -20,7 +20,7 @@ build-devnet:
 
 build-testnet:
 	anchor build -p hyperlane_adapter -- --features testnet --no-default-features
-	anchor build -p portal
+	anchor build -p portal -- --features testnet --no-default-features
 
 build-mainnet:
 	anchor build --verifiable  -- --features mainnet --no-default-features
