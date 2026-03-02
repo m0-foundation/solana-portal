@@ -78,7 +78,7 @@ pub struct WormholeQuote {
     pub estimated_cost: U256,
 }
 
-/// Load private key from PRIVATEEVM_KEY_KEY environment variable
+/// Load private key from EVM_KEY environment variable
 pub fn load_private_key() -> Result<PrivateKeySigner> {
     let private_key = std::env::var("EVM_KEY").context("EVM_KEY environment variable not set")?;
 
