@@ -44,11 +44,13 @@ pub fn get_rpc_config(adapter: BridgeAdapter, network: Network) -> (String, Stri
     let rpc_url = match network {
         Network::Devnet => get_devnet_rpc_url(),
         Network::Mainnet => get_mainnet_rpc_url(),
+        Network::Testnet => "https://api.testnet.solana.com".to_string(),
     };
 
     let network_name = match network {
         Network::Devnet => "devnet",
         Network::Mainnet => "mainnet",
+        Network::Testnet => "testnet",
     };
 
     let adapter_name = match adapter {

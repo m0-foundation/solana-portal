@@ -1,8 +1,5 @@
 use alloy::{
-    primitives::FixedBytes,
-    providers::Provider,
-    rpc::types::TransactionRequest,
-    sol_types::SolCall,
+    primitives::FixedBytes, providers::Provider, rpc::types::TransactionRequest, sol_types::SolCall,
 };
 use anyhow::{Context, Result};
 
@@ -20,7 +17,7 @@ use super::evm_common::{
 pub async fn send_evm_index(adapter: BridgeAdapter, network: Network) -> Result<()> {
     let config = NetworkConfig::from_network(network)?;
     println!("Network: {}", config.network_label);
-    println!("Using adapter: {}", get_adapter_name(adapter, &config));
+    println!("Using adapter: {}", get_adapter_name(adapter));
 
     // Load private key and create provider
     let signer = load_private_key()

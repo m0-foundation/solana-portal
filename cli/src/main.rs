@@ -20,6 +20,7 @@ pub enum BridgeAdapter {
 pub enum Network {
     Devnet,
     Mainnet,
+    Testnet,
 }
 
 #[derive(Subcommand)]

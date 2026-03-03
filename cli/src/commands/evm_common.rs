@@ -12,9 +12,7 @@ use m0_portal_common::{DEFAULT_GAS_LIMIT, DEFAULT_MSG_VALUE, SOLANA_WORMHOLE_CHA
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    types::evm::{
-        Portal, SEPOLIA_HYPERLANE_ADAPTER, SEPOLIA_PORTAL_CONTRACT, SEPOLIA_WORMHOLE_ADAPTER,
-    },
+    types::evm::{Portal, EVM_HYPERLANE_ADAPTER, EVM_PORTAL_CONTRACT, EVM_WORMHOLE_ADAPTER},
     BridgeAdapter, Network,
 };
 
@@ -32,7 +30,7 @@ pub struct NetworkConfig {
 impl NetworkConfig {
     pub fn from_network(network: Network) -> anyhow::Result<Self> {
         match network {
-            Network::Devnet => Ok(Self {
+            Network::Devnet | Network::Testnet => Ok(Self {
                 rpc_url: std::env::var("EVM_RPC_URL")
                     .unwrap_or_else(|_| "https://sepolia.gateway.tenderly.co".to_string()),
                 wormhole_source_chain_id: 10002,
@@ -104,7 +102,7 @@ pub fn create_provider(
 
 /// Get the portal contract address
 pub fn get_portal_address() -> Result<Address> {
-    SEPOLIA_PORTAL_CONTRACT
+    EVM_PORTAL_CONTRACT
         .parse::<Address>()
         .context("Failed to parse portal contract address")
 }
@@ -112,8 +110,8 @@ pub fn get_portal_address() -> Result<Address> {
 /// Get adapter address based on bridge selection
 pub fn get_adapter_address(adapter: BridgeAdapter) -> Result<Address> {
     let addr_str = match adapter {
-        BridgeAdapter::Hyperlane => SEPOLIA_HYPERLANE_ADAPTER,
-        BridgeAdapter::Wormhole => SEPOLIA_WORMHOLE_ADAPTER,
+        BridgeAdapter::Hyperlane => EVM_HYPERLANE_ADAPTER,
+        BridgeAdapter::Wormhole => EVM_WORMHOLE_ADAPTER,
     };
     addr_str
         .parse::<Address>()
@@ -121,12 +119,11 @@ pub fn get_adapter_address(adapter: BridgeAdapter) -> Result<Address> {
 }
 
 /// Get adapter name for display
-pub fn get_adapter_name(adapter: BridgeAdapter, config: &NetworkConfig) -> String {
-    let adapter_name = match adapter {
-        BridgeAdapter::Hyperlane => "Hyperlane",
-        BridgeAdapter::Wormhole => "Wormhole",
-    };
-    format!("{} ({})", adapter_name, config.network_label)
+pub fn get_adapter_name(adapter: BridgeAdapter) -> String {
+    match adapter {
+        BridgeAdapter::Hyperlane => "Hyperlane".to_string(),
+        BridgeAdapter::Wormhole => "Wormhole".to_string(),
+    }
 }
 
 /// Estimate gas fee by calling the quote function

@@ -2,13 +2,13 @@ use alloy::{
     primitives::{Address, FixedBytes, U256},
     providers::Provider,
     rpc::types::TransactionRequest,
-    sol_types::SolCall,
+    sol_types::{SolCall, SolValue},
 };
 use anyhow::{Context, Result};
 
 use crate::{
     commands::common::parse_recipient,
-    types::evm::{address_to_bytes32, Portal, PAYLOAD_TYPE_TOKEN_TRANSFER},
+    types::evm::{address_to_bytes32, Erc20, Portal, PAYLOAD_TYPE_TOKEN_TRANSFER},
     BridgeAdapter, Network,
 };
 
@@ -26,7 +26,7 @@ pub async fn send_evm_token(
 ) -> Result<()> {
     let config = NetworkConfig::from_network(network)?;
     println!("Network: {}", config.network_label);
-    println!("Using adapter: {}", get_adapter_name(adapter, &config));
+    println!("Using adapter: {}", get_adapter_name(adapter));
     println!("Sending {} tokens to Solana", amount);
 
     // Load private key and create provider
@@ -48,6 +48,35 @@ pub async fn send_evm_token(
     // Parse recipient (Solana address as bytes32)
     let recipient_bytes = parse_recipient(&recipient)?;
     println!("Recipient: 0x{}", hex::encode(recipient_bytes));
+
+    // Check allowance and approve if needed
+    let amount_u256 = U256::from(amount);
+    let allowance_call = Erc20::allowanceCall {
+        owner: sender_address,
+        spender: contract_address,
+    };
+    let allowance_tx = TransactionRequest::default()
+        .to(source_token_address)
+        .input(allowance_call.abi_encode().into());
+    let allowance_result = provider
+        .call(&allowance_tx)
+        .await
+        .context("Failed to check token allowance")?;
+    let current_allowance =
+        U256::abi_decode(&allowance_result, true).context("Failed to decode allowance")?;
+
+    if current_allowance < amount_u256 {
+        println!("Approving Portal contract to spend {} tokens...", amount);
+        let approve_call = Erc20::approveCall {
+            spender: contract_address,
+            amount: amount_u256,
+        };
+        let approve_tx = TransactionRequest::default()
+            .to(source_token_address)
+            .input(approve_call.abi_encode().into());
+        let approve_hash = send_and_confirm_transaction(&provider, approve_tx).await?;
+        println!("Approval confirmed: {:#x}", approve_hash);
+    }
 
     // Get adapter args and transaction value
     let (adapter_args, tx_value) = get_adapter_args_and_value(
