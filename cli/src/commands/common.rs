@@ -35,8 +35,8 @@ pub const ASSOCIATED_TOKEN_PROGRAM_ID: &str = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25e
 
 // Wormhole peer portal address
 pub const PEER_PORTAL: [u8; 32] = [
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 234, 174, 73, 107, 205, 169, 60, 204, 211, 253, 111, 246,
-    9, 99, 71, 151, 158, 135, 177, 83,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 172, 255, 236, 40, 196, 238, 226, 28, 136, 154, 78, 108, 7,
+    4, 197, 64, 237, 157, 79, 221,
 ];
 
 /// Get RPC URL and adapter name for the given bridge adapter
