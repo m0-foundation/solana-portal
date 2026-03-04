@@ -211,7 +211,7 @@ pub async fn relay_message(vaa_id: String, rpc_url: Option<String>, testnet: boo
         instructions,
         &lut_keys,
         &payer,
-        Some(&guardian_sigs_keypair),
+        None,
     )
     .await?;
 
@@ -426,76 +426,22 @@ async fn resolve_accounts(
             anyhow::bail!("Simulation failed: {:?}", err);
         }
 
-        // Read the result PDA account data from simulation
-        let account_data = sim_result
+        // Always check return data first to avoid reading stale result account state.
+        // The on-chain resolver returns Missing/Resolved inline via return data, or
+        // Account() when the result is stored in the result PDA (too large for return data).
+        let return_data = sim_result
             .value
-            .accounts
+            .return_data
             .as_ref()
-            .and_then(|accs| accs.first())
-            .and_then(|acc| acc.as_ref())
-            .context("Result PDA account not returned from simulation")?;
+            .context("No return data from simulation")?;
 
-        let data_bytes = account_data
-            .data
-            .decode()
-            .context("Failed to decode result account data")?;
+        let decoded = BASE64
+            .decode(&return_data.data.0)
+            .context("Failed to decode return data")?;
 
-        if data_bytes.len() < 8 {
-            anyhow::bail!("Result account data too short: {} bytes", data_bytes.len());
-        }
-
-        // Verify discriminator
-        if data_bytes[..8] != RESOLVER_RESULT_ACCOUNT_DISCRIMINATOR {
-            // The resolver returned inline (not via account). Parse from return data.
-            // Check the simulation return data
-            if let Some(return_data) = &sim_result.value.return_data {
-                let decoded = BASE64
-                    .decode(&return_data.data.0)
-                    .context("Failed to decode return data")?;
-
-                let resolver: Resolver<InstructionGroups> =
-                    AnchorDeserialize::deserialize(&mut decoded.as_slice())
-                        .context("Failed to deserialize return data as Resolver")?;
-
-                match &resolver {
-                    Resolver::Missing(missing) => {
-                        println!(
-                            "  Missing {} accounts, {} LUTs",
-                            missing.accounts.len(),
-                            missing.address_lookup_tables.len()
-                        );
-                        for pubkey in &missing.accounts {
-                            // Skip placeholders - they don't need to be added as remaining accounts
-                            if *pubkey == RESOLVER_PUBKEY_PAYER
-                                || *pubkey == RESOLVER_PUBKEY_SHIM_VAA_SIGS
-                                || *pubkey == RESOLVER_PUBKEY_GUARDIAN_SET
-                            {
-                                continue;
-                            }
-                            println!("    Adding: {}", pubkey);
-                            account_metas.push(AccountMeta::new(*pubkey, false));
-                        }
-                        // Also fetch and add LUT addresses
-                        for lut_pubkey in &missing.address_lookup_tables {
-                            println!("    Adding LUT: {}", lut_pubkey);
-                            account_metas.push(AccountMeta::new_readonly(*lut_pubkey, false));
-                        }
-                        continue;
-                    }
-                    Resolver::Resolved(_) => return Ok(resolver),
-                    Resolver::Account() => {
-                        // Result is in the account, fall through to parse it below
-                    }
-                }
-            } else {
-                anyhow::bail!("No return data and result account discriminator mismatch");
-            }
-        }
-
-        // Parse the result from the account data (skip 8-byte discriminator)
         let resolver: Resolver<InstructionGroups> =
-            AnchorDeserialize::deserialize(&mut &data_bytes[8..])
-                .context("Failed to deserialize result account as Resolver")?;
+            AnchorDeserialize::deserialize(&mut decoded.as_slice())
+                .context("Failed to deserialize return data as Resolver")?;
 
         match &resolver {
             Resolver::Missing(missing) => {
@@ -505,6 +451,7 @@ async fn resolve_accounts(
                     missing.address_lookup_tables.len()
                 );
                 for pubkey in &missing.accounts {
+                    // Skip placeholders - they don't need to be added as remaining accounts
                     if *pubkey == RESOLVER_PUBKEY_PAYER
                         || *pubkey == RESOLVER_PUBKEY_SHIM_VAA_SIGS
                         || *pubkey == RESOLVER_PUBKEY_GUARDIAN_SET
@@ -514,19 +461,49 @@ async fn resolve_accounts(
                     println!("    Adding: {}", pubkey);
                     account_metas.push(AccountMeta::new(*pubkey, false));
                 }
+                // Also fetch and add LUT addresses
                 for lut_pubkey in &missing.address_lookup_tables {
                     println!("    Adding LUT: {}", lut_pubkey);
                     account_metas.push(AccountMeta::new_readonly(*lut_pubkey, false));
                 }
+                continue;
             }
             Resolver::Resolved(_) => {
-                println!("  Resolved!");
+                println!("  Resolved (inline)!");
                 return Ok(resolver);
             }
             Resolver::Account() => {
-                println!("  Account (resolved via account data)");
-                // Re-read from account - already parsed above
-                return Ok(resolver);
+                // Result is stored in the result PDA account - parse it from simulation state
+                println!("  Resolved (via account)!");
+                let account_data = sim_result
+                    .value
+                    .accounts
+                    .as_ref()
+                    .and_then(|accs| accs.first())
+                    .and_then(|acc| acc.as_ref())
+                    .context("Result PDA account not returned from simulation")?;
+
+                let data_bytes = account_data
+                    .data
+                    .decode()
+                    .context("Failed to decode result account data")?;
+
+                if data_bytes.len() < 8 {
+                    anyhow::bail!(
+                        "Result account data too short: {} bytes",
+                        data_bytes.len()
+                    );
+                }
+
+                if data_bytes[..8] != RESOLVER_RESULT_ACCOUNT_DISCRIMINATOR {
+                    anyhow::bail!("Result account discriminator mismatch");
+                }
+
+                let account_resolver: Resolver<InstructionGroups> =
+                    AnchorDeserialize::deserialize(&mut &data_bytes[8..])
+                        .context("Failed to deserialize result account as Resolver")?;
+
+                return Ok(account_resolver);
             }
         }
     }
