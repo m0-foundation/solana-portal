@@ -156,7 +156,7 @@ fn test_03_index_update_hyperlane() -> Result<()> {
     // Recipient should be registered peer
     assert_eq!(
         hex::encode(recipient),
-        "000000000000000000000000408f6e7bde5634160fda61b945dc9f41b965e406"
+        "00000000000000000000000077ef4e9d37524069f81890c537a5c5d390bb4b4d"
     );
 
     Ok(())
@@ -194,7 +194,11 @@ fn test_04_index_update_hyperlane_repeat_msgid() -> Result<()> {
         .unwrap_err();
 
     let s = err.to_string();
-    assert!(s.contains("2006") || s.contains("custom program error: 0x07d6"));
+    assert!(
+        s.contains("2006") || s.contains("custom program error: 0x07d6"),
+        "unexpected error: {}",
+        s
+    );
     assert!(s.contains("ConstraintSeeds"));
 
     Ok(())
@@ -264,7 +268,7 @@ fn test_06_missing_account() -> Result<()> {
         .unwrap_err();
 
     let s = err.to_string();
-    assert!(s.contains("Error Code: InvalidRemainingAccounts"));
+    assert!(s.contains("Error Code: InvalidRemainingAccounts"), "{}", s);
 
     Ok(())
 }
