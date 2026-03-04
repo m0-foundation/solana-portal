@@ -43,6 +43,19 @@ fn test_02_path_other_chain() -> Result<()> {
 
     program
         .request()
+        .accounts(portal_accounts::InitializeBridgePaths {
+            admin: program.payer(),
+            portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
+            chain_paths: pda!(&[CHAIN_PATHS_SEED, &chain_id], &portal::ID),
+            system_program: system_program::ID,
+        })
+        .args(portal_instruction::InitializeBridgePaths {
+            destination_chain_id: 42161,
+        })
+        .send()?;
+
+    program
+        .request()
         .accounts(portal_accounts::AddBridgePaths {
             admin: program.payer(),
             portal_global: pda!(&[GLOBAL_SEED], &portal::ID),

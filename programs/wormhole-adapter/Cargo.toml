@@ -9,7 +9,7 @@ crate-type = ["cdylib", "lib"]
 name = "wormhole_adapter"
 
 [features]
-default = ["mainnet", "legacy-ntt"]
+default = ["mainnet"]
 idl-build = [
     "anchor-lang/idl-build",
     "anchor-spl/idl-build",

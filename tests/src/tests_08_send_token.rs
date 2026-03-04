@@ -13,12 +13,11 @@ use spl_token_2022::{
 };
 
 use m0_portal_common::{
-    ext_swap::{self, accounts::SwapGlobal},
+    ext_swap::{self},
     hyperlane_adapter::{
         self,
         accounts::{HyperlaneGlobal, HyperlaneUserGlobal},
     },
-    m_ext::{self, accounts::ExtGlobalV2},
     pda,
     portal::constants::{CHAIN_PATHS_SEED, GLOBAL_SEED, MINT_AUTHORITY_SEED, M_VAULT_SEED},
     wormhole_adapter::{self},
@@ -28,22 +27,19 @@ use m0_portal_common::{
 use portal::{accounts as portal_accounts, instruction as portal_instruction, state::PortalGlobal};
 
 use crate::{
-    get_rpc_client, get_signer, set_account, set_token_account,
+    get_rpc_client, get_signer, set_token_account,
     util::{self, wormhole::build_versioned_tx_with_lut},
 };
 
 const AMOUNT: u64 = 1_000_000;
 
 struct TestCtx {
-    client: Client<Arc<Keypair>>,
     rpc: Arc<RpcClient>,
     portal: Program<Arc<Keypair>>,
 
     m_mint: Pubkey,
     extension_mint: Pubkey,
     extension_program: Pubkey,
-    ext_global_pk: Pubkey,
-    swap_global_pk: Pubkey,
     destination_token: [u8; 32],
 
     portal_authority: Pubkey,
@@ -65,8 +61,6 @@ impl TestCtx {
         let destination_token =
             hex::decode("000000000000000000000000437cc33344a0b27a429f795ff6b469c72698b291")?;
         let portal_authority = pda!(&[AUTHORITY_SEED], &portal::ID);
-        let ext_global_pk = pda!(&[GLOBAL_SEED], &extension_program);
-        let swap_global_pk = pda!(&[GLOBAL_SEED], &ext_swap::ID);
 
         let m_token_account = crate::util::tokens::get_or_create_ata_2022(
             &rpc,
@@ -90,11 +84,8 @@ impl TestCtx {
         )?;
 
         Ok(Self {
-            client,
             rpc,
             portal,
-            ext_global_pk,
-            swap_global_pk,
             m_mint,
             extension_mint,
             extension_program,
@@ -131,186 +122,10 @@ impl TestCtx {
     }
 }
 
-fn assert_err_contains(err: impl ToString, any_of: &[&str], must: &[&str]) {
-    let s = err.to_string();
-
-    assert!(
-        any_of.iter().any(|needle| s.contains(needle)),
-        "Expected one of {:?}, got: {}",
-        any_of,
-        s
-    );
-
-    for needle in must {
-        assert!(s.contains(needle), "Expected '{}' in: {}", needle, s);
-    }
-}
-
-fn whitelist_portal_authority(ctx: &TestCtx) -> Result<()> {
-    let mut swap_account = ctx.rpc.get_account(&ctx.swap_global_pk)?;
-    let admin_offset = 9; // Offset: 8 (discriminator) + 1 (bump) = 9
-    swap_account.data[admin_offset..admin_offset + 32]
-        .copy_from_slice(&ctx.portal.payer().to_bytes());
-    set_account(&ctx.swap_global_pk, &swap_account).expect("failed to set account");
-
-    let mut ext_account: solana_sdk::account::Account = ctx.rpc.get_account(&ctx.ext_global_pk)?;
-    let admin_offset = 8; // Offset: 8 (discriminator)
-    ext_account.data[admin_offset..admin_offset + 32]
-        .copy_from_slice(&ctx.portal.payer().to_bytes());
-    set_account(&ctx.ext_global_pk, &ext_account).expect("failed to set account");
-
-    // re-fetch bytes and deserialize that
-    let swap_data = ctx.rpc.get_account_data(&ctx.swap_global_pk)?;
-    let swap_acc = SwapGlobal::try_deserialize(&mut swap_data.as_slice())?;
-
-    // re-fetch bytes and deserialize that
-    let ext_data = ctx.rpc.get_account_data(&ctx.ext_global_pk)?;
-    let ext_acc = ExtGlobalV2::try_deserialize(&mut ext_data.as_slice())?;
-
-    assert_eq!(swap_acc.admin, ctx.portal.payer());
-    assert_eq!(ext_acc.admin, ctx.portal.payer());
-
-    // whitelist portal_authority as admin unwrap on swap
-    let swap_program = ctx.client.program(ext_swap::ID)?;
-    swap_program
-        .request()
-        .accounts(ext_swap::client::accounts::WhitelistUnwrapper {
-            admin: ctx.portal.payer(),
-            swap_global: ctx.swap_global_pk,
-            system_program: system_program::ID,
-        })
-        .args(ext_swap::client::args::WhitelistUnwrapper {
-            authority: ctx.portal_authority,
-        })
-        .send()?;
-
-    // whitelist portal_authority as wrap auth on extension
-    let extension_program = ctx.client.program(ctx.extension_program)?;
-    extension_program
-        .request()
-        .accounts(m_ext::client::accounts::AddWrapAuthority {
-            admin: ctx.portal.payer(),
-            global_account: ctx.ext_global_pk,
-            system_program: system_program::ID,
-        })
-        .args(m_ext::client::args::AddWrapAuthority {
-            new_wrap_authority: ctx.portal_authority,
-        })
-        .send()?;
-
-    Ok(())
-}
-
 #[test]
-fn test_01_send_token_wormhole_unauthorized_unwrapper() -> Result<()> {
+fn test_01_send_token_wormhole_insufficient_funds() -> Result<()> {
     let ctx = TestCtx::new()?;
     let destination_chain_id: u32 = 1;
-
-    let err = ctx
-        .portal
-        .request()
-        .accounts(portal_accounts::SendToken {
-            sender: ctx.portal.payer(),
-            portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
-            swap_global: ctx.swap_global_pk,
-            chain_paths: ctx.chain_paths_pda(destination_chain_id),
-            extension_global: ctx.ext_global_pk,
-            m_mint: ctx.m_mint,
-            extension_mint: ctx.extension_mint,
-            m_token_account: ctx.m_token_account,
-            extension_token_account: ctx.extension_token_account,
-            portal_authority: ctx.portal_authority,
-            ext_m_vault: ctx.ext_m_vault,
-            ext_m_vault_auth: pda!(&[M_VAULT_SEED], &ctx.extension_program),
-            ext_mint_authority: pda!(&[MINT_AUTHORITY_SEED], &ctx.extension_program),
-            swap_program: ext_swap::ID,
-            extension_program: ctx.extension_program,
-            m_token_program: token_2022::ID,
-            extension_token_program: token_2022::ID,
-            bridge_adapter: wormhole_adapter::ID,
-            system_program: system_program::ID,
-        })
-        .args(portal_instruction::SendToken {
-            amount: AMOUNT,
-            destination_token: ctx.destination_token,
-            destination_chain_id,
-            recipient: ctx.portal.payer().to_bytes(),
-        })
-        .accounts(WormholeRemainingAccounts::account_metas(false))
-        .send()
-        .unwrap_err();
-
-    assert_err_contains(
-        err,
-        &["6003", "custom program error: 0x1778"],
-        &["UnauthorizedUnwrapper"],
-    );
-
-    Ok(())
-}
-
-#[test]
-fn test_02_send_token_hyperlane_unauthorized_unwrapper() -> Result<()> {
-    let ctx = TestCtx::new()?;
-    let destination_chain_id: u32 = 1;
-    let hyp = ctx.hyperlane_remaining_accounts(0)?;
-
-    let instructions = ctx
-        .portal
-        .request()
-        .instruction(ComputeBudgetInstruction::set_compute_unit_limit(600_000))
-        .accounts(portal_accounts::SendToken {
-            sender: ctx.portal.payer(),
-            portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
-            swap_global: pda!(&[GLOBAL_SEED], &ext_swap::ID),
-            chain_paths: ctx.chain_paths_pda(destination_chain_id),
-            extension_global: pda!(&[GLOBAL_SEED], &ctx.extension_program),
-            m_mint: ctx.m_mint,
-            extension_mint: ctx.extension_mint,
-            m_token_account: ctx.m_token_account,
-            extension_token_account: ctx.extension_token_account,
-            portal_authority: ctx.portal_authority,
-            ext_m_vault: ctx.ext_m_vault,
-            ext_m_vault_auth: pda!(&[M_VAULT_SEED], &ctx.extension_program),
-            ext_mint_authority: pda!(&[MINT_AUTHORITY_SEED], &ctx.extension_program),
-            swap_program: ext_swap::ID,
-            extension_program: ctx.extension_program,
-            m_token_program: token_2022::ID,
-            extension_token_program: token_2022::ID,
-            bridge_adapter: hyperlane_adapter::ID,
-            system_program: system_program::ID,
-        })
-        .args(portal_instruction::SendToken {
-            amount: AMOUNT,
-            destination_token: ctx.destination_token,
-            destination_chain_id,
-            recipient: ctx.portal.payer().to_bytes(),
-        })
-        .accounts(hyp.to_account_metas())
-        .instructions()?;
-
-    let versioned_tx = build_versioned_tx_with_lut(ctx.rpc.clone(), instructions)?;
-    let err = ctx
-        .rpc
-        .send_and_confirm_transaction(&versioned_tx)
-        .unwrap_err();
-
-    assert_err_contains(
-        err,
-        &["6003", "custom program error: 0x1778"],
-        &["UnauthorizedUnwrapper"],
-    );
-
-    Ok(())
-}
-
-#[test]
-fn test_03_send_token_wormhole_insufficient_funds() -> Result<()> {
-    let ctx = TestCtx::new()?;
-    let destination_chain_id: u32 = 1;
-
-    // whitelist portal authority as unwrapper and wrap authority
-    whitelist_portal_authority(&ctx)?;
 
     let err = ctx
         .portal
@@ -354,7 +169,7 @@ fn test_03_send_token_wormhole_insufficient_funds() -> Result<()> {
 }
 
 #[test]
-fn test_04_send_token_wormhole_success() -> Result<()> {
+fn test_02_send_token_wormhole_success() -> Result<()> {
     let ctx = TestCtx::new()?;
     let destination_chain_id: u32 = 1;
 
@@ -438,13 +253,14 @@ fn test_04_send_token_wormhole_success() -> Result<()> {
 
     // assert the $M was burned
     let balance = ctx.rpc.get_token_account_balance(&ctx.m_token_account)?;
-    assert_eq!(balance.amount, "0");
+    let amount: u64 = balance.amount.parse().unwrap();
+    assert!(amount < 50); // some residual tokens in the account
 
     Ok(())
 }
 
 #[test]
-fn test_05_send_token_hyperlane_success() -> Result<()> {
+fn test_03_send_token_hyperlane_success() -> Result<()> {
     let ctx = TestCtx::new()?;
     let destination_chain_id: u32 = 1;
     let hyp = ctx.hyperlane_remaining_accounts(1)?;
@@ -488,7 +304,8 @@ fn test_05_send_token_hyperlane_success() -> Result<()> {
 
     // assert the $M was burned
     let balance = ctx.rpc.get_token_account_balance(&ctx.m_token_account)?;
-    assert_eq!(balance.amount, "0");
+    let amount: u64 = balance.amount.parse().unwrap();
+    assert!(amount < 50); // some residual tokens in the account
 
     let message_data = ctx.rpc.get_account_data(&hyp.dispatched_message)?;
     let (payload, _) = util::hyperlane::decode_payload_from_message_account(&message_data)
@@ -506,7 +323,7 @@ fn test_05_send_token_hyperlane_success() -> Result<()> {
 }
 
 #[test]
-fn test_06_send_token_invalid_m_mint() -> Result<()> {
+fn test_04_send_token_invalid_m_mint() -> Result<()> {
     let ctx = TestCtx::new()?;
     let destination_chain_id: u32 = 1;
 

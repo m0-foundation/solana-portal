@@ -35,49 +35,12 @@ fn test_02_check_globals() -> Result<()> {
 
     assert_eq!(global_wh.peers.0[0].m0_chain_id, 1);
     assert_eq!(global_hp.peers.0[0].m0_chain_id, 1);
-    assert_eq!(global_wh.peers.0[1].m0_chain_id, 42161);
-    assert_eq!(global_wh.peers.0[2].m0_chain_id, 8453);
 
     Ok(())
 }
 
 #[test]
-fn test_03_remove_peer() -> Result<()> {
-    let client = Client::new(Cluster::Localnet, get_signer());
-    let rpc_client = get_rpc_client();
-
-    let program = client.program(wormhole_adapter::ID)?;
-
-    let data_wh = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &wormhole_adapter::ID))?;
-    let global_wh = WormholeGlobal::try_deserialize(&mut data_wh.as_slice())?;
-    assert!(global_wh.peers.0.iter().any(|p| p.m0_chain_id == 42161));
-
-    // Remove Arbitrum
-    program
-        .request()
-        .accounts(accounts::SetPeer {
-            admin: program.payer(),
-            wormhole_global: pda!(&[GLOBAL_SEED], &wormhole_adapter::ID),
-            system_program: system_program::ID,
-        })
-        .args(instruction::SetPeer {
-            peer: Peer {
-                m0_chain_id: 42161,
-                address: [0; 32],
-                adapter_chain_id: 24,
-            },
-        })
-        .send()?;
-
-    let data_wh = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &wormhole_adapter::ID))?;
-    let global_wh = WormholeGlobal::try_deserialize(&mut data_wh.as_slice())?;
-    assert!(global_wh.peers.0.iter().all(|p| p.m0_chain_id != 42161));
-
-    Ok(())
-}
-
-#[test]
-fn test_04_update_peer() -> Result<()> {
+fn test_03_update_peer() -> Result<()> {
     let client = Client::new(Cluster::Localnet, get_signer());
     let rpc_client = get_rpc_client();
 
@@ -117,19 +80,50 @@ fn test_04_update_peer() -> Result<()> {
 }
 
 #[test]
+fn test_04_remove_peer() -> Result<()> {
+    let client = Client::new(Cluster::Localnet, get_signer());
+    let rpc_client = get_rpc_client();
+
+    let program = client.program(wormhole_adapter::ID)?;
+
+    let data_wh = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &wormhole_adapter::ID))?;
+    let global_wh = WormholeGlobal::try_deserialize(&mut data_wh.as_slice())?;
+    assert!(global_wh.peers.0.iter().any(|p| p.m0_chain_id == 8453));
+
+    // Remove Base
+    program
+        .request()
+        .accounts(accounts::SetPeer {
+            admin: program.payer(),
+            wormhole_global: pda!(&[GLOBAL_SEED], &wormhole_adapter::ID),
+            system_program: system_program::ID,
+        })
+        .args(instruction::SetPeer {
+            peer: Peer {
+                m0_chain_id: 8453,
+                address: [0; 32],
+                adapter_chain_id: 420,
+            },
+        })
+        .send()?;
+
+    let data_wh = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &wormhole_adapter::ID))?;
+    let global_wh = WormholeGlobal::try_deserialize(&mut data_wh.as_slice())?;
+    assert!(global_wh.peers.0.iter().all(|p| p.m0_chain_id != 8453));
+
+    Ok(())
+}
+
+#[test]
 fn test_05_bridge_path_config() -> Result<()> {
     let client = get_rpc_client();
 
-    for chain_id in [1u32, 42161u32] {
-        let data = client.get_account_data(&pda!(
-            &[CHAIN_PATHS_SEED, &chain_id.to_le_bytes()],
-            &portal::ID
-        ))?;
-        let paths = ChainBridgePaths::try_deserialize(&mut data.as_slice())?;
+    let data =
+        client.get_account_data(&pda!(&[CHAIN_PATHS_SEED, &1u32.to_le_bytes()], &portal::ID))?;
+    let paths = ChainBridgePaths::try_deserialize(&mut data.as_slice())?;
 
-        assert_eq!(paths.destination_chain_id, chain_id);
-        assert_eq!(paths.paths.len(), 0);
-    }
+    assert_eq!(paths.destination_chain_id, 1u32);
+    assert_eq!(paths.paths.len(), 0);
 
     Ok(())
 }

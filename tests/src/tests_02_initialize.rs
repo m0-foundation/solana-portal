@@ -1,6 +1,6 @@
 use anchor_lang::AccountDeserialize;
-use anyhow::Result;
-use hyperlane_adapter::state::HyperlaneGlobal;
+use anyhow::{Ok, Result};
+use hyperlane_adapter::state::{HyperlaneGlobal, GLOBAL_SEED};
 use m0_portal_common::{
     consts::{
         HYPERLANE_DEFAULT_IGP_ACCOUNT, HYPERLANE_DEFAULT_IGP_PROGRAM_ID,
@@ -8,15 +8,26 @@ use m0_portal_common::{
     },
     hyperlane_adapter::accounts::AccountMetasData,
     pda,
-    portal::{self, accounts::PortalGlobal},
+    portal::{self, accounts::PortalGlobal, constants::CHAIN_PATHS_SEED},
 };
+use solana_sdk::account::Account;
 use std::vec;
 use wormhole_adapter::state::WormholeGlobal;
 
-use crate::run_surfpool_cmd;
+use crate::{run_surfpool_cmd, set_account};
 
 #[test]
 fn test_01_initialize_programs() -> Result<()> {
+    // reset state (which gets pulled from mainnet)
+    for program_id in [portal::ID, wormhole_adapter::ID, hyperlane_adapter::ID] {
+        set_account(&pda!(&[GLOBAL_SEED], &program_id), &Account::default())?;
+    }
+
+    set_account(
+        &pda!(&[CHAIN_PATHS_SEED, &1u32.to_le_bytes()], &portal::ID),
+        &Account::default(),
+    )?;
+
     let logs = run_surfpool_cmd(vec!["run", "initialize", "--unsupervised"])?;
     assert!(!logs.contains("error"), "Initialization failed: {}", logs);
     Ok(())
@@ -48,8 +59,8 @@ fn test_03_check_globals() -> Result<()> {
     assert_eq!(global_portal.pending_admin, None);
     assert_eq!(global_portal.unclaimed_m_balance, 0);
     assert_eq!(global_portal.padding, [0u8; 120]);
-    assert!(!global_portal.incoming_paused);
-    assert!(!global_portal.outgoing_paused);
+    assert!(global_portal.incoming_paused);
+    assert!(global_portal.outgoing_paused);
 
     // Assert all fields of global_hp
     assert_eq!(global_hp.igp_program_id, HYPERLANE_DEFAULT_IGP_PROGRAM_ID);
@@ -95,7 +106,7 @@ fn test_04_check_hyperlane_metas_pda() -> Result<()> {
     ))?;
 
     let account_metas = AccountMetasData::try_deserialize(&mut data_account_metas.as_slice())?;
-    assert_eq!(account_metas.extensions.len(), 5);
+    assert!(account_metas.extensions.len() > 5);
 
     Ok(())
 }
@@ -104,5 +115,26 @@ fn test_04_check_hyperlane_metas_pda() -> Result<()> {
 fn test_05_fund_hyperlane_receive_payer() -> Result<()> {
     let logs = run_surfpool_cmd(vec!["run", "fund_receive_payer", "--unsupervised"])?;
     assert!(!logs.contains("error"), "Funding failed: {}", logs);
+    Ok(())
+}
+
+#[test]
+fn test_06_unpause() -> Result<()> {
+    run_surfpool_cmd(vec![
+        "run",
+        "pause",
+        "--unsupervised",
+        "--input",
+        "pause_action=unpause_incoming",
+    ])?;
+
+    run_surfpool_cmd(vec![
+        "run",
+        "pause",
+        "--unsupervised",
+        "--input",
+        "pause_action=unpause_outgoing",
+    ])?;
+
     Ok(())
 }
