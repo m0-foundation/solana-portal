@@ -40,9 +40,9 @@ send_token_svm:
 
 # Usage: make send_token_evm AMOUNT=1000 ADAPTER=wormhole
 send_token_evm:
-	export SEPOLIA_RPC_URL=$$(op read "op://Solana Dev/Alchemy/sepolia") \
-	export PRIVATE_KEY=$$(op read "op://Solana Dev/Ethereum Test Wallet/Wallet/key") \
-	cd cli && cargo run send-evm-token $(AMOUNT) D76ySoHPwD8U2nnTTDqXeUJQg5UkD9UD1PUE1rnvPAGm --adapter $(ADAPTER)
+	export EVM_RPC_URL=$$(op read "op://Solana Dev/Alchemy/mainnet") \
+	export EVM_KEY=$$(op read "op://Solana Dev/Ethereum Test Wallet/Wallet/key") \
+	cd cli && cargo run send-evm-token $(AMOUNT) D76ySoHPwD8U2nnTTDqXeUJQg5UkD9UD1PUE1rnvPAGm --adapter $(ADAPTER) --network mainnet
 
 # Usage: make send_index_svm CHAIN_ID=1 ADAPTER=wormhole
 send_index_svm:

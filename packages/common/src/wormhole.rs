@@ -16,7 +16,7 @@ use crate::{
 /// Wormhole executor related constants
 pub const SOLANA_WORMHOLE_CHAIN_ID: u16 = 1;
 pub const DEFAULT_GAS_LIMIT: u128 = 250_000;
-pub const DEFAULT_MSG_VALUE: u128 = 15_000_000;
+pub const DEFAULT_MSG_VALUE: u128 = 20_000_000;
 const EXECUTOR_PROGRAM_ID: Pubkey = pubkey!("execXUrAsMnqMmTHj5m7N1YQgsDz3cwGLYCYyuDRciV");
 const EXECUTOR_QUOTE_API_URL_DEVNET: &str = "https://executor-testnet.labsapis.com/v0/quote";
 const EXECUTOR_QUOTE_API_URL: &str = "https://executor.labsapis.com/v0/quote";
