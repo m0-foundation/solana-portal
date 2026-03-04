@@ -40,6 +40,10 @@ enum Commands {
         #[arg(short, long, value_enum, default_value = "hyperlane")]
         adapter: BridgeAdapter,
     },
+    CreateHyperlaneLut {
+        #[arg(long, value_parser = ["mainnet", "testnet"])]
+        network: String,
+    },
 }
 
 #[tokio::main]
@@ -70,6 +74,9 @@ async fn main() -> Result<()> {
             adapter,
         } => {
             commands::send_evm_token(amount, recipient, adapter).await?;
+        }
+        Commands::CreateHyperlaneLut { network } => {
+            commands::create_hyperlane_lut(network).await?;
         }
     }
 

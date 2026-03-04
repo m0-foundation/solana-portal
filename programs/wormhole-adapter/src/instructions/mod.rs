@@ -9,9 +9,7 @@ pub mod transfer_admin;
 
 use anchor_lang::prelude::*;
 pub use initialize::*;
-use m0_portal_common::{
-    portal, BridgeError, Payload, PayloadData, PayloadHeader, TokenTransferPayload,
-};
+use m0_portal_common::{BridgeError, Payload};
 pub use pause::*;
 pub use receive_message::*;
 pub use resolve_execute::*;
@@ -123,6 +121,7 @@ impl VaaBody {
 mod tests {
     use super::*;
     use base64::prelude::*;
+    use m0_portal_common::PayloadData;
 
     #[test]
     #[cfg(feature = "legacy-ntt")]

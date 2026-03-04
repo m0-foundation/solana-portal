@@ -1,4 +1,4 @@
-.PHONY: test build test-verbose send_token_svm send_token_evm
+.PHONY: test build test-verbose send_token_svm send_token_evm create-hyperlane-lut-devnet create-hyperlane-lut-mainnet
 
 test:
 	anchor build -- --features skip-validation
@@ -43,3 +43,9 @@ send_token_evm:
 	export SEPOLIA_RPC_URL=$$(op read "op://Solana Dev/Alchemy/sepolia") \
 	export PRIVATE_KEY=$$(op read "op://Solana Dev/Ethereum Test Wallet/Wallet/key") \
 	cd cli && cargo run send-evm-token $(AMOUNT) D76ySoHPwD8U2nnTTDqXeUJQg5UkD9UD1PUE1rnvPAGm --adapter $(ADAPTER)
+
+create-hyperlane-lut-testnet:
+	cd cli && cargo run -- create-hyperlane-lut --network testnet
+
+create-hyperlane-lut-mainnet:
+	cd cli && cargo run -- create-hyperlane-lut  --network mainnet
