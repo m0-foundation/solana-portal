@@ -40,6 +40,17 @@ enum Commands {
         #[arg(short, long, value_enum, default_value = "hyperlane")]
         adapter: BridgeAdapter,
     },
+    /// Manually relay a Wormhole VAA message by fetching it from WormholeScan and submitting on-chain
+    RelayMessage {
+        /// VAA ID in format: chain/emitter/sequence
+        vaa_id: String,
+        /// RPC URL override (defaults to RPC_URL env var)
+        #[arg(long)]
+        rpc_url: Option<String>,
+        /// Use testnet WormholeScan API instead of mainnet
+        #[arg(long)]
+        testnet: bool,
+    },
 }
 
 #[tokio::main]
@@ -70,6 +81,13 @@ async fn main() -> Result<()> {
             adapter,
         } => {
             commands::send_evm_token(amount, recipient, adapter).await?;
+        }
+        Commands::RelayMessage {
+            vaa_id,
+            rpc_url,
+            testnet,
+        } => {
+            commands::relay_message(vaa_id, rpc_url, testnet).await?;
         }
     }
 

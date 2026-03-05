@@ -21,6 +21,7 @@ anchor-client.workspace = true
 anchor-lang.workspace = true
 m0-portal-common = { path = "../packages/common", features = ["executor"] }
 wormhole-adapter = { path = "../programs/wormhole-adapter" }
+solana-account-decoder-client-types = "2.0"
 solana-rpc-client-types = "2.0"
 solana-rpc-client = "2.0"
 solana-sdk = "2.0"
