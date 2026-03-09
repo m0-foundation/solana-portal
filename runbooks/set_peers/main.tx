@@ -18,8 +18,8 @@ variable "evm_wormhole_adapter" {
     value = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 172, 255, 236, 40, 196, 238,226, 28, 136, 154, 78, 108, 7, 4, 197,64, 237, 157, 79, 221]
 }
 variable "evm_hyperlane_adapter" {
-    description = "Hyperlane adapter on EVM chains: 0x77EF4e9D37524069f81890C537a5c5d390bb4b4d"
-    value = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 119, 239, 78, 157, 55, 82, 64, 105, 248,24, 144, 197, 55, 165, 197, 211, 144, 187,75, 77]
+    description = "Hyperlane adapter on EVM chains: 0xfCc1d596Ad6cAb0b5394eAa447d8626813180f32"
+    value = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 252, 193, 213, 150, 173, 108, 171, 11, 83, 148, 234, 164, 71, 216, 98, 104, 19, 24, 15, 50]
 }
 
 action "set_wormhole_peer_ethereum" "svm::process_instructions" {
