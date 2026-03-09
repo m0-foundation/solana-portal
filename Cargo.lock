@@ -4435,6 +4435,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "solana-account-decoder-client-types",
  "solana-client",
  "solana-rpc-client",
  "solana-rpc-client-types",

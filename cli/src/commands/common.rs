@@ -1,4 +1,4 @@
-use crate::BridgeAdapter;
+use crate::{BridgeAdapter, Network};
 use anchor_lang::AccountDeserialize;
 use anyhow::{Context, Result};
 use m0_portal_common::{
@@ -26,7 +26,7 @@ use solana_sdk::{
 };
 use std::str::FromStr;
 
-// Token addresses (testnet/devnet)
+// Token addresses
 pub const M_MINT: &str = "mzerojk9tg56ebsrEAhfkyc9VgKjTW2zDqp6C5mhjzH";
 pub const EXTENSION_MINT: &str = "mzeroXDoBpRVhnEXBra27qzAMdxgpWVY3DzQW7xMVJp";
 pub const EXTENSION_PROGRAM: &str = "wMXX1K1nca5W4pZr1piETe78gcAVVrEFi9f4g46uXko";
@@ -34,28 +34,42 @@ pub const TOKEN_2022_PROGRAM_ID: &str = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpP
 pub const ASSOCIATED_TOKEN_PROGRAM_ID: &str = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
 
 // Wormhole peer portal address
-pub const PEER_PORTAL: [u8; 32] = [
+pub const WORMHOLE_PEER_PORTAL: [u8; 32] = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 172, 255, 236, 40, 196, 238, 226, 28, 136, 154, 78, 108, 7,
     4, 197, 64, 237, 157, 79, 221,
 ];
 
-/// Get RPC URL and adapter name for the given bridge adapter
-pub fn get_rpc_config(adapter: BridgeAdapter) -> (String, &'static str) {
-    match adapter {
-        BridgeAdapter::Hyperlane => (get_testnet_rpc_url(), "Hyperlane (testnet)"),
-        BridgeAdapter::Wormhole => (get_devnet_rpc_url(), "Wormhole (devnet)"),
-    }
-}
+/// Get RPC URL and adapter name for the given bridge adapter and network
+pub fn get_rpc_config(adapter: BridgeAdapter, network: Network) -> (String, String) {
+    let rpc_url = match network {
+        Network::Devnet => get_devnet_rpc_url(),
+        Network::Mainnet => get_mainnet_rpc_url(),
+        Network::Testnet => "https://api.testnet.solana.com".to_string(),
+    };
 
-/// Get testnet RPC URL from TESTNET_RPC_URL env var, or use default
-pub fn get_testnet_rpc_url() -> String {
-    std::env::var("TESTNET_RPC_URL")
-        .unwrap_or_else(|_| "https://api.testnet.solana.com".to_string())
+    let network_name = match network {
+        Network::Devnet => "devnet",
+        Network::Mainnet => "mainnet",
+        Network::Testnet => "testnet",
+    };
+
+    let adapter_name = match adapter {
+        BridgeAdapter::Hyperlane => format!("Hyperlane ({})", network_name),
+        BridgeAdapter::Wormhole => format!("Wormhole ({})", network_name),
+    };
+
+    (rpc_url, adapter_name)
 }
 
 /// Get devnet RPC URL from DEVNET_RPC_URL env var, or use default
 pub fn get_devnet_rpc_url() -> String {
     std::env::var("DEVNET_RPC_URL").unwrap_or_else(|_| "https://api.devnet.solana.com".to_string())
+}
+
+/// Get mainnet RPC URL from MAINNET_RPC_URL env var, or use default
+pub fn get_mainnet_rpc_url() -> String {
+    std::env::var("MAINNET_RPC_URL")
+        .unwrap_or_else(|_| "https://api.mainnet-beta.solana.com".to_string())
 }
 
 /// Load keypair from the default Solana config location
@@ -182,11 +196,12 @@ pub async fn send_via_wormhole(
     accounts: Vec<AccountMeta>,
     instruction_data: Vec<u8>,
     destination_chain_id: u32,
+    devnet: bool,
 ) -> Result<solana_sdk::signature::Signature> {
     let mut all_accounts = accounts;
 
     // Get and append Wormhole remaining accounts
-    let wormhole_accounts = WormholeRemainingAccounts::account_metas(true);
+    let wormhole_accounts = WormholeRemainingAccounts::account_metas(devnet);
     all_accounts.extend(wormhole_accounts);
 
     let send_ix = SolanaInstruction {
@@ -196,7 +211,7 @@ pub async fn send_via_wormhole(
     };
 
     // Build the relay instruction
-    let current_sequence = get_current_sequence(rpc_client, true)
+    let current_sequence = get_current_sequence(rpc_client, devnet)
         .await
         .expect("Failed to get current sequence");
 
@@ -206,9 +221,10 @@ pub async fn send_via_wormhole(
         &payer.pubkey(),
         get_wormhole_chain_id(destination_chain_id).unwrap(),
         current_sequence,
-        &PEER_PORTAL,
+        &WORMHOLE_PEER_PORTAL,
         Some(350_000),
         Some(25_000_000),
+        devnet,
     )
     .await?;
 
@@ -219,6 +235,7 @@ pub async fn send_via_wormhole(
         rpc_client,
         vec![compute_budget_ix, send_ix, relay_ix],
         payer,
+        devnet,
     )
     .await?;
 
@@ -234,6 +251,7 @@ pub async fn build_versioned_tx_with_lut(
     rpc: &RpcClient,
     instructions: Vec<solana_sdk::instruction::Instruction>,
     signer: &Keypair,
+    devnet: bool,
 ) -> Result<VersionedTransaction> {
     let data_wh = rpc
         .get_account_data(&pda!(&[GLOBAL_SEED], &wormhole_adapter::ID))
@@ -253,8 +271,12 @@ pub async fn build_versioned_tx_with_lut(
             .to_vec(),
     };
 
-    let swap_lut_account =
-        Pubkey::from_str("6GhuWPuAmiJeeSVsr58KjqHcAejJRndCx9BVtHkaYHUR").unwrap();
+    let swap_lut_account = Pubkey::from_str(if devnet {
+        "6GhuWPuAmiJeeSVsr58KjqHcAejJRndCx9BVtHkaYHUR"
+    } else {
+        "6XLVt26ySCh55HEvBemM9k7FYLLzwi8SUJDV17t8oCQR"
+    })
+    .unwrap();
 
     let swap_lut = AddressLookupTableAccount {
         key: swap_lut_account,

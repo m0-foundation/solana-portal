@@ -12,21 +12,45 @@ use m0_portal_common::{DEFAULT_GAS_LIMIT, DEFAULT_MSG_VALUE, SOLANA_WORMHOLE_CHA
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    types::evm::{
-        Portal, SEPOLIA_HYPERLANE_ADAPTER, SEPOLIA_PORTAL_CONTRACT, SEPOLIA_WORMHOLE_ADAPTER,
-        SOLANA_CHAIN_ID,
-    },
-    BridgeAdapter,
+    types::evm::{Portal, EVM_HYPERLANE_ADAPTER, EVM_PORTAL_CONTRACT, EVM_WORMHOLE_ADAPTER},
+    BridgeAdapter, Network,
 };
 
-pub const WORMHOLE_SEPOLIA_CHAIN_ID: u16 = 10002;
-const EXECUTOR_QUOTE_API_URL: &str = "https://executor-testnet.labsapis.com/v0/quote";
 const GAS_INSTRUCTION_DISCRIMINANT: u8 = 1;
-const DEFAULT_SEPOLIA_RPC: &str = "https://sepolia.gateway.tenderly.co";
 
-/// Get Sepolia RPC URL from SEPOLIA_RPC_URL env var, or use default
-pub fn get_sepolia_rpc_url() -> String {
-    std::env::var("SEPOLIA_RPC_URL").unwrap_or_else(|_| DEFAULT_SEPOLIA_RPC.to_string())
+/// All network-dependent EVM configuration values
+pub struct NetworkConfig {
+    pub rpc_url: String,
+    pub wormhole_source_chain_id: u16,
+    pub executor_quote_api_url: &'static str,
+    pub solana_chain_id: u32,
+    pub network_label: &'static str,
+}
+
+impl NetworkConfig {
+    pub fn from_network(network: Network) -> anyhow::Result<Self> {
+        match network {
+            Network::Devnet | Network::Testnet => Ok(Self {
+                rpc_url: std::env::var("EVM_RPC_URL")
+                    .unwrap_or_else(|_| "https://sepolia.gateway.tenderly.co".to_string()),
+                wormhole_source_chain_id: 10002,
+                executor_quote_api_url: "https://executor-testnet.labsapis.com/v0/quote",
+                solana_chain_id: 1399811150,
+                network_label: "devnet (Sepolia -> Solana devnet)",
+            }),
+            Network::Mainnet => {
+                let rpc_url = std::env::var("EVM_RPC_URL")
+                    .context("EVM_RPC_URL environment variable is required for mainnet")?;
+                Ok(Self {
+                    rpc_url,
+                    wormhole_source_chain_id: 2,
+                    executor_quote_api_url: "https://executor.labsapis.com/v0/quote",
+                    solana_chain_id: 1399811149,
+                    network_label: "mainnet (Ethereum -> Solana mainnet)",
+                })
+            }
+        }
+    }
 }
 
 /// Request body for the executor quote API
@@ -52,10 +76,9 @@ pub struct WormholeQuote {
     pub estimated_cost: U256,
 }
 
-/// Load private key from PRIVATE_KEY environment variable
+/// Load private key from EVM_KEY environment variable
 pub fn load_private_key() -> Result<PrivateKeySigner> {
-    let private_key =
-        std::env::var("PRIVATE_KEY").context("PRIVATE_KEY environment variable not set")?;
+    let private_key = std::env::var("EVM_KEY").context("EVM_KEY environment variable not set")?;
 
     let private_key = private_key.trim_start_matches("0x");
 
@@ -67,19 +90,19 @@ pub fn load_private_key() -> Result<PrivateKeySigner> {
 /// Create a provider with the given signer
 pub fn create_provider(
     signer: PrivateKeySigner,
+    config: &NetworkConfig,
 ) -> Result<impl Provider<http::Http<http::Client>>> {
     let wallet = EthereumWallet::from(signer);
-    let rpc_url = get_sepolia_rpc_url();
     let provider = ProviderBuilder::new()
         .with_recommended_fillers()
         .wallet(wallet)
-        .on_http(rpc_url.parse()?);
+        .on_http(config.rpc_url.parse()?);
     Ok(provider)
 }
 
 /// Get the portal contract address
 pub fn get_portal_address() -> Result<Address> {
-    SEPOLIA_PORTAL_CONTRACT
+    EVM_PORTAL_CONTRACT
         .parse::<Address>()
         .context("Failed to parse portal contract address")
 }
@@ -87,8 +110,8 @@ pub fn get_portal_address() -> Result<Address> {
 /// Get adapter address based on bridge selection
 pub fn get_adapter_address(adapter: BridgeAdapter) -> Result<Address> {
     let addr_str = match adapter {
-        BridgeAdapter::Hyperlane => SEPOLIA_HYPERLANE_ADAPTER,
-        BridgeAdapter::Wormhole => SEPOLIA_WORMHOLE_ADAPTER,
+        BridgeAdapter::Hyperlane => EVM_HYPERLANE_ADAPTER,
+        BridgeAdapter::Wormhole => EVM_WORMHOLE_ADAPTER,
     };
     addr_str
         .parse::<Address>()
@@ -96,10 +119,10 @@ pub fn get_adapter_address(adapter: BridgeAdapter) -> Result<Address> {
 }
 
 /// Get adapter name for display
-pub fn get_adapter_name(adapter: BridgeAdapter) -> &'static str {
+pub fn get_adapter_name(adapter: BridgeAdapter) -> String {
     match adapter {
-        BridgeAdapter::Hyperlane => "Hyperlane (Sepolia)",
-        BridgeAdapter::Wormhole => "Wormhole (Sepolia)",
+        BridgeAdapter::Hyperlane => "Hyperlane".to_string(),
+        BridgeAdapter::Wormhole => "Wormhole".to_string(),
     }
 }
 
@@ -109,12 +132,13 @@ pub async fn estimate_gas_fee<P>(
     contract_address: Address,
     adapter_address: Address,
     payload_type: u8,
+    config: &NetworkConfig,
 ) -> Result<U256>
 where
     P: Provider<http::Http<http::Client>>,
 {
     let call = Portal::quoteCall {
-        destinationChainId: SOLANA_CHAIN_ID,
+        destinationChainId: config.solana_chain_id,
         payloadType: payload_type,
         bridgeAdapter: adapter_address,
     };
@@ -151,20 +175,20 @@ fn encode_relay_instructions(gas_limit: u128, msg_value: u128) -> String {
 }
 
 /// Fetch a signed quote from the Wormhole executor API
-pub async fn fetch_wormhole_quote() -> Result<WormholeQuote> {
+pub async fn fetch_wormhole_quote(config: &NetworkConfig) -> Result<WormholeQuote> {
     println!("Fetching Wormhole executor quote...");
 
     let relay_instructions = encode_relay_instructions(DEFAULT_GAS_LIMIT, DEFAULT_MSG_VALUE);
 
     let request = QuoteRequest {
-        src_chain: WORMHOLE_SEPOLIA_CHAIN_ID,
+        src_chain: config.wormhole_source_chain_id,
         dst_chain: SOLANA_WORMHOLE_CHAIN_ID,
         relay_instructions,
     };
 
     let client = reqwest::Client::new();
     let response: QuoteResponse = client
-        .post(EXECUTOR_QUOTE_API_URL)
+        .post(config.executor_quote_api_url)
         .json(&request)
         .send()
         .await
@@ -207,20 +231,27 @@ pub async fn get_adapter_args_and_value<P>(
     contract_address: Address,
     adapter_address: Address,
     payload_type: u8,
+    config: &NetworkConfig,
 ) -> Result<(Bytes, U256)>
 where
     P: Provider<http::Http<http::Client>>,
 {
     match adapter {
         BridgeAdapter::Wormhole => {
-            let quote = fetch_wormhole_quote().await?;
+            let quote = fetch_wormhole_quote(config).await?;
             let value_eth = format_wei_to_eth(quote.estimated_cost);
             println!("Estimated cost: {} ETH", value_eth);
             Ok((Bytes::from(quote.signed_quote), quote.estimated_cost))
         }
         BridgeAdapter::Hyperlane => {
-            let gas_fee =
-                estimate_gas_fee(provider, contract_address, adapter_address, payload_type).await?;
+            let gas_fee = estimate_gas_fee(
+                provider,
+                contract_address,
+                adapter_address,
+                payload_type,
+                config,
+            )
+            .await?;
             let gas_fee_eth = format_wei_to_eth(gas_fee);
             println!("Estimated gas fee: {} ETH", gas_fee_eth);
             Ok((Bytes::new(), gas_fee))
