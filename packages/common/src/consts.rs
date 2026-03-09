@@ -14,6 +14,7 @@ pub const HYPERLANE_DEFAULT_IGP_ACCOUNT: Pubkey =
     pubkey!("JAvHW21tYXE9dtdG83DReqU2b4LUexFuCbtJT5tF8X6M");
 pub const HYPERLANE_DEFAULT_OVERHEAD_IGP_ACCOUNT: Pubkey =
     pubkey!("AkeHBbE5JkwVppujCQQ6WuxsVsJtruBAjUo6fDCFp6fF");
+pub const HYPERLANE_ADDRESS_TABLE: Pubkey = pubkey!("8MedWKtfT7QdMcZWDuVPx1iUrJRRZXDQpzyZAaqzQg2Z");
 
 /// DEVNET
 pub const WORMHOLE_BRIDGE_PROGRAM_ID_DEVNET: Pubkey =
@@ -32,3 +33,5 @@ pub const HYPERLANE_DEFAULT_IGP_ACCOUNT_TESTNET: Pubkey =
     pubkey!("9SQVtTNsbipdMzumhzi6X8GwojiSMwBfqAhS7FgyTcqy");
 pub const HYPERLANE_DEFAULT_OVERHEAD_IGP_ACCOUNT_TESTNET: Pubkey =
     pubkey!("hBHAApi5ZoeCYHqDdCKkCzVKmBdwywdT3hMqe327eZB");
+pub const HYPERLANE_ADDRESS_TABLE_TESTNET: Pubkey =
+    pubkey!("4zybokQ8gLLPWUawXaw1JhrPZZsTaTGeaHZhLLb5nPhS");

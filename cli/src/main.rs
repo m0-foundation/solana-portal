@@ -66,6 +66,10 @@ enum Commands {
         #[arg(long)]
         testnet: bool,
     },
+    CreateHyperlaneLut {
+        #[arg(long, value_parser = ["mainnet", "testnet"])]
+        network: String,
+    },
 }
 
 #[tokio::main]
@@ -106,6 +110,9 @@ async fn main() -> Result<()> {
             testnet,
         } => {
             commands::relay_message(vaa_id, rpc_url, testnet).await?;
+        }
+        Commands::CreateHyperlaneLut { network } => {
+            commands::create_hyperlane_lut(network).await?;
         }
     }
 
