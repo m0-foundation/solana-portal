@@ -1,17 +1,21 @@
 use alloy::primitives::Address;
 
 // Sepolia Portal and adapters
-pub const SEPOLIA_PORTAL_CONTRACT: &str = "0xD925C84b55E4e44a53749fF5F2a5A13F63D128fd";
-pub const SEPOLIA_HYPERLANE_ADAPTER: &str = "0x408F6E7bDE5634160fda61b945DC9F41B965E406";
-pub const SEPOLIA_WORMHOLE_ADAPTER: &str = "0xeAae496BcDa93cCCd3fD6ff6096347979e87B153";
+pub const EVM_PORTAL_CONTRACT: &str = "0xD925C84b55E4e44a53749fF5F2a5A13F63D128fd";
+pub const EVM_HYPERLANE_ADAPTER: &str = "0xfCc1d596Ad6cAb0b5394eAa447d8626813180f32";
+pub const EVM_WORMHOLE_ADAPTER: &str = "0xaCffEC28C4eEe21C889a4e6C0704c540Ed9D4fDd";
 
-// Destination chain ID for Solana
-pub const SOLANA_CHAIN_ID: u32 = 1399811150;
 pub const PAYLOAD_TYPE_TOKEN_TRANSFER: u8 = 0;
 pub const PAYLOAD_TYPE_INDEX: u8 = 1;
 
 // Contract ABI bindings using alloy's sol! macro
 alloy::sol! {
+    /// IERC20 interface - standard ERC20 token functions
+    interface IERC20 {
+        function approve(address spender, uint256 amount) external returns (bool);
+        function allowance(address owner, address spender) external view returns (uint256);
+    }
+
     /// IPortal interface - base portal contract
     interface IPortal {
         /// Transfers token to the destination chain using the specified bridge adapter
@@ -67,6 +71,7 @@ alloy::sol! {
     }
 }
 
+pub use IERC20 as Erc20;
 pub use IHubPortal as HubPortal;
 pub use IPortal as Portal;
 

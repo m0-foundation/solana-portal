@@ -20,6 +20,7 @@ idl-build = [
     "m0-portal-common/idl-build",
 ]
 mainnet = []
+testnet = []
 skip-validation = []
 
 [dependencies]

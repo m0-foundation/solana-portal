@@ -20,7 +20,7 @@ solana_security_txt::security_txt! {
     policy: "https://github.com/m0-foundation/solana-portal/blob/main/SECURITY.md",
     preferred_languages: "en",
     source_code: "https://github.com/m0-foundation/solana-portal/tree/main/programs/hyperlane-adapter",
-auditors: "Halborn, Sherlock, Adevar, Guardian"
+    auditors: "Halborn, Sherlock, Adevar, Guardian"
 }
 
 declare_id!("mZhPGteS36G7FhMTcRofLQU8ocBNAsGq7u8SKSHfL2X");
