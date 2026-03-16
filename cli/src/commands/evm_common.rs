@@ -77,14 +77,15 @@ pub struct WormholeQuote {
 }
 
 /// Load private key from EVM_KEY environment variable
-pub fn load_private_key() -> Result<PrivateKeySigner> {
-    let private_key = std::env::var("EVM_KEY").context("EVM_KEY environment variable not set")?;
+pub fn load_private_key() -> PrivateKeySigner {
+    let private_key = std::env::var("EVM_KEY").expect("EVM_KEY environment variable not set");
 
     let private_key = private_key.trim_start_matches("0x");
 
-    private_key
-        .parse::<PrivateKeySigner>()
-        .context("Invalid private key format")
+    let key = private_key.parse::<PrivateKeySigner>().unwrap();
+    println!("Loaded private key with address: {:#x}", key.address());
+
+    key
 }
 
 /// Create a provider with the given signer
@@ -267,15 +268,52 @@ pub async fn send_and_confirm_transaction<P>(
 where
     P: Provider<http::Http<http::Client>>,
 {
+    // Fetch base fee from latest block and priority fee for EIP-1559 fee calculation
+    let latest_block = provider
+        .get_block_by_number(alloy::eips::BlockNumberOrTag::Latest, false.into())
+        .await
+        .context("Failed to get latest block")?
+        .context("Latest block not found")?;
+    let base_fee = latest_block
+        .header
+        .base_fee_per_gas
+        .context("Latest block missing base_fee_per_gas (non-EIP-1559 network?)")?;
+    let max_priority_fee = provider
+        .get_max_priority_fee_per_gas()
+        .await
+        .context("Failed to get max priority fee")?;
+    let bumped_priority_fee = max_priority_fee * 120 / 100;
+
+    // 2x base fee buffer ensures max_fee stays above base fee even if it spikes next block
+    let max_fee = base_fee as u128 * 2 + bumped_priority_fee;
+
+    println!(
+        "Gas prices: maxFee={} gwei, priorityFee={} gwei (bumped 20%)",
+        max_fee / 1_000_000_000,
+        bumped_priority_fee / 1_000_000_000,
+    );
+
+    let tx = tx
+        .max_fee_per_gas(max_fee)
+        .max_priority_fee_per_gas(bumped_priority_fee);
+
+    println!("Sending transaction...");
     let pending_tx = provider
         .send_transaction(tx)
         .await
         .context("Failed to send transaction")?;
 
-    let receipt = pending_tx
-        .get_receipt()
-        .await
-        .context("Failed to get transaction receipt")?;
+    let tx_hash = *pending_tx.tx_hash();
+    println!("Transaction sent: {:#x}", tx_hash);
+    println!("Waiting for confirmation...");
+
+    let receipt = tokio::time::timeout(
+        std::time::Duration::from_secs(300),
+        pending_tx.get_receipt(),
+    )
+    .await
+    .context("Transaction confirmation timed out after 5 minutes")?
+    .context("Failed to get transaction receipt")?;
 
     Ok(receipt.transaction_hash)
 }

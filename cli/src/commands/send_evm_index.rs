@@ -20,8 +20,7 @@ pub async fn send_evm_index(adapter: BridgeAdapter, network: Network) -> Result<
     println!("Using adapter: {}", get_adapter_name(adapter));
 
     // Load private key and create provider
-    let signer = load_private_key()
-        .context("Failed to load private key. Make sure PRIVATE_KEY env var is set")?;
+    let signer = load_private_key();
     let sender_address = signer.address();
     let provider = create_provider(signer, &config)?;
 
@@ -56,7 +55,6 @@ pub async fn send_evm_index(adapter: BridgeAdapter, network: Network) -> Result<
 
     // Send transaction
     let tx_hash = send_and_confirm_transaction(&provider, tx).await?;
-    println!("Transaction hash: {:#x}", tx_hash);
 
     // Get final receipt status
     let receipt = provider

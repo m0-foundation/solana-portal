@@ -30,8 +30,7 @@ pub async fn send_evm_token(
     println!("Sending {} tokens to Solana", amount);
 
     // Load private key and create provider
-    let signer = load_private_key()
-        .context("Failed to load private key. Make sure PRIVATE_KEY env var is set")?;
+    let signer = load_private_key();
     let sender_address = signer.address();
     let provider = create_provider(signer, &config)?;
 
