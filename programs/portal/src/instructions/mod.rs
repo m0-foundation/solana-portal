@@ -11,7 +11,9 @@ pub mod transfer_admin;
 pub mod wrap_unclaimed;
 
 use anchor_lang::prelude::*;
-use m0_portal_common::{hyperlane_adapter, wormhole_adapter, BridgeError, PayloadData};
+use m0_portal_common::{
+    hyperlane_adapter, layerzero_adapter, wormhole_adapter, BridgeError, PayloadData,
+};
 
 pub use bridge_path::*;
 pub use enable_cross_spoke_transfers::*;
@@ -134,6 +136,40 @@ pub fn send_message<'info>(
                 },
                 &[&[AUTHORITY_SEED, &[portal_authority_bump]]],
             ),
+            destination_chain_id,
+            portal_global.generate_message_id(destination_chain_id),
+            payload.encode(),
+            payload_type,
+        )
+    } else if bridge_adapter.key() == layerzero_adapter::ID {
+        // LayerZero send accounts come via remaining_accounts.
+        // Named accounts: lz_global, endpoint_program
+        // The rest are LZ endpoint send accounts forwarded to the send library.
+        if remaining_accounts.len() < 2 {
+            return err!(BridgeError::InvalidRemainingAccounts);
+        }
+
+        let [lz_global, endpoint_program]: [AccountInfo; 2] = remaining_accounts[..2]
+            .to_vec()
+            .try_into()
+            .map_err(|_| BridgeError::InvalidRemainingAccounts)?;
+
+        let lz_remaining = remaining_accounts[2..].to_vec();
+
+        layerzero_adapter::cpi::send_message(
+            CpiContext::new_with_signer(
+                bridge_adapter.to_account_info(),
+                layerzero_adapter::cpi::accounts::SendMessage {
+                    payer: sender,
+                    lz_global,
+                    portal_global: portal_global.to_account_info(),
+                    portal_authority,
+                    endpoint_program,
+                    system_program,
+                },
+                &[&[AUTHORITY_SEED, &[portal_authority_bump]]],
+            )
+            .with_remaining_accounts(lz_remaining),
             destination_chain_id,
             portal_global.generate_message_id(destination_chain_id),
             payload.encode(),

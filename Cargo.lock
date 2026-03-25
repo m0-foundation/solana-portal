@@ -3731,6 +3731,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57d8d8ce877200136358e0bbff3a77965875db3af755a11e1fa6b1b3e2df13ea"
 
 [[package]]
+name = "layerzero-adapter"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang 0.31.1",
+ "anchor-spl",
+ "cfg-if",
+ "m0-portal-common",
+ "solana-security-txt",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

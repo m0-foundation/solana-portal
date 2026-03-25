@@ -19,6 +19,7 @@ use crate::{
             UNIQUE_MESSAGE_SEED,
         },
     },
+    layerzero_adapter::{self},
     pda,
     wormhole_adapter::{
         self,
@@ -216,5 +217,38 @@ impl HyperlaneRemainingAccounts {
         }
 
         accounts
+    }
+}
+
+pub struct LayerZeroRemainingAccounts {
+    pub lz_global: Pubkey,
+    pub endpoint_program: Pubkey,
+}
+
+impl LayerZeroRemainingAccounts {
+    pub fn new() -> Self {
+        let lz_global = pda!(
+            &[layerzero_adapter::constants::GLOBAL_SEED],
+            &layerzero_adapter::ID
+        );
+
+        Self {
+            lz_global,
+            endpoint_program: Pubkey::from_str(
+                "76y77prsiCMvXMjuoZ5VRrhG5qYBrUMYTE5WgHqgjEn6",
+            )
+            .unwrap(),
+        }
+    }
+
+    pub fn account_metas() -> Vec<AccountMeta> {
+        Self::new().to_account_metas()
+    }
+
+    pub fn to_account_metas(&self) -> Vec<AccountMeta> {
+        vec![
+            AccountMeta::new(self.lz_global, false),
+            AccountMeta::new_readonly(self.endpoint_program, false),
+        ]
     }
 }

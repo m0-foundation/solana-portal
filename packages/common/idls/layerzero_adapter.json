@@ -1,0 +1,595 @@
+{
+  "address": "MzLzScr2JSzmxfDfg38ZPsw7RhRUGwkJtr2whLo7uru",
+  "metadata": {
+    "name": "layerzero_adapter",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "LayerZero V2 bridge adapter for M0 Portal"
+  },
+  "instructions": [
+    {
+      "name": "accept_admin",
+      "discriminator": [112, 42, 45, 90, 116, 181, 13, 170],
+      "accounts": [
+        {
+          "name": "pending_admin",
+          "signer": true
+        },
+        {
+          "name": "lz_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "cancel_admin_transfer",
+      "discriminator": [38, 131, 157, 31, 240, 137, 44, 215],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": ["lz_global"]
+        },
+        {
+          "name": "lz_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize",
+      "discriminator": [175, 175, 109, 31, 13, 152, 155, 237],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "lz_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        },
+        {
+          "name": "endpoint_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "chain_id",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "lz_receive",
+      "discriminator": [210, 86, 44, 195, 83, 140, 187, 15],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "lz_global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        },
+        {
+          "name": "lz_adapter_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [97, 117, 116, 104, 111, 114, 105, 116, 121]
+              }
+            ]
+          }
+        },
+        {
+          "name": "portal_global",
+          "writable": true
+        },
+        {
+          "name": "portal_authority"
+        },
+        {
+          "name": "message_account",
+          "writable": true
+        },
+        {
+          "name": "earn_global",
+          "writable": true
+        },
+        {
+          "name": "m_mint",
+          "writable": true
+        },
+        {
+          "name": "m_token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "earn_program"
+        },
+        {
+          "name": "portal_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": {
+              "name": "LzReceiveParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "lz_receive_types",
+      "discriminator": [122, 109, 93, 167, 65, 21, 10, 60],
+      "accounts": [
+        {
+          "name": "lz_global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": {
+              "name": "LzReceiveParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "pause_incoming",
+      "discriminator": [51, 131, 60, 173, 2, 83, 14, 52],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": ["lz_global"]
+        },
+        {
+          "name": "lz_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "pause_outgoing",
+      "discriminator": [202, 113, 17, 64, 22, 153, 217, 53],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": ["lz_global"]
+        },
+        {
+          "name": "lz_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "propose_admin",
+      "discriminator": [36, 244, 45, 228, 20, 41, 148, 8],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": ["lz_global"]
+        },
+        {
+          "name": "lz_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "new_admin",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "quote",
+      "discriminator": [248, 73, 41, 57, 6, 41, 143, 63],
+      "accounts": [
+        {
+          "name": "lz_global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        },
+        {
+          "name": "endpoint_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "dst_eid",
+          "type": "u32"
+        },
+        {
+          "name": "receiver",
+          "type": {
+            "array": ["u8", 32]
+          }
+        },
+        {
+          "name": "message",
+          "type": "bytes"
+        },
+        {
+          "name": "options",
+          "type": "bytes"
+        },
+        {
+          "name": "pay_in_lz_token",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "send_message",
+      "discriminator": [57, 40, 34, 178, 189, 10, 65, 26],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "lz_global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        },
+        {
+          "name": "portal_global"
+        },
+        {
+          "name": "portal_authority",
+          "signer": true
+        },
+        {
+          "name": "endpoint_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "m0_destination_chain_id",
+          "type": "u32"
+        },
+        {
+          "name": "message_id",
+          "type": {
+            "array": ["u8", 32]
+          }
+        },
+        {
+          "name": "payload",
+          "type": "bytes"
+        },
+        {
+          "name": "payload_type",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "set_delegate",
+      "discriminator": [235, 183, 27, 10, 96, 198, 156, 131],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": ["lz_global"]
+        },
+        {
+          "name": "lz_global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        },
+        {
+          "name": "endpoint_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "delegate",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "set_peer",
+      "discriminator": [139, 230, 67, 60, 204, 235, 195, 189],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": ["lz_global"]
+        },
+        {
+          "name": "lz_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "peer",
+          "type": {
+            "defined": {
+              "name": "Peer"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "unpause_incoming",
+      "discriminator": [195, 81, 195, 224, 62, 77, 253, 194],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": ["lz_global"]
+        },
+        {
+          "name": "lz_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "unpause_outgoing",
+      "discriminator": [19, 249, 136, 8, 192, 56, 198, 95],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": ["lz_global"]
+        },
+        {
+          "name": "lz_global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [103, 108, 111, 98, 97, 108]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "LayerZeroGlobal",
+      "discriminator": [58, 225, 195, 234, 157, 12, 148, 156]
+    }
+  ],
+  "types": [
+    {
+      "name": "LayerZeroGlobal",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "bump", "type": "u8" },
+          { "name": "admin", "type": "pubkey" },
+          { "name": "pending_admin", "type": { "option": "pubkey" } },
+          { "name": "chain_id", "type": "u32" },
+          { "name": "endpoint_program", "type": "pubkey" },
+          { "name": "outgoing_paused", "type": "bool" },
+          { "name": "incoming_paused", "type": "bool" },
+          { "name": "peers", "type": { "defined": { "name": "Peers" } } },
+          { "name": "padding", "type": { "array": ["u8", 128] } }
+        ]
+      }
+    },
+    {
+      "name": "LzReceiveParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "src_eid", "type": "u32" },
+          { "name": "sender", "type": { "array": ["u8", 32] } },
+          { "name": "nonce", "type": "u64" },
+          { "name": "guid", "type": { "array": ["u8", 32] } },
+          { "name": "message", "type": "bytes" },
+          { "name": "extra_data", "type": "bytes" }
+        ]
+      }
+    },
+    {
+      "name": "MessagingFee",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "native_fee", "type": "u64" },
+          { "name": "lz_token_fee", "type": "u64" }
+        ]
+      }
+    },
+    {
+      "name": "MessagingReceipt",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "guid", "type": { "array": ["u8", 32] } },
+          { "name": "nonce", "type": "u64" },
+          { "name": "fee", "type": { "defined": { "name": "MessagingFee" } } }
+        ]
+      }
+    },
+    {
+      "name": "LzAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "pubkey", "type": "pubkey" },
+          { "name": "is_signer", "type": "bool" },
+          { "name": "is_writable", "type": "bool" }
+        ]
+      }
+    },
+    {
+      "name": "Peer",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "address", "type": { "array": ["u8", 32] } },
+          { "name": "m0_chain_id", "type": "u32" },
+          { "name": "adapter_chain_id", "type": "u32" }
+        ]
+      }
+    },
+    {
+      "name": "Peers",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "vec": {
+              "defined": {
+                "name": "Peer"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "constants": [
+    {
+      "name": "GLOBAL_SEED",
+      "type": "bytes",
+      "value": "[103, 108, 111, 98, 97, 108]"
+    }
+  ]
+}
