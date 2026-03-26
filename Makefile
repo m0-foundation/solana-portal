@@ -35,8 +35,8 @@ publish-common:
 
 # Usage: make send_token_svm AMOUNT=1000 ADAPTER=wormhole
 send_token_svm:
-	export DEVNET_RPC_URL=$$(op read "op://Solana Dev/Helius/dev rpc") \
-	cd cli && cargo run send-token $(AMOUNT) 11155111 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217 --adapter $(ADAPTER)
+	export MAINNET_RPC_URL=$$(op read "op://Solana Dev/Helius/prod rpc") \
+	cd cli && cargo run send-token $(AMOUNT) 1 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217 --adapter $(ADAPTER) --network mainnet
 
 # Usage: make send_token_evm AMOUNT=1000 ADAPTER=wormhole
 send_token_evm:

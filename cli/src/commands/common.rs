@@ -222,8 +222,8 @@ pub async fn send_via_wormhole(
         get_wormhole_chain_id(destination_chain_id).unwrap(),
         current_sequence,
         &WORMHOLE_PEER_PORTAL,
-        Some(350_000),
-        Some(25_000_000),
+        None,
+        None,
         devnet,
     )
     .await?;
