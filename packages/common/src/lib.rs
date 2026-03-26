@@ -33,6 +33,7 @@ declare_program!(m_ext);
 declare_program!(order_book);
 declare_program!(wormhole_adapter);
 declare_program!(hyperlane_adapter);
+declare_program!(layerzero_adapter);
 
 #[macro_export]
 macro_rules! pda {

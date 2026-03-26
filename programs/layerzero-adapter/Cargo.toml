@@ -1,0 +1,34 @@
+[package]
+name = "layerzero-adapter"
+version = "0.1.0"
+description = "LayerZero V2 bridge adapter for M0 Portal"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "layerzero_adapter"
+
+[features]
+default = ["mainnet"]
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = [
+    "anchor-lang/idl-build",
+    "anchor-spl/idl-build",
+    "m0-portal-common/idl-build",
+]
+anchor-debug = []
+custom-heap = []
+custom-panic = []
+mainnet = []
+testnet = []
+skip-validation = []
+
+[dependencies]
+anchor-lang.workspace = true
+anchor-spl.workspace = true
+m0-portal-common = { path = "../../packages/common" }
+cfg-if.workspace = true
+solana-security-txt.workspace = true
