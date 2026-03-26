@@ -2,13 +2,15 @@ use anchor_client::{Client, Cluster};
 use anchor_lang::{system_program, AccountDeserialize};
 use anyhow::Result;
 use hyperlane_adapter::state::HyperlaneGlobal;
+use layerzero_adapter::state::LayerZeroGlobal;
 use m0_portal_common::{pda, Peer};
 use portal::state::{ChainBridgePaths, CHAIN_PATHS_SEED, GLOBAL_SEED};
 use std::vec;
 use wormhole_adapter::{accounts, instruction, state::WormholeGlobal};
 
 use crate::{
-    get_rpc_client, get_signer, run_surfpool_cmd, util::constants::ETHEREUM_WORMHOLE_ADAPTER,
+    get_rpc_client, get_signer, run_surfpool_cmd,
+    util::constants::{ETHEREUM_LAYERZERO_ADAPTER, ETHEREUM_LZ_EID, ETHEREUM_WORMHOLE_ADAPTER},
 };
 
 #[test]
@@ -40,7 +42,41 @@ fn test_02_check_globals() -> Result<()> {
 }
 
 #[test]
-fn test_03_update_peer() -> Result<()> {
+fn test_03_set_layerzero_peer() -> Result<()> {
+    let client = Client::new(Cluster::Localnet, get_signer());
+    let rpc_client = get_rpc_client();
+    let program = client.program(layerzero_adapter::ID)?;
+
+    program
+        .request()
+        .accounts(layerzero_adapter::accounts::SetPeer {
+            admin: program.payer(),
+            lz_global: pda!(&[GLOBAL_SEED], &layerzero_adapter::ID),
+            system_program: system_program::ID,
+        })
+        .args(layerzero_adapter::instruction::SetPeer {
+            peer: Peer {
+                m0_chain_id: 1,
+                address: ETHEREUM_LAYERZERO_ADAPTER,
+                adapter_chain_id: ETHEREUM_LZ_EID,
+            },
+        })
+        .send()?;
+
+    let data_lz = rpc_client.get_account_data(&pda!(&[GLOBAL_SEED], &layerzero_adapter::ID))?;
+    let global_lz = LayerZeroGlobal::try_deserialize(&mut data_lz.as_slice())?;
+
+    assert_eq!(global_lz.peers.len(), 1);
+    assert_eq!(global_lz.peers.0[0].m0_chain_id, 1);
+    assert_eq!(global_lz.peers.0[0].adapter_chain_id, ETHEREUM_LZ_EID);
+    assert_eq!(global_lz.peers.0[0].address, ETHEREUM_LAYERZERO_ADAPTER);
+
+    Ok(()
+    )
+}
+
+#[test]
+fn test_04_update_peer() -> Result<()> {
     let client = Client::new(Cluster::Localnet, get_signer());
     let rpc_client = get_rpc_client();
 
@@ -80,7 +116,7 @@ fn test_03_update_peer() -> Result<()> {
 }
 
 #[test]
-fn test_04_remove_peer() -> Result<()> {
+fn test_05_remove_peer() -> Result<()> {
     let client = Client::new(Cluster::Localnet, get_signer());
     let rpc_client = get_rpc_client();
 
@@ -115,7 +151,7 @@ fn test_04_remove_peer() -> Result<()> {
 }
 
 #[test]
-fn test_05_bridge_path_config() -> Result<()> {
+fn test_06_bridge_path_config() -> Result<()> {
     let client = get_rpc_client();
 
     let data =

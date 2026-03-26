@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::{instruction::Instruction, program::invoke_signed};
 use anchor_spl::token_2022::Token2022;
 use anchor_spl::token_interface::Mint;
 use m0_portal_common::{
@@ -8,12 +7,15 @@ use m0_portal_common::{
     BridgeError, Payload, AUTHORITY_SEED,
 };
 
-use crate::{
-    consts::CLEAR_DISCRIMINATOR,
-    state::{ClearParams, LayerZeroGlobal, LzReceiveParams, GLOBAL_SEED},
-};
+use crate::state::{LayerZeroGlobal, LzReceiveParams, GLOBAL_SEED};
+
+#[cfg(not(feature = "skip-validation"))]
+use anchor_lang::solana_program::{instruction::Instruction, program::invoke_signed};
+#[cfg(not(feature = "skip-validation"))]
+use crate::{consts::CLEAR_DISCRIMINATOR, state::ClearParams};
 
 /// Number of remaining_accounts consumed by the clear CPI.
+#[cfg(not(feature = "skip-validation"))]
 pub const CLEAR_ACCOUNTS_COUNT: usize = 8;
 
 #[derive(Accounts)]
@@ -80,6 +82,9 @@ pub struct LzReceive<'info> {
 
 impl<'info> LzReceive<'info> {
     fn validate(&self, params: &LzReceiveParams) -> Result<()> {
+        #[cfg(feature = "skip-validation")]
+        msg!("SKIPPING VALIDATION FEATURE ENABLED");
+
         let peer = self.lz_global.peers.get_peer(params.src_eid)?;
 
         if peer.address != params.sender {
@@ -96,61 +101,68 @@ impl<'info> LzReceive<'info> {
     ) -> Result<()> {
         let remaining = ctx.remaining_accounts;
 
-        // First CLEAR_ACCOUNTS_COUNT remaining accounts are for the clear CPI
-        let clear_accounts = &remaining[..CLEAR_ACCOUNTS_COUNT];
+        // When skip-validation is enabled, skip the clear CPI to the LZ endpoint
+        // (endpoint is not deployed in the test harness). All remaining_accounts
+        // go directly to the Portal CPI.
+        #[cfg(feature = "skip-validation")]
+        let portal_remaining = remaining;
+
+        #[cfg(not(feature = "skip-validation"))]
         let portal_remaining = &remaining[CLEAR_ACCOUNTS_COUNT..];
 
-        // Call clear() on the LZ endpoint before processing
-        let clear_params = ClearParams {
-            receiver: ctx.accounts.lz_global.key(),
-            src_eid: params.src_eid,
-            sender: params.sender,
-            nonce: params.nonce,
-            guid: params.guid,
-            message: params.message.clone(),
-        };
+        // Call clear() on the LZ endpoint before processing (skipped in tests)
+        #[cfg(not(feature = "skip-validation"))]
+        {
+            let clear_accounts = &remaining[..CLEAR_ACCOUNTS_COUNT];
 
-        let mut instruction_data = Vec::new();
-        instruction_data.extend_from_slice(&CLEAR_DISCRIMINATOR);
-        instruction_data.extend_from_slice(&clear_params.try_to_vec()?);
+            let clear_params = ClearParams {
+                receiver: ctx.accounts.lz_global.key(),
+                src_eid: params.src_eid,
+                sender: params.sender,
+                nonce: params.nonce,
+                guid: params.guid,
+                message: params.message.clone(),
+            };
 
-        let endpoint_key = ctx.accounts.lz_global.endpoint_program;
+            let mut instruction_data = Vec::new();
+            instruction_data.extend_from_slice(&CLEAR_DISCRIMINATOR);
+            instruction_data.extend_from_slice(&clear_params.try_to_vec()?);
 
-        // Clear accounts layout:
-        // 0: endpoint_program
-        // 1: receiver/oapp_pda (lz_global)
-        // 2: oapp_registry
-        // 3: nonce (writable)
-        // 4: payload_hash (writable)
-        // 5: endpoint_settings (writable)
-        // 6: event_authority
-        // 7: endpoint_program (again)
-        let clear_ix = Instruction {
-            program_id: endpoint_key,
-            data: instruction_data,
-            accounts: vec![
-                AccountMeta::new_readonly(ctx.accounts.lz_global.key(), true), // receiver signs
-                AccountMeta::new_readonly(clear_accounts[0].key(), false), // oapp_registry
-                AccountMeta::new(clear_accounts[1].key(), false),          // nonce
-                AccountMeta::new(clear_accounts[2].key(), false),          // payload_hash
-                AccountMeta::new(clear_accounts[3].key(), false),          // endpoint_settings
-                AccountMeta::new_readonly(clear_accounts[4].key(), false), // event_authority
-                AccountMeta::new_readonly(endpoint_key, false),            // endpoint_program
-            ],
-        };
+            let endpoint_key = ctx.accounts.lz_global.endpoint_program;
 
-        let mut clear_account_infos = Vec::with_capacity(CLEAR_ACCOUNTS_COUNT + 1);
-        clear_account_infos.push(ctx.accounts.lz_global.to_account_info());
-        for account in clear_accounts.iter() {
-            clear_account_infos.push(account.to_account_info());
+            // Clear accounts layout:
+            // 0: oapp_registry
+            // 1: nonce (writable)
+            // 2: payload_hash (writable)
+            // 3: endpoint_settings (writable)
+            // 4: event_authority
+            let clear_ix = Instruction {
+                program_id: endpoint_key,
+                data: instruction_data,
+                accounts: vec![
+                    AccountMeta::new_readonly(ctx.accounts.lz_global.key(), true),
+                    AccountMeta::new_readonly(clear_accounts[0].key(), false),
+                    AccountMeta::new(clear_accounts[1].key(), false),
+                    AccountMeta::new(clear_accounts[2].key(), false),
+                    AccountMeta::new(clear_accounts[3].key(), false),
+                    AccountMeta::new_readonly(clear_accounts[4].key(), false),
+                    AccountMeta::new_readonly(endpoint_key, false),
+                ],
+            };
+
+            let mut clear_account_infos = Vec::with_capacity(CLEAR_ACCOUNTS_COUNT + 1);
+            clear_account_infos.push(ctx.accounts.lz_global.to_account_info());
+            for account in clear_accounts.iter() {
+                clear_account_infos.push(account.to_account_info());
+            }
+
+            let global_bump = ctx.accounts.lz_global.bump;
+            invoke_signed(
+                &clear_ix,
+                &clear_account_infos,
+                &[&[GLOBAL_SEED, &[global_bump]]],
+            )?;
         }
-
-        let global_bump = ctx.accounts.lz_global.bump;
-        invoke_signed(
-            &clear_ix,
-            &clear_account_infos,
-            &[&[GLOBAL_SEED, &[global_bump]]],
-        )?;
 
         // Decode the M0 payload and CPI to Portal receive_message
         let payload = Payload::decode(&params.message)?;

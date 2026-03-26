@@ -1,6 +1,8 @@
-use anchor_lang::AccountDeserialize;
+use anchor_client::{Client, Cluster};
+use anchor_lang::{system_program, AccountDeserialize};
 use anyhow::{Ok, Result};
 use hyperlane_adapter::state::{HyperlaneGlobal, GLOBAL_SEED};
+use layerzero_adapter::state::LayerZeroGlobal;
 use m0_portal_common::{
     consts::{
         HYPERLANE_DEFAULT_IGP_ACCOUNT, HYPERLANE_DEFAULT_IGP_PROGRAM_ID,
@@ -11,15 +13,17 @@ use m0_portal_common::{
     portal::{self, accounts::PortalGlobal, constants::CHAIN_PATHS_SEED},
 };
 use solana_sdk::account::Account;
+use solana_sdk::pubkey::Pubkey;
 use std::vec;
 use wormhole_adapter::state::WormholeGlobal;
 
-use crate::{run_surfpool_cmd, set_account};
+use crate::{get_rpc_client, get_signer, run_surfpool_cmd, set_account};
+use crate::util::constants::SOLANA_CHAIN_ID;
 
 #[test]
 fn test_01_initialize_programs() -> Result<()> {
     // reset state (which gets pulled from mainnet)
-    for program_id in [portal::ID, wormhole_adapter::ID, hyperlane_adapter::ID] {
+    for program_id in [portal::ID, wormhole_adapter::ID, hyperlane_adapter::ID, layerzero_adapter::ID] {
         set_account(&pda!(&[GLOBAL_SEED], &program_id), &Account::default())?;
     }
 
@@ -91,7 +95,42 @@ fn test_03_check_globals() -> Result<()> {
 }
 
 #[test]
-fn test_04_check_hyperlane_metas_pda() -> Result<()> {
+fn test_04_initialize_layerzero() -> Result<()> {
+    let signer = get_signer();
+    let client = Client::new(Cluster::Localnet, signer.clone());
+    let program = client.program(layerzero_adapter::ID)?;
+
+    // Use system_program as a dummy endpoint since skip-validation skips register_oapp
+    program
+        .request()
+        .accounts(layerzero_adapter::accounts::Initialize {
+            admin: program.payer(),
+            lz_global: pda!(&[GLOBAL_SEED], &layerzero_adapter::ID),
+            endpoint_program: system_program::ID,
+            system_program: system_program::ID,
+        })
+        .args(layerzero_adapter::instruction::Initialize {
+            chain_id: SOLANA_CHAIN_ID,
+        })
+        .send()?;
+
+    // Verify global state
+    let rpc = get_rpc_client();
+    let data = rpc.get_account_data(&pda!(&[GLOBAL_SEED], &layerzero_adapter::ID))?;
+    let global = LayerZeroGlobal::try_deserialize(&mut data.as_slice())?;
+
+    assert_eq!(global.chain_id, SOLANA_CHAIN_ID);
+    assert_eq!(global.admin, signer.pubkey());
+    assert!(!global.outgoing_paused);
+    assert!(!global.incoming_paused);
+    assert_eq!(global.peers.len(), 0);
+    assert_eq!(global.pending_admin, None);
+
+    Ok(())
+}
+
+#[test]
+fn test_05_check_hyperlane_metas_pda() -> Result<()> {
     let client = crate::get_rpc_client();
 
     let data_account_metas = client.get_account_data(&pda!(
@@ -112,14 +151,14 @@ fn test_04_check_hyperlane_metas_pda() -> Result<()> {
 }
 
 #[test]
-fn test_05_fund_hyperlane_receive_payer() -> Result<()> {
+fn test_06_fund_hyperlane_receive_payer() -> Result<()> {
     let logs = run_surfpool_cmd(vec!["run", "fund_receive_payer", "--unsupervised"])?;
     assert!(!logs.contains("error"), "Funding failed: {}", logs);
     Ok(())
 }
 
 #[test]
-fn test_06_unpause() -> Result<()> {
+fn test_07_unpause() -> Result<()> {
     run_surfpool_cmd(vec![
         "run",
         "pause",

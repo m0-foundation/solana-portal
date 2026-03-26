@@ -17,6 +17,15 @@ pub const ETHEREUM_HYPERLANE_ADAPTER: [u8; 32] = [
     71, 216, 98, 104, 19, 24, 15, 50,
 ];
 
+// Placeholder Ethereum LayerZero adapter address for tests
+pub const ETHEREUM_LAYERZERO_ADAPTER: [u8; 32] = [
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22, 0x33,
+    0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0xAB, 0xCD, 0xEF, 0x01,
+];
+
+// LayerZero Ethereum EID (used as adapter_chain_id in peer registry)
+pub const ETHEREUM_LZ_EID: u32 = 30101;
+
 pub const SOLANA_CHAIN_ID: u32 = 1399811149;
 
 pub const M_MINT: Pubkey = pubkey!("mzerojk9tg56ebsrEAhfkyc9VgKjTW2zDqp6C5mhjzH");

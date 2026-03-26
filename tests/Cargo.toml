@@ -21,6 +21,7 @@ m0-portal-common = { path = "../packages/common" }
 portal = { path = "../programs/portal" }
 wormhole-adapter = { path = "../programs/wormhole-adapter" }
 hyperlane-adapter = { path = "../programs/hyperlane-adapter" }
+layerzero-adapter = { path = "../programs/layerzero-adapter" }
 anchor-lang.workspace = true
 solana-transaction-status-client-types = "2.3.13"
 anchor-spl.workspace = true

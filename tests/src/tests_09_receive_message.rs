@@ -5,6 +5,7 @@ use anchor_lang::{system_program, AnchorDeserialize, InstructionData, ToAccountM
 use anchor_spl::token_2022;
 use anyhow::Result;
 use hyperlane_adapter::{accounts as hyperlane_accounts, instruction as hyperlane_instruction};
+use layerzero_adapter::state::LzReceiveParams;
 use m0_portal_common::ext_swap::accounts::SwapGlobal;
 use m0_portal_common::{
     earn, ext_swap, CancelReportPayload, EarnerMerkleRootPayload, Extension, IndexPayload,
@@ -28,7 +29,8 @@ use wormhole_adapter::{
 };
 
 use crate::util::constants::{
-    ETHEREUM_HYPERLANE_ADAPTER, ETHEREUM_WORMHOLE_ADAPTER, M_MINT, SOLANA_CHAIN_ID,
+    ETHEREUM_HYPERLANE_ADAPTER, ETHEREUM_LAYERZERO_ADAPTER, ETHEREUM_LZ_EID,
+    ETHEREUM_WORMHOLE_ADAPTER, M_MINT, SOLANA_CHAIN_ID,
 };
 use crate::util::wormhole::build_versioned_tx_with_lut;
 use crate::{get_rpc_client, get_signer, set_account};
@@ -162,7 +164,65 @@ fn test_02_receive_index_hyperlane() -> Result<()> {
 }
 
 #[test]
-fn test_03_receive_invalid_peer_address() -> Result<()> {
+fn test_03_receive_index_layerzero() -> Result<()> {
+    let signer = get_signer();
+
+    let message_id = [50u8; 32];
+    let payload = create_default_payload(message_id, SOLANA_CHAIN_ID, portal::ID.to_bytes());
+
+    let accounts = create_lz_receive_accounts(signer.pubkey(), message_id);
+    let metas = require_metas(&payload.data, M_MINT, vec![], None)?;
+
+    let params = LzReceiveParams {
+        src_eid: ETHEREUM_LZ_EID,
+        sender: ETHEREUM_LAYERZERO_ADAPTER,
+        nonce: 1,
+        guid: [1u8; 32],
+        message: payload.encode(),
+        extra_data: vec![],
+    };
+
+    let mut all_accounts = accounts.to_account_metas(None);
+    // No clear accounts needed with skip-validation; append portal remaining directly
+    all_accounts.extend_from_slice(&metas);
+
+    let instruction = Instruction {
+        program_id: layerzero_adapter::ID,
+        accounts: all_accounts,
+        data: layerzero_adapter::instruction::LzReceive { params }.data(),
+    };
+
+    let transaction = Transaction::new_signed_with_payer(
+        &[instruction],
+        Some(&signer.pubkey()),
+        &[signer],
+        get_rpc_client().get_latest_blockhash()?,
+    );
+
+    let client = get_rpc_client();
+    let signature = client.send_and_confirm_transaction(&transaction)?;
+
+    // Verify that the index was propagated
+    let transaction = client.get_transaction(&signature, UiTransactionEncoding::Json)?;
+    let logs = transaction
+        .transaction
+        .meta
+        .unwrap()
+        .log_messages
+        .unwrap()
+        .join(". ");
+
+    assert!(
+        logs.contains("Program mz2vDzjbQDUDXBH6FPF5s4odCJ4y8YLE5QWaZ8XdZ9Z invoke [3]. Program log: Instruction: PropagateIndex."),
+        "Missing PropagateIndex log: {:?}",
+        logs
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_04_receive_invalid_peer_address() -> Result<()> {
     let signer = get_signer();
     let client = Client::new(Cluster::Localnet, signer.clone());
     let program = client.program(wormhole_adapter::ID)?;
@@ -194,7 +254,7 @@ fn test_03_receive_invalid_peer_address() -> Result<()> {
 }
 
 #[test]
-fn test_04_receive_invalid_peer_chain() -> Result<()> {
+fn test_05_receive_invalid_peer_chain() -> Result<()> {
     let signer = get_signer();
     let client = Client::new(Cluster::Localnet, signer.clone());
     let program = client.program(wormhole_adapter::ID)?;
@@ -226,7 +286,7 @@ fn test_04_receive_invalid_peer_chain() -> Result<()> {
 }
 
 #[test]
-fn test_05_receive_invalid_destination_chain() -> Result<()> {
+fn test_06_receive_invalid_destination_chain() -> Result<()> {
     let signer = get_signer();
     let client = Client::new(Cluster::Localnet, signer.clone());
     let program = client.program(wormhole_adapter::ID)?;
@@ -258,7 +318,7 @@ fn test_05_receive_invalid_destination_chain() -> Result<()> {
 }
 
 #[test]
-fn test_06_receive_invalid_destination_peer() -> Result<()> {
+fn test_07_receive_invalid_destination_peer() -> Result<()> {
     let signer = get_signer();
     let client = Client::new(Cluster::Localnet, signer.clone());
     let program = client.program(wormhole_adapter::ID)?;
@@ -290,7 +350,7 @@ fn test_06_receive_invalid_destination_peer() -> Result<()> {
 }
 
 #[test]
-fn test_07_receive_cancel_wormhole() -> Result<()> {
+fn test_08_receive_cancel_wormhole() -> Result<()> {
     let signer = get_signer();
     let client = Client::new(Cluster::Localnet, signer.clone());
     let program = client.program(wormhole_adapter::ID)?;
@@ -338,7 +398,7 @@ fn test_07_receive_cancel_wormhole() -> Result<()> {
 }
 
 #[test]
-fn test_08_change_destination_mint() -> Result<()> {
+fn test_09_change_destination_mint() -> Result<()> {
     let rpc_client = get_rpc_client();
     let signer = get_signer();
     let client = Client::new(Cluster::Localnet, signer.clone());
@@ -394,7 +454,7 @@ fn test_08_change_destination_mint() -> Result<()> {
 }
 
 #[test]
-fn test_09_receive_merkle_root() -> Result<()> {
+fn test_10_receive_merkle_root() -> Result<()> {
     let signer = get_signer();
     let client = Client::new(Cluster::Localnet, signer.clone());
     let program = client.program(wormhole_adapter::ID)?;
@@ -429,7 +489,7 @@ fn test_09_receive_merkle_root() -> Result<()> {
 }
 
 #[test]
-fn test_10_uninitialized_token_account() -> Result<()> {
+fn test_11_uninitialized_token_account() -> Result<()> {
     let rpc_client = get_rpc_client();
     let signer = get_signer();
     let client = Client::new(Cluster::Localnet, signer.clone());
@@ -515,6 +575,26 @@ fn create_default_vaa(emitter_chain: u16, emitter_address: [u8; 32], payload: Pa
         sequence: 0,
         consistency_level: 0,
         payload,
+    }
+}
+
+fn create_lz_receive_accounts(
+    signer_pubkey: Pubkey,
+    message_id: [u8; 32],
+) -> layerzero_adapter::accounts::LzReceive {
+    layerzero_adapter::accounts::LzReceive {
+        payer: signer_pubkey,
+        lz_global: pda!(&[GLOBAL_SEED], &layerzero_adapter::ID),
+        lz_adapter_authority: pda!(&[AUTHORITY_SEED], &layerzero_adapter::ID),
+        portal_global: pda!(&[GLOBAL_SEED], &portal::ID),
+        portal_authority: pda!(&[AUTHORITY_SEED], &portal::ID),
+        message_account: pda!(&[MESSAGE_SEED, &message_id], &portal::ID),
+        earn_global: pda!(&[GLOBAL_SEED], &earn::ID),
+        m_mint: M_MINT,
+        m_token_program: token_2022::ID,
+        earn_program: earn::ID,
+        portal_program: portal::ID,
+        system_program: system_program::ID,
     }
 }
 

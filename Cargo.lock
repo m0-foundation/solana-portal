@@ -8659,6 +8659,7 @@ dependencies = [
  "ctor",
  "hex",
  "hyperlane-adapter",
+ "layerzero-adapter",
  "m0-portal-common",
  "once_cell",
  "portal",
