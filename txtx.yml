@@ -57,7 +57,7 @@ environments:
     rpc_api_url: https://hatty-73mn84-fast-mainnet.helius-rpc.com
     chain_id: 1399811149
     wormhole_adapter: true
-    hyperlane_adapter: false
+    hyperlane_adapter: true
     build_dir: target/verifiable
     chain_id_idx: 0
     pause_action: pause_outgoing

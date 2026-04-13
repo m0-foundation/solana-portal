@@ -121,12 +121,12 @@ action "initialize_hyperlane_adapter" "svm::process_instructions" {
 
 action "sync_ext_hyperlane_adapter" "svm::process_instructions" {
     description = "Sync extensions on the Hyperlane Adapter program"
-    signers = [signer.caller]
+    signers = [signer.payer]
     instruction {
         program_idl = variable.hyperlane_adapter_program.idl
         instruction_name = "sync_extensions"
         payer {
-            public_key = signer.caller.public_key
+            public_key = signer.payer.public_key
         }
     }
     pre_condition {

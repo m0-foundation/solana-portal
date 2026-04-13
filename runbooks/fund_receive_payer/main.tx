@@ -16,6 +16,6 @@ variable "amount_sol" {
 action "send_sol" "svm::send_sol" {
     description = "Send SOL to Hyperlane receive payer"
     amount = svm::sol_to_lamports(variable.amount_sol)
-    signer = signer.caller
+    signer = signer.payer
     recipient = variable.hyperlane_payer.pda
 }

@@ -173,13 +173,13 @@ pub async fn send_via_hyperlane(
 
     let compute_budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(600_000);
 
-    let recent_blockhash = rpc_client.get_latest_blockhash().await?;
-    let transaction = Transaction::new_signed_with_payer(
-        &[compute_budget_ix, instruction],
-        Some(&payer.pubkey()),
-        &[payer],
-        recent_blockhash,
-    );
+    let transaction = build_versioned_tx_with_lut(
+        rpc_client,
+        vec![compute_budget_ix, instruction],
+        payer,
+        false,
+    )
+    .await?;
 
     let signature = rpc_client
         .send_and_confirm_transaction(&transaction)

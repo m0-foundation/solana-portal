@@ -103,7 +103,8 @@ pub async fn send_evm_token(
     let tx = TransactionRequest::default()
         .to(contract_address)
         .input(call.abi_encode().into())
-        .value(tx_value);
+        .value(tx_value)
+        .gas_limit(400_000);
 
     // Send transaction
     let tx_hash = send_and_confirm_transaction(&provider, tx).await?;
