@@ -104,6 +104,7 @@ pub fn get_wormhole_chain_id(m0_chain_id: u32) -> Option<u16> {
         999 => Some(47),       // Hyper EVM
         10 => Some(24),        // Optimism
         4326 => Some(64),      // MegaETH
+        2288 => Some(63),      // Moca Chain
         // Testnets
         421614 => Some(10003),   // Arbitrum Testnet
         11155111 => Some(10002), // Sepolia
