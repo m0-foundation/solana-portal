@@ -26,7 +26,7 @@ build-mainnet:
 	anchor build --verifiable  -- --features mainnet --no-default-features
 
 localnet:
-	surfpool start -r deployment -r initialize -a test4MzZzYk2NAP1222FSuKqq83GuXY5tHakqREDHPo --rpc-url https://hatty-73mn84-fast-mainnet.helius-rpc.com
+	surfpool start -r deployment -r initialize -a test4MzZzYk2NAP1222FSuKqq83GuXY5tHakqREDHPo --rpc-url $$(op read "op://Solana Dev/Helius/prod secure rpc")
 
 publish-common:
 	cd packages/common && \
